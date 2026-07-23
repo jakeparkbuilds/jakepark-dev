@@ -3,7 +3,7 @@ import SectionShell from "./section-shell";
 
 const BACKGROUND_ENTRIES = [
   {
-    marker: "seoul → nova",
+    marker: "seoul / nova",
     text: "I grew up in Northern Virginia, after my family immigrated from Seoul when I was in elementary school.",
   },
   {
@@ -69,8 +69,13 @@ export default function About({
         <div className="flex flex-1 flex-col md:order-1">
           <div className="flex flex-col gap-9">
             {BACKGROUND_ENTRIES.map((entry) => (
-              <div key={entry.marker} className="flex items-start">
-                <p className="w-[100px] shrink-0 font-mono text-mono-micro uppercase text-muted">
+              // items-baseline (not items-start): the mono marker (11px) and
+              // body text (19px/1.58) have different first-line baselines.
+              // Flexbox baseline alignment reads each item's actual first-line
+              // baseline from the browser's font metrics, so the two line up
+              // correctly without a hand-tuned margin.
+              <div key={entry.marker} className="flex items-baseline gap-6">
+                <p className="w-[130px] shrink-0 whitespace-nowrap font-mono text-mono-micro uppercase text-muted">
                   {entry.marker}
                 </p>
                 <p className="max-w-[560px] flex-1 font-display text-body text-body">
@@ -80,7 +85,7 @@ export default function About({
             ))}
           </div>
 
-          <div className="ml-[100px] mt-12 flex max-w-[560px] flex-col gap-3 border-t-[0.5px] border-muted pt-8">
+          <div className="ml-[154px] mt-12 flex max-w-[560px] flex-col gap-3 border-t-[0.5px] border-muted pt-8">
             <p className="font-mono text-mono-label-sm uppercase text-label sm:text-mono-label">
               elsewhere
             </p>
