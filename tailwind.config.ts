@@ -57,6 +57,7 @@ const config: Config = {
       },
       spacing: {
         section: "clamp(24px, 6vw, 96px)",
+        "section-y": "clamp(96px, 12vh, 180px)",
         "frame-desktop": "40px",
         "frame-mobile": "16px",
       },

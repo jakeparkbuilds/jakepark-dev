@@ -21,7 +21,7 @@ export default function SectionShell({
     <section
       id={id}
       aria-labelledby={headingId}
-      className="flex min-h-[80svh] w-full flex-col justify-center gap-10 p-section"
+      className="section-pad flex w-full flex-col gap-10 py-section-y"
     >
       <div className="flex flex-col gap-4">
         <SectionMark mark={number} label={label} />

@@ -7,6 +7,18 @@
     border-radius: 0;
   }
 
+  :root {
+    --nav-gutter: 0px;
+  }
+
+  /* Matches tailwind.config.ts screens.md — the fixed nav is hidden below
+     this width (see Nav), so the reserved column collapses to zero there. */
+  @media (min-width: 900px) {
+    :root {
+      --nav-gutter: 180px;
+    }
+  }
+
   body {
     background-color: theme("colors.paper");
     color: theme("colors.body");
@@ -28,5 +40,16 @@
   :focus-visible {
     outline: 1px solid theme("colors.accent");
     outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Section-container padding: standard edge padding on every side, plus
+     the reserved nav column added to the right so nothing ever runs under
+     the fixed nav. Applied at the section-container level (hero + every
+     SectionShell) so it holds automatically for every section. */
+  .section-pad {
+    padding: theme("spacing.section");
+    padding-right: calc(theme("spacing.section") + var(--nav-gutter));
   }
 }

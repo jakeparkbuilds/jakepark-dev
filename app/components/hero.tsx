@@ -83,7 +83,7 @@ export default function Hero() {
       aria-labelledby="hero-heading"
       className="relative flex min-h-svh w-full flex-col border-t-[0.5px] border-ink"
     >
-      <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-section p-section md:flex-row md:items-center md:gap-x-12">
+      <div className="section-pad mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-section md:flex-row md:items-center md:gap-x-12">
         <div className="flex max-w-col flex-1 flex-col gap-8 md:justify-center">
           <p className="font-mono text-mono-label-sm uppercase text-label sm:text-mono-label">
             CS + Math @ Georgetown
