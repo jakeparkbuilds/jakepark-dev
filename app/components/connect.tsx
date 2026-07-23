@@ -4,10 +4,6 @@ const SOCIAL_LINKS = [
   { label: "instagram", href: "https://www.instagram.com/jakeprkusr/" },
 ];
 
-// Build-time constant, not a runtime Date() — avoids a hydration mismatch
-// between the server-rendered and client-rendered strings.
-const LAST_UPDATED = "july 2026";
-
 // Deliberately does not use SectionShell: this section breaks the page's
 // left-aligned marker/h2/hairline rhythm on purpose (docs/motion-spec.md
 // §07). No heading text exists to label the section, so the accessible
@@ -17,7 +13,12 @@ export default function Connect({ id }: { id: string }) {
     <section
       id={id}
       aria-label="connect"
-      className="section-pad flex w-full flex-col items-center pt-[clamp(140px,20vh,240px)] pb-[clamp(72px,10vh,140px)]"
+      // --nav-gutter is scoped to this element: above 1280px the centered
+      // column clears the nav by 80px+, so the gutter this section would
+      // otherwise inherit is zeroed out and it centers on the full
+      // viewport. Below 1280px (nav labels sit closer in) every other
+      // section's gutter is kept.
+      className="section-pad flex w-full flex-col items-center pt-[clamp(140px,20vh,240px)] pb-[clamp(72px,10vh,140px)] min-[1280px]:[--nav-gutter:0px]"
     >
       <div className="flex w-full max-w-[720px] flex-col items-center gap-14 text-center">
         <div className="flex flex-col items-center gap-6">
@@ -42,7 +43,7 @@ export default function Connect({ id }: { id: string }) {
             not muted (#9B9382, decorative-only per CLAUDE.md contrast rule). */}
         <p className="max-w-[520px] font-display text-body text-label">
           I&apos;m always up for talking about ML systems, civic tech, or
-          where to find a decent slice in N.Y.
+          where to find a decent slice in D.C.
         </p>
 
         <nav aria-label="social links">
@@ -73,10 +74,9 @@ export default function Connect({ id }: { id: string }) {
         className="mt-16 w-full max-w-[720px] border-t-[0.5px] border-muted"
       />
 
-      <div className="mt-10 flex w-full flex-col items-center gap-2 text-center font-mono text-mono-micro uppercase text-muted sm:flex-row sm:items-baseline sm:justify-between sm:text-left">
-        <p>washington, d.c. · 38.9076°n 77.0723°w</p>
-        <p>last updated {LAST_UPDATED}</p>
-      </div>
+      <p className="mt-10 text-center font-mono text-mono-micro uppercase text-muted">
+        washington, d.c. · 38.9076°n 77.0723°w
+      </p>
     </section>
   );
 }
