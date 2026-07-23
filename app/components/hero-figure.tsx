@@ -7,7 +7,7 @@ export default function HeroFigure() {
         viewBox="0 0 400 400"
         role="img"
         aria-label="Map of Washington, D.C. showing its 46 neighborhood clusters within the district boundary"
-        className="w-[60%] min-w-[160px]"
+        className="w-[90%] min-w-[220px]"
       >
         {DC_NEIGHBORHOODS.map((d, i) => (
           <path
@@ -15,7 +15,7 @@ export default function HeroFigure() {
             d={d}
             fill="none"
             stroke="#1A1815"
-            strokeOpacity={0.28}
+            strokeOpacity={0.18}
             strokeWidth={0.5}
             vectorEffect="non-scaling-stroke"
           />
@@ -30,7 +30,7 @@ export default function HeroFigure() {
         />
       </svg>
       <figcaption className="font-mono text-mono-label-sm uppercase text-label sm:text-mono-label">
-        fig. 01 — district of columbia · 46 neighborhood clusters
+        district of columbia · 46 neighborhood clusters
       </figcaption>
     </figure>
   );

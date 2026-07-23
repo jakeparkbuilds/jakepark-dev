@@ -19,7 +19,8 @@ const NEIGHBORHOODS_URL =
 
 const VIEWBOX = 400; // square viewBox, matches hero-figure.tsx
 const MARGIN = 8; // px padding inside the viewBox
-const SIMPLIFY_TOLERANCE_PX = 3; // ~2-4px visual tolerance, per spec
+const BOUNDARY_TOLERANCE_PX = 3; // unchanged — do not regenerate the boundary geometry
+const NEIGHBORHOOD_TOLERANCE_PX = 0.75; // ~0.5-1px, keeps interior curvature
 
 async function fetchGeoJSON(url) {
   const res = await fetch(url);
@@ -128,19 +129,19 @@ async function main() {
     ];
   }
 
-  function processRing(rawRing) {
+  function processRing(rawRing, tolerance) {
     const ring = dropClosingDuplicate(rawRing);
     const projected = ring.map(project);
-    const simplified = simplifyRDP(projected, SIMPLIFY_TOLERANCE_PX);
+    const simplified = simplifyRDP(projected, tolerance);
     return ringToPath(simplified);
   }
 
   const DC_OUTLINE = ringToPath(
-    simplifyRDP(boundaryRing.map(project), SIMPLIFY_TOLERANCE_PX)
+    simplifyRDP(boundaryRing.map(project), BOUNDARY_TOLERANCE_PX)
   );
 
   const DC_NEIGHBORHOODS = neighborhoodsFC.features
-    .map((f) => processRing(f.geometry.coordinates[0]))
+    .map((f) => processRing(f.geometry.coordinates[0], NEIGHBORHOOD_TOLERANCE_PX))
     .sort();
 
   const outPath = path.join(
@@ -156,7 +157,8 @@ async function main() {
 //   Washington DC Boundary: ${BOUNDARY_URL}
 //   Neighborhood Clusters:  ${NEIGHBORHOODS_URL}
 // Projected with an equirectangular projection scaled to a ${VIEWBOX}x${VIEWBOX}
-// viewBox and simplified with Ramer-Douglas-Peucker (tolerance ${SIMPLIFY_TOLERANCE_PX}px).
+// viewBox and simplified with Ramer-Douglas-Peucker (boundary tolerance
+// ${BOUNDARY_TOLERANCE_PX}px, neighborhood tolerance ${NEIGHBORHOOD_TOLERANCE_PX}px).
 // Coordinates rounded to 1 decimal place.
 `;
 
