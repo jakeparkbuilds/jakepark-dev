@@ -60,8 +60,8 @@ re-animates on scroll-up.
 (`scaleX: 0 → 1`, `transform-origin: left`) over 900ms on `draw` easing when its
 section enters. This is the site's signature and it is worth being consistent about.
 
-**Section marks** (`§ 02` etc.) — mono label does a 260ms scramble through
-`0-9 § —` before settling. Borrowed texture from wodniack, but only on the marks,
+**Section marks** (`02` etc.) — mono label does a 260ms scramble through
+`0-9 —` before settling. Borrowed texture from wodniack, but only on the marks,
 never on headings or body.
 
 **Nav** — no fixed header. A thin right-margin rail of six 1px muted ticks, one
@@ -72,7 +72,7 @@ Click jumps. Hidden below 900px. This is the only persistent chrome.
 
 ## Per-section contract
 
-### § 01 hero — SET PIECE 1
+### 01 hero — SET PIECE 1
 
 *Claim: this person does quantitative work.*
 
@@ -94,7 +94,7 @@ first — a hero that animates before the font lands looks broken.
 
 Mobile: figure renders once, static, at 240px tall, below the text.
 
-### § 02 about + portrait
+### 02 about + portrait
 
 *Claim: none. This is a quiet section.*
 
@@ -103,7 +103,7 @@ Portrait uncovers via `clip-path: inset(0 0 100% 0) → inset(0 0 0 0)`, 900ms,
 
 Body copy uses the standard reveal grammar, per paragraph, 60ms apart.
 
-### § 03 experience timeline
+### 03 experience timeline
 
 *Claim: continuity.*
 
@@ -116,7 +116,7 @@ Ventures, Hoyalytics. Dates in mono, titles in Bricolage 500.
 
 Reduced motion: line is drawn at full length, entries visible.
 
-### § 04 projects — SET PIECE 2
+### 04 projects — SET PIECE 2
 
 *Claim: these are real systems, and here is what they actually did.*
 
@@ -139,7 +139,7 @@ accent. Nothing moves, nothing lifts, nothing shadows.
 
 Mobile and reduced motion: figures render in final state, no animation.
 
-### § 05 signal board — SET PIECE 3
+### 05 signal board — SET PIECE 3
 
 *Claim: this is a person, not a résumé.*
 
@@ -153,17 +153,17 @@ palette and rules.
 - A `now` block: currently building / reading / listening. Hand-edited, dated.
 - Optional: the assistant. Deferred — see below.
 
-### § 06 skills
+### 06 skills
 
 Micro only. Mono text grouped by category, separated by `·`. Standard reveal with
 `stagger({ grid: [n, 1], from: 'center' })`, 20ms. No badges, no pills, no bars,
 no proficiency indicators.
 
-### § 07 education
+### 07 education
 
 Two entries, standard reveal grammar. Nothing else. Resist the urge.
 
-### § 08 connect
+### 08 connect
 
 Display-scale type, clip-reveal like the hero name. Email as text, not a button.
 Social links repeat. These four links may have a subtle magnetic hover — max 4px

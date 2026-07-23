@@ -1,3 +1,4 @@
+import About from "./components/about";
 import Hero from "./components/hero";
 import Nav from "./components/nav";
 import Section from "./components/section";
@@ -8,9 +9,13 @@ export default function Home() {
     <main>
       <Nav />
       <Hero />
-      {CONTENT_SECTIONS.map(({ number, id, label }) => (
-        <Section key={id} number={number} id={id} label={label} />
-      ))}
+      {CONTENT_SECTIONS.map(({ number, id, label }) =>
+        id === "about" ? (
+          <About key={id} number={number} id={id} label={label} />
+        ) : (
+          <Section key={id} number={number} id={id} label={label} />
+        )
+      )}
     </main>
   );
 }
