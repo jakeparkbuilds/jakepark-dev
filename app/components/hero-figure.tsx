@@ -7,30 +7,42 @@ const SE_BOUNDARY_START = { x: 164.1, y: 392 };
 const SE_BOUNDARY_END = { x: 354.1, y: 201.6 };
 
 const CAPTION_TEXT = "district of columbia · 46 neighborhood clusters";
-const CAPTION_FONT_SIZE = 10;
-const CAPTION_TRACKING = CAPTION_FONT_SIZE * 0.16;
+// IBM Plex Mono's real per-glyph advance width, read directly off the
+// shipped font file (fonttools hmtx table: 600/1000 units for every
+// character in this string, including the space and the middle dot —
+// confirms it's truly monospace, not an assumption).
+const MONO_CHAR_WIDTH_EM = 0.6;
+const CAPTION_TRACKING_EM = 0.16; // mono-micro tracking, per CLAUDE.md
 const CAPTION_CLEARANCE = 14; // target clear space between the boundary and the glyphs
-// Uppercase mono glyphs have no descenders, so at this rotation angle
-// their ink bulges back toward the line from the baseline. Pushing the
-// baseline out by one extra ascent keeps the ink itself ~14 units clear.
-const CAPTION_ASCENT = CAPTION_FONT_SIZE * 0.72;
 
 function computeCaptionPlacement() {
   const dx = SE_BOUNDARY_END.x - SE_BOUNDARY_START.x;
   const dy = SE_BOUNDARY_END.y - SE_BOUNDARY_START.y;
   const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+  const edgeLength = Math.hypot(dx, dy);
+
+  // Solve font-size so the caption's rendered width matches the boundary
+  // segment exactly: n glyphs at MONO_CHAR_WIDTH_EM each, plus (n-1)
+  // inter-character tracking gaps at CAPTION_TRACKING_EM.
+  const n = CAPTION_TEXT.length;
+  const emsPerLine = n * MONO_CHAR_WIDTH_EM + (n - 1) * CAPTION_TRACKING_EM;
+  const fontSize = edgeLength / emsPerLine;
+  const tracking = fontSize * CAPTION_TRACKING_EM;
+  // Uppercase mono glyphs have no descenders, so at this rotation angle
+  // their ink bulges back toward the line from the baseline. Pushing the
+  // baseline out by one extra ascent keeps the ink itself ~14 units clear.
+  const ascent = fontSize * 0.72;
 
   const midX = (SE_BOUNDARY_START.x + SE_BOUNDARY_END.x) / 2;
   const midY = (SE_BOUNDARY_START.y + SE_BOUNDARY_END.y) / 2;
 
   // Outward normal: perpendicular to the segment, away from the shape's
   // interior (DC_OUTLINE's centroid sits up and to the left of this edge).
-  const len = Math.hypot(dx, dy);
-  const outX = -dy / len;
-  const outY = dx / len;
+  const outX = -dy / edgeLength;
+  const outY = dx / edgeLength;
 
-  const offset = CAPTION_CLEARANCE + CAPTION_ASCENT;
-  return { x: midX + outX * offset, y: midY + outY * offset, angle };
+  const offset = CAPTION_CLEARANCE + ascent;
+  return { x: midX + outX * offset, y: midY + outY * offset, angle, fontSize, tracking };
 }
 
 const CAPTION_PLACEMENT = computeCaptionPlacement();
@@ -69,8 +81,8 @@ export default function HeroFigure() {
           transform={`rotate(${CAPTION_PLACEMENT.angle} ${CAPTION_PLACEMENT.x} ${CAPTION_PLACEMENT.y})`}
           textAnchor="middle"
           fontFamily="var(--font-plex-mono)"
-          fontSize={CAPTION_FONT_SIZE}
-          letterSpacing={CAPTION_TRACKING}
+          fontSize={CAPTION_PLACEMENT.fontSize}
+          letterSpacing={CAPTION_PLACEMENT.tracking}
           fill="#9B9382"
           className="hidden md:inline"
           style={{ textTransform: "uppercase" }}
