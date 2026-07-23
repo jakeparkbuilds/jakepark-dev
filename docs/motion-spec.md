@@ -10,7 +10,7 @@ something true about Jake's work, or reveals content in the site's own rhythm.
 Decoration is not a reason. If you cannot say in one sentence what a piece of
 motion is *asserting*, delete it.
 
-There are exactly **three set pieces**. Everything else is quiet. Adding a fourth
+There are exactly **two set pieces**. Everything else is quiet. Adding a third
 set piece requires asking first.
 
 ---
@@ -139,31 +139,17 @@ accent. Nothing moves, nothing lifts, nothing shadows.
 
 Mobile and reduced motion: figures render in final state, no animation.
 
-### 05 signal board — SET PIECE 3
-
-*Claim: this is a person, not a résumé.*
-
-Different texture from everything above — denser, more instrument-like, but same
-palette and rules.
-
-- GitHub contribution grid from the real API, cells filling in a
-  `stagger({ grid: [53, 7], from: 'first' })` sweep, ~14ms, in ink opacity steps.
-  Cached server-side; never let the client hit the API on every load.
-- Wizards + Commanders current records, fetched server-side, set as mono.
-- A `now` block: currently building / reading / listening. Hand-edited, dated.
-- Optional: the assistant. Deferred — see below.
-
-### 06 skills
+### 05 skills
 
 Micro only. Mono text grouped by category, separated by `·`. Standard reveal with
 `stagger({ grid: [n, 1], from: 'center' })`, 20ms. No badges, no pills, no bars,
 no proficiency indicators.
 
-### 07 education
+### 06 education
 
 Two entries, standard reveal grammar. Nothing else. Resist the urge.
 
-### 08 connect
+### 07 connect
 
 Display-scale type, clip-reveal like the hero name. Email as text, not a button.
 Social links repeat. These four links may have a subtle magnetic hover — max 4px
@@ -179,9 +165,9 @@ Under `prefers-reduced-motion: reduce`:
 - Lenis off, native scroll
 - All reveals become instant; content is visible at rest with no opacity or
   transform initial state
-- All three set pieces render their **final frame immediately** — the Brownian
-  path complete, the graph settled, the histogram converged. Content is never
-  lost, only the drawing of it.
+- Both set pieces render their **final frame immediately** — the Brownian
+  path complete, the histogram converged. Content is never lost, only the
+  drawing of it.
 - Hairlines drawn at full length
 - Section-mark scramble skipped
 
