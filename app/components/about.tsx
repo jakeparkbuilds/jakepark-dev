@@ -85,13 +85,25 @@ export default function About({
             ))}
           </div>
 
-          <div className="ml-[154px] mt-12 flex max-w-[560px] flex-col gap-3 border-t-[0.5px] border-muted pt-8">
-            <p className="font-mono text-mono-label-sm uppercase text-label sm:text-mono-label">
-              elsewhere
-            </p>
-            <p className="font-mono text-small text-body">
-              {INTERESTS.join(" · ")}
-            </p>
+          {/* Full-width hairline: spans gutter + text column (130 + 24 + 560),
+              not indented like the entry rows, so it reads as a section
+              divider rather than a continuation of the text column. */}
+          <div className="mt-12 max-w-[714px] border-t-[0.5px] border-muted pt-8">
+            <div className="flex items-baseline gap-6">
+              <p className="w-[130px] shrink-0 whitespace-nowrap font-mono text-mono-micro uppercase text-muted">
+                elsewhere
+              </p>
+              {/* grid-flow-col + grid-rows-4 fills column-first (items 1-4
+                  left column, 5-7 right) instead of the default row-first
+                  order, so reading order runs down then over. */}
+              <div className="grid flex-1 grid-cols-1 gap-x-12 gap-y-3.5 sm:grid-cols-2 sm:grid-flow-col sm:grid-rows-4">
+                {INTERESTS.map((interest) => (
+                  <p key={interest} className="font-mono text-small text-body">
+                    {interest}
+                  </p>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
