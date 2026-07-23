@@ -106,7 +106,7 @@ export default function Hero() {
           </nav>
         </div>
 
-        <div className="flex flex-1 items-center md:justify-start">
+        <div className="flex flex-[1.4] items-center md:justify-start">
           <div className="w-full">
             <HeroFigure />
           </div>

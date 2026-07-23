@@ -7,7 +7,7 @@ export default function HeroFigure() {
         viewBox="0 0 400 400"
         role="img"
         aria-label="Map of Washington, D.C. showing its 46 neighborhood clusters within the district boundary"
-        className="w-[90%] min-w-[220px]"
+        className="w-full min-w-[220px]"
       >
         {DC_NEIGHBORHOODS.map((d, i) => (
           <path
