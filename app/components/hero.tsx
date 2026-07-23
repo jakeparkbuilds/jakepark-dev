@@ -126,7 +126,7 @@ export default function Hero() {
         </div>
 
         <div className="flex flex-[1.4] items-center md:justify-start">
-          <div className="w-full">
+          <div className="w-full md:w-[90%]">
             <HeroFigure />
           </div>
         </div>
