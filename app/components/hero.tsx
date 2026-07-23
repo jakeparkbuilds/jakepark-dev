@@ -17,7 +17,7 @@ export default function Hero() {
       <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-section p-section md:flex-row md:items-center">
         <div className="flex max-w-col flex-1 flex-col gap-8 md:justify-center">
           <p className="font-mono text-mono-label-sm uppercase text-label sm:text-mono-label">
-            § 01 / index
+            CS + Math @ Georgetown
           </p>
 
           <h1 id="hero-heading" className="font-display text-display text-ink">
@@ -26,9 +26,9 @@ export default function Hero() {
           </h1>
 
           <p className="max-w-col font-display text-body text-body">
-            I build machine-learning and data systems: geospatial pipelines, graph
-            neural networks over legislative networks, and distributed Monte Carlo
-            simulators on AWS. Quantitative work, carefully made.
+            I&apos;m an undergraduate at Georgetown University studying Computer
+            Science and Mathematics, with a particular interest in how data, ML,
+            and AI systems drive civic and social impact.
           </p>
 
           <nav aria-label="social links">
