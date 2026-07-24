@@ -1,6 +1,7 @@
 "use client";
 
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { CursorPoint } from "../../lib/cursor/useCursorState";
 
 export type InkCanvasHandle = {
@@ -12,29 +13,50 @@ export type InkCanvasHandle = {
 
 const INK = "#1A1815";
 const MAX_DPR = 2;
-const TRAIL_ALPHA = 0.55;
-const TRAIL_FADE_MS = 2500;
+const TRAIL_ALPHA = 0.85;
+const TRAIL_LINE_WIDTH = 0.75;
+const TRAIL_FADE_MS = 3200;
 const TRAIL_FADE_EASING = "cubic-bezier(0.33, 1, 0.68, 1)";
-const CLICK_FADE_MS = 900;
-const CLICK_ALPHA = 0.5;
-const CLICK_RADIUS = 1.5;
+const CLICK_FADE_MS = 1400;
+const CLICK_ALPHA = 0.85;
+const CLICK_RADIUS = 2;
+const RESIZE_DEBOUNCE_MS = 150;
 
+// Resizes the backing bitmap AND calls setTransform exactly once — never
+// ctx.scale() repeatedly — so every subsequent draw call can just use plain
+// client-coordinate (CSS px) numbers straight off the pointer event.
 function sizeCanvas(canvas: HTMLCanvasElement, dpr: number) {
   canvas.width = Math.round(window.innerWidth * dpr);
   canvas.height = Math.round(window.innerHeight * dpr);
+  canvas.style.width = "100vw";
+  canvas.style.height = "100vh";
+  canvas.getContext("2d")?.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 // Two stacked canvases, not one: the drag trail fades as a single unit via
-// the canvas ELEMENT's own opacity (a 2500ms CSS transition, per spec), but
-// click dots need independent per-mark 900ms fades that can overlap a trail
-// fade in progress. A raster canvas has no per-shape opacity, so giving the
-// dots their own layer is what lets both timelines run without one erasing
-// or dimming the other. Both layers render the same ink, at the same place,
-// so visually it still reads as one drawing surface.
+// the canvas ELEMENT's own opacity (a single CSS transition, per spec), but
+// click dots need independent per-mark fades that can overlap a trail fade
+// in progress. A raster canvas has no per-shape opacity, so giving the dots
+// their own layer is what lets both timelines run without one erasing or
+// dimming the other. Both layers render the same ink, at the same place, so
+// visually it still reads as one drawing surface.
+//
+// Both are portaled straight to document.body (not rendered where this
+// component happens to sit in the tree) — position: fixed only measures
+// from the viewport when nothing between the element and the initial
+// containing block has a transform/filter/will-change/contain. Portaling
+// removes any risk of that regardless of where a future ancestor's styles
+// change.
 const InkCanvas = forwardRef<InkCanvasHandle>(function InkCanvas(_props, ref) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const trailRef = useRef<HTMLCanvasElement | null>(null);
   const marksRef = useRef<HTMLCanvasElement | null>(null);
-  const dprRef = useRef(1);
+  // CSS-px size, not the bitmap's device-px width/height — draw calls run in
+  // the dpr-transformed (CSS px) space, so clearRect needs to clear in that
+  // same space rather than the raw device-pixel bitmap dimensions.
+  const cssSizeRef = useRef({ width: 0, height: 0 });
 
   const pointsRef = useRef<CursorPoint[]>([]);
   const pendingRef = useRef<{ point: CursorPoint; suspended: boolean } | null>(null);
@@ -46,38 +68,55 @@ const InkCanvas = forwardRef<InkCanvasHandle>(function InkCanvas(_props, ref) {
   const dotsRafRef = useRef<number | null>(null);
 
   useEffect(() => {
+    // Runs after `mounted` flips true, once the portaled canvases actually
+    // exist in the DOM and these refs are populated — a plain `[]`-deps
+    // effect would fire on the first (pre-portal, refs-still-null) render
+    // and never again, leaving the bitmap at its unsized 300x150 default.
     const trail = trailRef.current;
     const marks = marksRef.current;
     if (!trail || !marks) return;
 
     function resize() {
       const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
-      dprRef.current = dpr;
+      cssSizeRef.current = { width: window.innerWidth, height: window.innerHeight };
       sizeCanvas(trail!, dpr);
       sizeCanvas(marks!, dpr);
+      // Resizing clears both bitmaps as a side effect (changing width/height
+      // resets the backing store) — the in-memory point/dot lists are
+      // stale against the new size either way, so drop them too.
+      pointsRef.current = [];
+      dotsRef.current = [];
     }
 
     resize();
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
-  }, []);
+    let resizeTimer: number | undefined;
+    function onResize() {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(resize, RESIZE_DEBOUNCE_MS);
+    }
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.clearTimeout(resizeTimer);
+    };
+  }, [mounted]);
 
-  function drawTrailSegment(ctx: CanvasRenderingContext2D, dpr: number) {
+  function drawTrailSegment(ctx: CanvasRenderingContext2D) {
     const points = pointsRef.current;
     const n = points.length;
     if (n < 2) return;
 
     ctx.globalAlpha = TRAIL_ALPHA;
     ctx.strokeStyle = INK;
-    ctx.lineWidth = 0.5 * dpr;
+    ctx.lineWidth = TRAIL_LINE_WIDTH;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
     if (n === 2) {
       const [a, b] = points;
       ctx.beginPath();
-      ctx.moveTo(a.x * dpr, a.y * dpr);
-      ctx.lineTo(b.x * dpr, b.y * dpr);
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
       ctx.stroke();
       return;
     }
@@ -87,11 +126,11 @@ const InkCanvas = forwardRef<InkCanvasHandle>(function InkCanvas(_props, ref) {
     // newest pair — the standard technique for a freehand stroke that reads
     // as drawn, not a polyline of straight segments.
     const [p0, p1, p2] = points;
-    const mid1 = { x: ((p0.x + p1.x) / 2) * dpr, y: ((p0.y + p1.y) / 2) * dpr };
-    const mid2 = { x: ((p1.x + p2.x) / 2) * dpr, y: ((p1.y + p2.y) / 2) * dpr };
+    const mid1 = { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
+    const mid2 = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
     ctx.beginPath();
     ctx.moveTo(mid1.x, mid1.y);
-    ctx.quadraticCurveTo(p1.x * dpr, p1.y * dpr, mid2.x, mid2.y);
+    ctx.quadraticCurveTo(p1.x, p1.y, mid2.x, mid2.y);
     ctx.stroke();
   }
 
@@ -112,7 +151,7 @@ const InkCanvas = forwardRef<InkCanvasHandle>(function InkCanvas(_props, ref) {
           const points = pointsRef.current;
           points.push(pending.point);
           if (points.length > 3) points.shift();
-          drawTrailSegment(ctx, dprRef.current);
+          drawTrailSegment(ctx);
         }
       }
     }
@@ -127,19 +166,19 @@ const InkCanvas = forwardRef<InkCanvasHandle>(function InkCanvas(_props, ref) {
   function dotsTick() {
     const marks = marksRef.current;
     const ctx = marks?.getContext("2d");
-    const dpr = dprRef.current;
     const now = performance.now();
     const dots = dotsRef.current.filter((dot) => now - dot.createdAt < CLICK_FADE_MS);
     dotsRef.current = dots;
 
     if (ctx && marks) {
-      ctx.clearRect(0, 0, marks.width, marks.height);
+      const { width, height } = cssSizeRef.current;
+      ctx.clearRect(0, 0, width, height);
       ctx.fillStyle = INK;
       for (const dot of dots) {
         const t = (now - dot.createdAt) / CLICK_FADE_MS;
         ctx.globalAlpha = CLICK_ALPHA * (1 - t);
         ctx.beginPath();
-        ctx.arc(dot.x * dpr, dot.y * dpr, CLICK_RADIUS * dpr, 0, Math.PI * 2);
+        ctx.arc(dot.x, dot.y, CLICK_RADIUS, 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -160,7 +199,8 @@ const InkCanvas = forwardRef<InkCanvasHandle>(function InkCanvas(_props, ref) {
       trail.style.transition = "none";
       trail.style.opacity = "1";
       fadingRef.current = false;
-      trail.getContext("2d")?.clearRect(0, 0, trail.width, trail.height);
+      const { width, height } = cssSizeRef.current;
+      trail.getContext("2d")?.clearRect(0, 0, width, height);
 
       pointsRef.current = [];
       pendingRef.current = null;
@@ -191,7 +231,8 @@ const InkCanvas = forwardRef<InkCanvasHandle>(function InkCanvas(_props, ref) {
         trail.removeEventListener("transitionend", handleEnd);
         fadingRef.current = false;
         trail.style.transition = "none";
-        trail.getContext("2d")?.clearRect(0, 0, trail.width, trail.height);
+        const { width, height } = cssSizeRef.current;
+        trail.getContext("2d")?.clearRect(0, 0, width, height);
         // Bitmap's empty either way, but leave the element at its resting
         // opacity rather than stranded at 0 until the next drag happens to
         // reset it.
@@ -217,11 +258,20 @@ const InkCanvas = forwardRef<InkCanvasHandle>(function InkCanvas(_props, ref) {
     };
   }, []);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <>
-      <canvas ref={trailRef} className="pointer-events-none fixed inset-0 z-[9999]" />
-      <canvas ref={marksRef} className="pointer-events-none fixed inset-0 z-[9999]" />
-    </>
+      <canvas
+        ref={trailRef}
+        style={{ position: "fixed", top: 0, left: 0, pointerEvents: "none", zIndex: 9998 }}
+      />
+      <canvas
+        ref={marksRef}
+        style={{ position: "fixed", top: 0, left: 0, pointerEvents: "none", zIndex: 9998 }}
+      />
+    </>,
+    document.body
   );
 });
 

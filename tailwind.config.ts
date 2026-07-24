@@ -18,7 +18,12 @@ const config: Config = {
       muted: "#9B9382",
       accent: "#22384F",
       body: "#2E2A24",
-      label: "#7C7566",
+      label: "#6B6455",
+      // Darkest marks on the page: the cursor dot and the active nav label.
+      "near-black": "#0A0908",
+      // The map coordinate readout only — deliberately its own value, not
+      // reused elsewhere (see docs/motion-spec.md cursor contrast pass).
+      readout: "#4A4438",
     },
     fontFamily: {
       display: ["var(--font-bricolage)", "sans-serif"],

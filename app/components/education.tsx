@@ -69,12 +69,12 @@ function EntryRow({ entry }: { entry: EducationEntry }) {
       <div className="edu-body">
         <p className="font-display text-h2 text-ink">{entry.institution}</p>
         <p className="mt-[10px] font-display text-body text-body">{entry.degree}</p>
-        <p className="mt-[14px] font-mono text-mono-micro uppercase text-muted">
+        <p className="mt-[14px] font-mono text-mono-micro uppercase text-label">
           {entry.location}
         </p>
       </div>
 
-      <div className="edu-course font-mono text-[12px] leading-[1.7] text-muted">
+      <div className="edu-course font-mono text-[12px] leading-[1.7] text-label">
         <p>{entry.coursework.join(" · ")}</p>
       </div>
     </div>

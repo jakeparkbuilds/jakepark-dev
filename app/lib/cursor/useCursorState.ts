@@ -127,12 +127,18 @@ export function useCursorEngine(callbacks: CursorCallbacks, active: boolean) {
       const point = { x: event.clientX, y: event.clientY };
       const target = event.target as Element | null;
       const isLink = !!target?.closest("a");
+      // A drag currently selects page text and paints it with the browser's
+      // default highlight (visible over the connect section); ::selection
+      // is restyled globally (globals.css) but the selection itself still
+      // shouldn't happen while drawing.
+      document.body.style.userSelect = "none";
       callbacksRef.current.onPointerDown?.(point, { isLink });
       dragging = true;
       callbacksRef.current.onDragStart?.();
     }
 
     function handleUp() {
+      document.body.style.userSelect = "";
       if (!dragging) return;
       dragging = false;
       callbacksRef.current.onDragEnd?.();

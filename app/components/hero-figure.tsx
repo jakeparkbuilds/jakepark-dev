@@ -111,18 +111,22 @@ export default function HeroFigure() {
             d={d}
             fill="none"
             stroke="#1A1815"
-            strokeOpacity={0.18}
+            strokeOpacity={0.34}
             strokeWidth={0.5}
             vectorEffect="non-scaling-stroke"
           />
         ))}
+        {/* data-dc-boundary: the District's real boundary geometry, used by
+            PlotterCursor's isPointInFill() hit test (not a bounding-box
+            approximation) to gate the map coordinate readout. */}
         <path
           d={DC_OUTLINE}
           fill="none"
           stroke="#1A1815"
-          strokeOpacity={0.6}
+          strokeOpacity={0.95}
           strokeWidth={0.5}
           vectorEffect="non-scaling-stroke"
+          data-dc-boundary
         />
         <text
           x={CAPTION_PLACEMENT.x}
@@ -132,7 +136,7 @@ export default function HeroFigure() {
           fontFamily="var(--font-plex-mono)"
           fontSize={CAPTION_PLACEMENT.fontSize}
           letterSpacing={CAPTION_PLACEMENT.tracking}
-          fill="#9B9382"
+          fill="#6B6455"
           className="hidden md:inline"
           style={{ textTransform: "uppercase" }}
         >

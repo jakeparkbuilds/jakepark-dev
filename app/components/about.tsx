@@ -75,7 +75,7 @@ export default function About({
               // baseline from the browser's font metrics, so the two line up
               // correctly without a hand-tuned margin.
               <div key={entry.marker} className="flex items-baseline gap-6">
-                <p className="w-[130px] shrink-0 whitespace-nowrap font-mono text-mono-micro uppercase text-muted">
+                <p className="w-[130px] shrink-0 whitespace-nowrap font-mono text-mono-micro uppercase text-label">
                   {entry.marker}
                 </p>
                 <p className="max-w-[560px] flex-1 font-display text-body text-body">
@@ -90,7 +90,7 @@ export default function About({
               divider rather than a continuation of the text column. */}
           <div className="mt-12 max-w-[714px] border-t-[0.5px] border-muted pt-8">
             <div className="flex items-baseline gap-6">
-              <p className="w-[130px] shrink-0 whitespace-nowrap font-mono text-mono-micro uppercase text-muted">
+              <p className="w-[130px] shrink-0 whitespace-nowrap font-mono text-mono-micro uppercase text-label">
                 elsewhere
               </p>
               {/* grid-flow-col + grid-rows-4 fills column-first (items 1-4

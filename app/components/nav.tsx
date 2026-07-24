@@ -49,7 +49,7 @@ export default function Nav() {
             onClick={(event) => handleClick(event, id)}
             aria-current={isActive ? "true" : undefined}
             className={`flex items-center gap-2 font-mono text-mono-micro uppercase transition-colors duration-150 ${
-              isActive ? "text-ink" : "text-muted hover:text-label"
+              isActive ? "text-near-black" : "text-label hover:text-body"
             }`}
           >
             <span

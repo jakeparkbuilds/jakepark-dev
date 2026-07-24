@@ -22,7 +22,7 @@ export default function Connect({ id }: { id: string }) {
     >
       <div className="flex w-full max-w-[720px] flex-col items-center gap-14 text-center">
         <div className="flex flex-col items-center gap-6">
-          <p className="font-mono text-mono-micro uppercase text-muted">
+          <p className="font-mono text-mono-micro uppercase text-label">
             you&apos;ve reached the end
           </p>
 
@@ -39,9 +39,11 @@ export default function Connect({ id }: { id: string }) {
           </a>
         </div>
 
-        {/* Real body copy, not a caption — uses the label token (#7C7566),
-            not muted (#9B9382, decorative-only per CLAUDE.md contrast rule). */}
-        <p className="max-w-[520px] font-display text-body text-label">
+        {/* Real body copy, not a caption — full-strength body color
+            (#2E2A24), same text-body-twice pattern used wherever this
+            token needs to carry both its size and its color (see
+            hero.tsx, about.tsx, education.tsx). */}
+        <p className="max-w-[520px] font-display text-body text-body">
           I&apos;m always up for talking about ML systems, civic tech, or
           where to find a decent slice in D.C.
         </p>
@@ -74,7 +76,7 @@ export default function Connect({ id }: { id: string }) {
         className="mt-16 w-full max-w-[720px] border-t-[0.5px] border-muted"
       />
 
-      <p className="mt-10 text-center font-mono text-mono-micro uppercase text-muted">
+      <p className="mt-10 text-center font-mono text-mono-micro uppercase text-label">
         washington, d.c. · 38.9076°n 77.0723°w
       </p>
     </section>

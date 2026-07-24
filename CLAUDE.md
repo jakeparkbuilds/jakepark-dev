@@ -79,7 +79,9 @@ Rules:
 - Text column 632px at desktop.
 - Grain: SVG fractalNoise, `opacity: 0.05`, `mix-blend-mode: multiply`,
   `pointer-events: none`. One instance, fixed to the page, not per-section.
-- `border-radius: 0` on everything. No exceptions.
+- `border-radius: 0` on everything, with exactly one exception: the custom
+  cursor dot (`.cursor-dot` in globals.css) uses `border-radius: 50%` because
+  it is a literal circle, not a rounded rectangle. No other exceptions.
 - **No box-shadows anywhere.** Cards are defined by rules and space.
 
 ---
