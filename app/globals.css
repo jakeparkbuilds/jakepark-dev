@@ -159,4 +159,82 @@
       transition: none !important;
     }
   }
+
+  /* Custom pointer system ("the plotter head" — see PlotterCursor.tsx). The
+     native cursor is hidden only where a real fine pointer + hover surface
+     exist; touch and coarse pointers keep it, and the JS side mirrors this
+     exact query to skip mounting the system there at all rather than just
+     hiding it. */
+  @media (pointer: fine) and (hover: hover) {
+    html,
+    body,
+    a,
+    button,
+    [role="button"],
+    .nav-item,
+    [data-cursor="pen-down"] {
+      cursor: none;
+    }
+  }
+
+  /* Pen-down hover feedback: arms scale toward the center gap, the dot
+     fades in. transform-box: fill-box lets each line's own percentage
+     origin anchor at its inner (center-facing) end, so shrinking reads as
+     the arm retracting toward the gap, not stretching from the far end. */
+  .cx-line {
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    transform-box: fill-box;
+  }
+
+  .cx-line--left {
+    transform-origin: 100% 50%;
+  }
+
+  .cx-line--right {
+    transform-origin: 0% 50%;
+  }
+
+  .cx-line--top {
+    transform-origin: 50% 100%;
+  }
+
+  .cx-line--bottom {
+    transform-origin: 50% 0%;
+  }
+
+  .cx-dot {
+    opacity: 0;
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .cursor-crosshair.is-pen-down .cx-line--h {
+    transform: scaleX(0.6);
+  }
+
+  .cursor-crosshair.is-pen-down .cx-line--v {
+    transform: scaleY(0.6);
+  }
+
+  .cursor-crosshair.is-pen-down .cx-dot {
+    opacity: 1;
+  }
+
+  /* Map coordinate readout: fades with the pointer entering/leaving the DC
+     map's bounding box (see PlotterCursor's onMove). */
+  .cursor-readout {
+    opacity: 0;
+    transition: opacity 200ms;
+  }
+
+  .cursor-readout.is-visible {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cx-line,
+    .cx-dot,
+    .cursor-readout {
+      transition: none !important;
+    }
+  }
 }

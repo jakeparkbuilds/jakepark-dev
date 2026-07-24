@@ -103,6 +103,7 @@ export default function HeroFigure() {
         role="img"
         aria-label="Map of Washington, D.C. showing its 46 neighborhood clusters within the district boundary"
         className="w-full min-w-[220px]"
+        data-dc-map
       >
         {DC_NEIGHBORHOODS.map((d, i) => (
           <path
