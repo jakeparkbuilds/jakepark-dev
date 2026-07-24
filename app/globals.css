@@ -53,20 +53,22 @@
     padding-right: calc(theme("spacing.section") + var(--nav-gutter));
   }
 
-  /* Education catalog-plate row (see Education component). Named grid
-     areas let the coursework block move from its own column (desktop)
-     to inline flow below the entry (tablet) to plain document order
-     (mobile) without duplicating markup per breakpoint. */
+  /* Education catalog-plate row (see Education component). The row's own
+     top border stands in for the hairline (rather than a sibling div) so
+     the hover/focus color transition below can target .edu-row directly —
+     a separate preceding div can't be reached by a descendant selector.
+     Named grid areas move the logo from above (mobile) to beside (tablet+)
+     the body column without duplicating markup per breakpoint. */
   .edu-row {
     display: grid;
     grid-template-columns: 1fr;
     grid-template-areas:
       "logo"
-      "body"
-      "course";
+      "body";
     column-gap: 32px;
     row-gap: 24px;
     align-items: start;
+    border-top: 0.5px solid theme("colors.muted");
   }
 
   .edu-logo {
@@ -75,10 +77,6 @@
 
   .edu-body {
     grid-area: body;
-  }
-
-  .edu-course {
-    grid-area: course;
   }
 
   /* Inline SVG logos are injected with their own baked-in width/height
@@ -94,46 +92,50 @@
   @media (min-width: 640px) {
     .edu-row {
       grid-template-columns: 120px minmax(0, 1fr);
-      grid-template-areas:
-        "logo body"
-        "logo course";
+      grid-template-areas: "logo body";
     }
   }
 
-  /* Below this point column 3 collapses (course folds into the "body"
-     column above) — see the 640px rule. At and above it, course gets its
-     own column and its hover/focus reveal engages. */
+  /* Coursework list: single column and always visible below 1100px (no
+     hover surface exists at touch/tablet widths), 2-column column-first
+     grid gated behind hover/focus at desktop. clip-path never changes this
+     box's own size, so revealing it can't shift anything below it. */
+  .edu-course-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    row-gap: 8px;
+  }
+
   @media (min-width: 1100px) {
     .edu-row {
-      grid-template-columns: 120px minmax(0, 620px) 1fr;
-      column-gap: 48px;
-      grid-template-areas: "logo body course";
+      transition: border-top-color 180ms;
+    }
+
+    .edu-row:hover,
+    .edu-row:focus-visible {
+      border-top-color: theme("colors.ink");
     }
 
     /* Drawn, not faded: uncovers left-to-right, matching the site's
        motion vocabulary (docs/motion-spec.md). */
-    .edu-course {
+    .edu-course-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(var(--course-rows, 1), auto);
+      grid-auto-flow: column;
+      column-gap: 40px;
+      row-gap: 8px;
       clip-path: inset(0 100% 0 0);
       transition: clip-path 420ms cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    .edu-row:hover .edu-course,
-    .edu-row:focus-visible .edu-course {
+    .edu-row:hover .edu-course-list,
+    .edu-row:focus-visible .edu-course-list {
       clip-path: inset(0 0 0 0);
-    }
-
-    .edu-row .edu-hairline {
-      transition: background-color 180ms;
-    }
-
-    .edu-row:hover .edu-hairline,
-    .edu-row:focus-visible .edu-hairline {
-      background-color: theme("colors.ink");
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .edu-course {
+    .edu-course-list {
       clip-path: inset(0 0 0 0) !important;
       transition: none !important;
     }

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { CSSProperties } from "react";
 import SectionShell from "./section-shell";
 
 type EducationEntry = {
@@ -19,14 +20,12 @@ const ENTRIES: EducationEntry[] = [
     logoFile: "georgetown.svg",
     logoAlt: "Georgetown University shield",
     coursework: [
-      "machine learning",
-      "ai i & ii",
-      "linear algebra",
+      "computer science i & ii",
+      "data structures",
+      "advanced programming",
       "discrete math",
       "multivariable calculus",
-      "differential equations",
-      "statistical modeling",
-      "data structures",
+      "intro to math statistics",
     ],
   },
   {
@@ -35,7 +34,18 @@ const ENTRIES: EducationEntry[] = [
     location: "Alexandria, Virginia",
     logoFile: "tjhsst.svg",
     logoAlt: "Thomas Jefferson High School for Science and Technology crest",
-    coursework: ["advanced placement", "research statistics", "computer systems"],
+    coursework: [
+      "computer science principles",
+      "data structures",
+      "web app development",
+      "mobile app development",
+      "engineering research lab",
+      "calculus bc",
+      "multivariable calculus",
+      "linear algebra",
+      "ap statistics",
+      "statistical modeling",
+    ],
   },
 ];
 
@@ -47,31 +57,45 @@ function readLogo(file: string) {
 }
 
 function EntryRow({ entry }: { entry: EducationEntry }) {
+  // Explicit row count (rather than relying on grid auto-flow to guess) is
+  // what makes the 2-column course list fill column-first: item 1..N goes
+  // down the left column, then wraps to the right at exactly the midpoint,
+  // regardless of how many items a given entry has.
+  const courseRows = Math.ceil(entry.coursework.length / 2);
+
   return (
-    <div>
-      <div aria-hidden="true" className="edu-hairline h-[0.5px] w-full bg-muted" />
+    <div tabIndex={0} className="edu-row py-[clamp(40px,5vh,64px)]">
       <div
-        tabIndex={0}
-        className="edu-row py-[clamp(40px,5vh,64px)]"
-      >
-        <div
-          className="edu-logo h-10 w-auto shrink-0 sm:h-[52px]"
-          role="img"
-          aria-label={entry.logoAlt}
-          dangerouslySetInnerHTML={{ __html: readLogo(entry.logoFile) }}
-        />
+        className="edu-logo h-10 w-auto shrink-0 sm:h-[52px]"
+        role="img"
+        aria-label={entry.logoAlt}
+        dangerouslySetInnerHTML={{ __html: readLogo(entry.logoFile) }}
+      />
 
-        <div className="edu-body max-w-[620px]">
-          <p className="font-display text-h2 text-ink">{entry.institution}</p>
-          <p className="mt-[10px] font-display text-body text-body">{entry.degree}</p>
-          <p className="mt-[14px] font-mono text-mono-micro uppercase text-muted">
-            {entry.location}
-          </p>
-        </div>
-
-        <p className="edu-course font-mono text-small text-muted">
-          {entry.coursework.join(" · ")}
+      <div className="edu-body max-w-[620px]">
+        <p className="font-display text-h2 text-ink">{entry.institution}</p>
+        <p className="mt-[10px] font-display text-body text-body">{entry.degree}</p>
+        <p className="mt-[14px] font-mono text-mono-micro uppercase text-muted">
+          {entry.location}
         </p>
+
+        <div className="mt-6">
+          <p className="mb-3 font-mono text-mono-micro uppercase text-muted">
+            coursework
+          </p>
+          {/* --course-rows drives the column-first fill at >=1100px (see
+              .edu-course-list); below that it's ignored since the list is a
+              single column. clip-path never changes this box's size, so the
+              reveal can't shift anything below it. */}
+          <div
+            className="edu-course-list font-mono text-small text-muted"
+            style={{ "--course-rows": courseRows } as CSSProperties}
+          >
+            {entry.coursework.map((course) => (
+              <p key={course}>{course}</p>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

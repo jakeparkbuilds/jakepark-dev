@@ -18,7 +18,7 @@ export default function Connect({ id }: { id: string }) {
       // otherwise inherit is zeroed out and it centers on the full
       // viewport. Below 1280px (nav labels sit closer in) every other
       // section's gutter is kept.
-      className="section-pad flex w-full flex-col items-center pt-[clamp(140px,20vh,240px)] pb-[clamp(72px,10vh,140px)] min-[1280px]:[--nav-gutter:0px]"
+      className="section-pad flex w-full flex-col items-center pt-[clamp(100px,12vh,160px)] pb-[clamp(72px,10vh,140px)] min-[1280px]:[--nav-gutter:0px]"
     >
       <div className="flex w-full max-w-[720px] flex-col items-center gap-14 text-center">
         <div className="flex flex-col items-center gap-6">
