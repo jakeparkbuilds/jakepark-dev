@@ -58,9 +58,9 @@
      the hover/focus color transition below can target .edu-row directly —
      a separate preceding div can't be reached by a descendant selector.
      Named grid areas reflow logo/body/course across breakpoints without
-     duplicating markup. Each entry is its own grid container, so a
-     column's height is always sized by that entry's own content only —
-     never shared or equalized across rows. */
+     duplicating markup. At >=1100px each .edu-row is itself a grid item of
+     the shared .edu-grid row-track grid below, so its rendered height
+     matches whichever entry's content is tallest — see .edu-grid. */
   .edu-row {
     display: grid;
     grid-template-columns: 1fr;
@@ -84,9 +84,6 @@
 
   .edu-course {
     grid-area: course;
-    display: flex;
-    flex-direction: column;
-    row-gap: 8px;
   }
 
   /* Inline SVG logos are injected with their own baked-in width/height
@@ -101,7 +98,7 @@
 
   @media (min-width: 640px) {
     .edu-row {
-      grid-template-columns: 120px minmax(0, 1fr);
+      grid-template-columns: 80px minmax(0, 1fr);
       grid-template-areas:
         "logo body"
         "logo course";
@@ -111,15 +108,26 @@
   /* Below this point course folds into flow beneath body (see the 640px
      rule) and is always visible — no hover surface exists at touch/tablet
      widths. At and above it, course becomes its own right-hand column and
-     its hover/focus reveal engages. Column 3 is max-content (not 1fr) so
-     it's sized to its own longest line and never wraps; body's column
-     narrows to make room automatically. */
+     its hover/focus reveal engages. Column 2 is capped with minmax(0, 440px)
+     so the institution name stays a readable measure (TJHSST's full name
+     may still wrap to two lines); column 3 takes the remaining space as
+     1fr so the flowing coursework run gets room to wrap across a few lines
+     instead of forcing one long unbroken line. */
   @media (min-width: 1100px) {
     .edu-row {
-      grid-template-columns: 120px minmax(0, 1fr) max-content;
-      column-gap: 48px;
+      grid-template-columns: 80px minmax(0, 440px) minmax(0, 1fr);
+      column-gap: 32px;
       grid-template-areas: "logo body course";
       transition: border-top-color 180ms;
+    }
+
+    /* Equal-height rows (see .edu-grid): .edu-row is align-items: start
+       internally, so when a row is stretched taller than its own content
+       by the shared grid above, the extra space appears below the
+       content, not stretched into it. */
+    .edu-grid {
+      display: grid;
+      grid-template-rows: repeat(var(--entry-count, 1), 1fr);
     }
 
     .edu-row:hover,
@@ -130,8 +138,6 @@
     /* Drawn, not faded: uncovers left-to-right, matching the site's
        motion vocabulary (docs/motion-spec.md). */
     .edu-course {
-      align-items: flex-end;
-      text-align: right;
       /* Approximates the institution name's cap-height, not just its
          (much looser) line-height box top — same reasoning as the
          portrait nudge in about.tsx, not re-derived exactly for the h2

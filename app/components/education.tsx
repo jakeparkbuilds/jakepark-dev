@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { CSSProperties } from "react";
 import SectionShell from "./section-shell";
 
 type EducationEntry = {
@@ -65,7 +66,7 @@ function EntryRow({ entry }: { entry: EducationEntry }) {
         dangerouslySetInnerHTML={{ __html: readLogo(entry.logoFile) }}
       />
 
-      <div className="edu-body max-w-[620px]">
+      <div className="edu-body">
         <p className="font-display text-h2 text-ink">{entry.institution}</p>
         <p className="mt-[10px] font-display text-body text-body">{entry.degree}</p>
         <p className="mt-[14px] font-mono text-mono-micro uppercase text-muted">
@@ -73,16 +74,8 @@ function EntryRow({ entry }: { entry: EducationEntry }) {
         </p>
       </div>
 
-      {/* Own grid item, own row: each entry's .edu-row is a separate grid
-          container, so this column's height is sized only by this entry's
-          own item count — Georgetown's 6-line list can never inherit
-          TJHSST's 10-line height, or vice versa. */}
-      <div className="edu-course font-mono text-small text-muted">
-        {entry.coursework.map((course) => (
-          <p key={course} className="whitespace-nowrap">
-            {course}
-          </p>
-        ))}
+      <div className="edu-course font-mono text-[12px] leading-[1.7] text-muted">
+        <p>{entry.coursework.join(" · ")}</p>
       </div>
     </div>
   );
@@ -100,9 +93,22 @@ export default function Education({
   return (
     <SectionShell number={number} id={id} label={label}>
       <div>
-        {ENTRIES.map((entry) => (
-          <EntryRow key={entry.institution} entry={entry} />
-        ))}
+        {/* Equal-height rows: at >=1100px this becomes a CSS grid with
+            grid-template-rows: repeat(N, 1fr) on an auto-height container —
+            per the grid spec, intrinsically-sized fr row tracks are each
+            sized to the tallest fr track's content, so every row ends up as
+            tall as whichever entry's coursework run wraps the most. Each
+            .edu-row keeps align-items: start internally, so the shorter
+            entry's extra height shows up as empty space below its content,
+            not as stretched/centered text. */}
+        <div
+          className="edu-grid"
+          style={{ "--entry-count": ENTRIES.length } as CSSProperties}
+        >
+          {ENTRIES.map((entry) => (
+            <EntryRow key={entry.institution} entry={entry} />
+          ))}
+        </div>
         <div aria-hidden="true" className="h-[0.5px] w-full bg-muted" />
       </div>
     </SectionShell>
