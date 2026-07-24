@@ -10,10 +10,6 @@ export type CursorPoint = { x: number; y: number };
 // for anything added later that isn't naturally one of those tags.
 const PEN_DOWN_SELECTOR = 'a, button, [role="button"], .nav-item, [data-cursor="pen-down"]';
 
-// The hero DC map SVG (see hero-figure.tsx's data-dc-map attribute) — the
-// one drawing on the site the trail must never scribble across.
-const MAP_SELECTOR = "[data-dc-map]";
-
 const CURSOR_ACTIVE_QUERY = "(pointer: fine) and (hover: hover)";
 
 function subscribeCursorActive(callback: () => void) {
@@ -45,15 +41,10 @@ export function useCursorActive(): boolean {
   );
 }
 
-export type MapMeta = {
-  overMap: boolean;
-  mapRect: DOMRect | null;
-};
-
 export type CursorCallbacks = {
   // Fires on every pointermove, synchronously, with the live pointer
   // position — this is the zero-lag path. Never gated behind React state.
-  onMove?: (point: CursorPoint, map: MapMeta, dragging: boolean) => void;
+  onMove?: (point: CursorPoint, dragging: boolean) => void;
   onPenDownChange?: (penDown: boolean) => void;
   onPointerDown?: (point: CursorPoint, meta: { isLink: boolean }) => void;
   onDragStart?: () => void;
@@ -61,9 +52,9 @@ export type CursorCallbacks = {
 };
 
 // Owns the single document-level pointer listeners: raw position, hover-
-// intent delegation via closest() (no per-element listeners), drag state,
-// and the DC map bounding-box check. Everything here is imperative callback
-// dispatch — nothing in this hook causes a React re-render on pointermove.
+// intent delegation via closest() (no per-element listeners), and drag
+// state. Everything here is imperative callback dispatch — nothing in this
+// hook causes a React re-render on pointermove.
 //
 // `active` gates whether any listener is attached at all — on a coarse
 // pointer this system doesn't just render nothing, it costs nothing either.
@@ -80,25 +71,10 @@ export function useCursorEngine(callbacks: CursorCallbacks, active: boolean) {
 
     let penDown = false;
     let dragging = false;
-    let mapEl: Element | null = null;
-
-    function getMapEl() {
-      if (!mapEl || !mapEl.isConnected) mapEl = document.querySelector(MAP_SELECTOR);
-      return mapEl;
-    }
-
-    function checkMap(x: number, y: number): MapMeta {
-      const el = getMapEl();
-      if (!el) return { overMap: false, mapRect: null };
-      const rect = el.getBoundingClientRect();
-      const inside = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
-      return { overMap: inside, mapRect: inside ? rect : null };
-    }
 
     function handleMove(event: PointerEvent) {
       const point = { x: event.clientX, y: event.clientY };
-      const map = checkMap(point.x, point.y);
-      callbacksRef.current.onMove?.(point, map, dragging);
+      callbacksRef.current.onMove?.(point, dragging);
     }
 
     function handleOver(event: PointerEvent) {
@@ -130,15 +106,18 @@ export function useCursorEngine(callbacks: CursorCallbacks, active: boolean) {
       // A drag currently selects page text and paints it with the browser's
       // default highlight (visible over the connect section); ::selection
       // is restyled globally (globals.css) but the selection itself still
-      // shouldn't happen while drawing.
-      document.body.style.userSelect = "none";
+      // shouldn't happen while drawing. Applied as a class on <html> (which
+      // also reserves scrollbar-gutter: stable, see globals.css) rather than
+      // an inline style on <body>, so toggling it can never itself change
+      // document.documentElement.clientWidth mid-drag.
+      document.documentElement.classList.add("cursor-dragging");
       callbacksRef.current.onPointerDown?.(point, { isLink });
       dragging = true;
       callbacksRef.current.onDragStart?.();
     }
 
     function handleUp() {
-      document.body.style.userSelect = "";
+      document.documentElement.classList.remove("cursor-dragging");
       if (!dragging) return;
       dragging = false;
       callbacksRef.current.onDragEnd?.();

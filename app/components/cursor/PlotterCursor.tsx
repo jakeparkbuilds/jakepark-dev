@@ -49,7 +49,17 @@ export default function PlotterCursor() {
   const active = useCursorActive();
   const reducedMotion = useReducedMotion();
 
-  const dotRef = useRef<HTMLDivElement | null>(null);
+  // Two nested elements, deliberately: posRef carries ONLY translate3d(x,y,0),
+  // written directly on every pointermove, no transition, no animation ever.
+  // scaleRef carries the centering offset + size (hover shrink, click bounce)
+  // via its own transform, animated independently. Diagnosed empirically
+  // (see commit message) that a WAAPI animation on the SAME element as the
+  // one getting per-frame `style.transform` writes can paint a stale
+  // position for the animation's duration even though the written transform
+  // string never changes — splitting onto separate elements removes any
+  // possibility of that.
+  const posRef = useRef<HTMLDivElement | null>(null);
+  const scaleRef = useRef<HTMLDivElement | null>(null);
   const clickAnimRef = useRef<Animation | null>(null);
   const labelWrapRef = useRef<HTMLDivElement | null>(null);
   const labelTextRef = useRef<HTMLSpanElement | null>(null);
@@ -117,14 +127,16 @@ export default function PlotterCursor() {
 
   useCursorEngine(
     {
-      onMove(point, map, dragging) {
-        const dot = dotRef.current;
-        if (dot) {
-          dot.style.transform = `translate3d(${point.x}px, ${point.y}px, 0) translate(-50%, -50%)`;
+      onMove(point, dragging) {
+        // The ONLY writer to the position layer. No other listener in this
+        // module ever touches posRef's transform.
+        const pos = posRef.current;
+        if (pos) {
+          pos.style.transform = `translate3d(${point.x}px, ${point.y}px, 0)`;
         }
 
         if (dragging) {
-          inkRef.current?.addPoint(point, map.overMap);
+          inkRef.current?.addPoint(point);
         }
 
         const labelWrap = labelWrapRef.current;
@@ -156,15 +168,19 @@ export default function PlotterCursor() {
         }
       },
       onPenDownChange(penDown) {
-        dotRef.current?.classList.toggle("is-pen-down", penDown);
+        scaleRef.current?.classList.toggle("is-pen-down", penDown);
       },
       onPointerDown(point, meta) {
-        // Discrete state change, not motion — still fires under reduced
-        // motion, it just doesn't animate there.
-        if (!reducedMotion && dotRef.current) {
+        // Ref + direct animation call, not React state — nothing in this
+        // component re-renders on a pointer event.
+        if (!reducedMotion && scaleRef.current) {
           clickAnimRef.current?.cancel();
-          clickAnimRef.current = dotRef.current.animate(
-            [{ scale: "1" }, { scale: "0.8", offset: 0.5 }, { scale: "1" }],
+          clickAnimRef.current = scaleRef.current.animate(
+            [
+              { transform: "translate(-50%, -50%) scale(1)" },
+              { transform: "translate(-50%, -50%) scale(0.8)", offset: 0.5 },
+              { transform: "translate(-50%, -50%) scale(1)" },
+            ],
             { duration: CLICK_SCALE_DURATION_MS, easing: CLICK_SCALE_EASING }
           );
         }
@@ -211,11 +227,9 @@ export default function PlotterCursor() {
 
   return (
     <>
-      <div
-        ref={dotRef}
-        aria-hidden="true"
-        className="cursor-dot pointer-events-none fixed left-0 top-0 z-[9999] will-change-transform"
-      />
+      <div ref={posRef} aria-hidden="true" className="cursor-pos fixed left-0 top-0 z-[9999]">
+        <div ref={scaleRef} className="cursor-dot" />
+      </div>
 
       <div
         ref={labelWrapRef}

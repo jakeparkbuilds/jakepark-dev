@@ -49,6 +49,15 @@
     background-color: rgba(34, 56, 79, 0.18); /* accent #22384F @ 0.18 alpha */
     color: #0a0908;
   }
+
+  /* Toggled on <html> for the duration of an ink drag (see useCursorState.ts
+     handleDown/handleUp). scrollbar-gutter: stable travels with the same
+     class so reserving/releasing gutter space can never itself be the thing
+     that shifts document.documentElement.clientWidth mid-drag. */
+  html.cursor-dragging {
+    user-select: none;
+    scrollbar-gutter: stable;
+  }
 }
 
 @layer components {
@@ -185,24 +194,33 @@
     }
   }
 
-  /* The pointer dot. border-radius: 50% here is the one deliberate exception
-     to the sitewide 0-radius rule (see CLAUDE.md) — it's a literal circle,
-     not a rounded rectangle. Position (transform) is written directly by
-     PlotterCursor on every pointermove for zero lag; only size transitions
-     here, driven by the .is-pen-down class on hover. */
+  /* The pointer dot is two nested elements, deliberately (see
+     PlotterCursor.tsx). .cursor-pos carries ONLY the raw translate3d
+     position, written every pointermove, no transition, no animation, no
+     will-change beyond transform — nothing here may ever ease or ship a
+     tween. .cursor-dot is the visible circle: a fixed 7px box, centered via
+     its own translate(-50%, -50%), with hover/click acting purely through
+     `scale` on this element's transform so the box size itself never
+     changes size (a width/height change would re-resolve the -50% centering
+     and visibly shift the dot). border-radius: 50% here is the one
+     deliberate exception to the sitewide 0-radius rule (see CLAUDE.md). */
+  .cursor-pos {
+    pointer-events: none;
+    will-change: transform;
+  }
+
   .cursor-dot {
     width: 7px;
     height: 7px;
     border-radius: 50%;
     background-color: #0a0908;
-    transition:
-      width 150ms cubic-bezier(0.4, 0, 0.2, 1),
-      height 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translate(-50%, -50%) scale(1);
+    transition: transform 160ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .cursor-dot.is-pen-down {
-    width: 4px;
-    height: 4px;
+    /* 4px / 7px — hover shrinks the dot via scale, not width/height. */
+    transform: translate(-50%, -50%) scale(0.5714286);
   }
 
   /* Map coordinate readout: fades with the pointer entering/leaving the

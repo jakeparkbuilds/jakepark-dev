@@ -6,7 +6,7 @@ import type { CursorPoint } from "../../lib/cursor/useCursorState";
 
 export type InkCanvasHandle = {
   startDrag: () => void;
-  addPoint: (point: CursorPoint, suspended: boolean) => void;
+  addPoint: (point: CursorPoint) => void;
   endDrag: () => void;
   registerClick: (point: CursorPoint, suppress: boolean) => void;
 };
@@ -59,7 +59,7 @@ const InkCanvas = forwardRef<InkCanvasHandle>(function InkCanvas(_props, ref) {
   const cssSizeRef = useRef({ width: 0, height: 0 });
 
   const pointsRef = useRef<CursorPoint[]>([]);
-  const pendingRef = useRef<{ point: CursorPoint; suspended: boolean } | null>(null);
+  const pendingRef = useRef<CursorPoint | null>(null);
   const draggingRef = useRef(false);
   const fadingRef = useRef(false);
   const trailRafRef = useRef<number | null>(null);
@@ -142,17 +142,10 @@ const InkCanvas = forwardRef<InkCanvasHandle>(function InkCanvas(_props, ref) {
       const pending = pendingRef.current;
       pendingRef.current = null;
       if (pending) {
-        if (pending.suspended) {
-          // Break the stroke while over the DC map: the next resumed point
-          // starts a fresh segment instead of drawing a straight line
-          // across it.
-          pointsRef.current = [];
-        } else {
-          const points = pointsRef.current;
-          points.push(pending.point);
-          if (points.length > 3) points.shift();
-          drawTrailSegment(ctx);
-        }
+        const points = pointsRef.current;
+        points.push(pending);
+        if (points.length > 3) points.shift();
+        drawTrailSegment(ctx);
       }
     }
 
@@ -209,9 +202,9 @@ const InkCanvas = forwardRef<InkCanvasHandle>(function InkCanvas(_props, ref) {
         trailRafRef.current = requestAnimationFrame(trailTick);
       }
     },
-    addPoint(point, suspended) {
+    addPoint(point) {
       if (!draggingRef.current) return;
-      pendingRef.current = { point, suspended };
+      pendingRef.current = point;
     },
     endDrag() {
       draggingRef.current = false;
