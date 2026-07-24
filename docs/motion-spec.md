@@ -40,8 +40,10 @@ as a template.
 
 **Banned motion**: parallax on images, letter-by-letter typewriter on body copy,
 counting numbers, marquee/infinite ticker, hover-lift with shadow, page-load
-spinners, scroll-jacking, horizontal scroll sections, cursor followers, magnetic
-buttons on anything except the outro links.
+spinners, scroll-jacking, horizontal scroll sections, cursor followers (an
+element lagging behind the pointer) — banned. The custom pointer itself is
+exempt: it tracks with zero lag and IS the pointer. Only deliberate ink residue
+may lag. Also banned: magnetic buttons on anything except the outro links.
 
 ---
 
