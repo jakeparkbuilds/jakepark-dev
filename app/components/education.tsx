@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { CSSProperties } from "react";
 import SectionShell from "./section-shell";
 
 type EducationEntry = {
@@ -57,12 +56,6 @@ function readLogo(file: string) {
 }
 
 function EntryRow({ entry }: { entry: EducationEntry }) {
-  // Explicit row count (rather than relying on grid auto-flow to guess) is
-  // what makes the 2-column course list fill column-first: item 1..N goes
-  // down the left column, then wraps to the right at exactly the midpoint,
-  // regardless of how many items a given entry has.
-  const courseRows = Math.ceil(entry.coursework.length / 2);
-
   return (
     <div tabIndex={0} className="edu-row py-[clamp(40px,5vh,64px)]">
       <div
@@ -78,24 +71,18 @@ function EntryRow({ entry }: { entry: EducationEntry }) {
         <p className="mt-[14px] font-mono text-mono-micro uppercase text-muted">
           {entry.location}
         </p>
+      </div>
 
-        <div className="mt-6">
-          <p className="mb-3 font-mono text-mono-micro uppercase text-muted">
-            coursework
+      {/* Own grid item, own row: each entry's .edu-row is a separate grid
+          container, so this column's height is sized only by this entry's
+          own item count — Georgetown's 6-line list can never inherit
+          TJHSST's 10-line height, or vice versa. */}
+      <div className="edu-course font-mono text-small text-muted">
+        {entry.coursework.map((course) => (
+          <p key={course} className="whitespace-nowrap">
+            {course}
           </p>
-          {/* --course-rows drives the column-first fill at >=1100px (see
-              .edu-course-list); below that it's ignored since the list is a
-              single column. clip-path never changes this box's size, so the
-              reveal can't shift anything below it. */}
-          <div
-            className="edu-course-list font-mono text-small text-muted"
-            style={{ "--course-rows": courseRows } as CSSProperties}
-          >
-            {entry.coursework.map((course) => (
-              <p key={course}>{course}</p>
-            ))}
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
