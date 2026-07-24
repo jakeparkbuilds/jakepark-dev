@@ -108,14 +108,14 @@
   /* Below this point course folds into flow beneath body (see the 640px
      rule) and is always visible — no hover surface exists at touch/tablet
      widths. At and above it, course becomes its own right-hand column and
-     its hover/focus reveal engages. Column 2 is capped with minmax(0, 440px)
-     so the institution name stays a readable measure (TJHSST's full name
-     may still wrap to two lines); column 3 takes the remaining space as
-     1fr so the flowing coursework run gets room to wrap across a few lines
-     instead of forcing one long unbroken line. */
+     its hover/focus reveal engages. Body/course targets roughly a 60/40
+     split of the space left after the logo gutter, but 620px is a measured
+     value, not the raw 6fr result (566px): at 1440px the wrap requirement
+     ("Thomas Jefferson High School for" / "Science and Technology") only
+     holds above ~601px, verified in a real browser. */
   @media (min-width: 1100px) {
     .edu-row {
-      grid-template-columns: 80px minmax(0, 440px) minmax(0, 1fr);
+      grid-template-columns: 80px minmax(0, 620px) minmax(0, 1fr);
       column-gap: 32px;
       grid-template-areas: "logo body course";
       transition: border-top-color 180ms;
