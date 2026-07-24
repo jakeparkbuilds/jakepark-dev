@@ -144,6 +144,19 @@ async function main() {
     .map((f) => processRing(f.geometry.coordinates[0], NEIGHBORHOOD_TOLERANCE_PX))
     .sort();
 
+  // The exact affine transform used by project() above, exported so any
+  // consumer (the cursor's map coordinate readout) can invert a point in
+  // this same 0-400 space back to lon/lat without re-deriving or
+  // approximating a second projection.
+  const DC_PROJECTION = {
+    lonMin,
+    latMax,
+    cosLat,
+    scale,
+    offsetX,
+    offsetY,
+  };
+
   const outPath = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
     "..",
@@ -165,7 +178,11 @@ async function main() {
   const contents =
     banner +
     `\nexport const DC_OUTLINE = ${JSON.stringify(DC_OUTLINE)};\n\n` +
-    `export const DC_NEIGHBORHOODS: string[] = ${JSON.stringify(DC_NEIGHBORHOODS, null, 2)};\n`;
+    `export const DC_NEIGHBORHOODS: string[] = ${JSON.stringify(DC_NEIGHBORHOODS, null, 2)};\n\n` +
+    `// Inverts a point in the same 0-400 project() space above back to lon/lat:\n` +
+    `//   lon = (x - offsetX) / cosLat / scale + lonMin\n` +
+    `//   lat = latMax - (y - offsetY) / scale\n` +
+    `export const DC_PROJECTION = ${JSON.stringify(DC_PROJECTION, null, 2)};\n`;
 
   await writeFile(outPath, contents);
 
