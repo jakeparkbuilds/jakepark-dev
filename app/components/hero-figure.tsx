@@ -140,7 +140,6 @@ const STAR_OUTER = 3;
 const STAR_INNER = STAR_OUTER * 0.382; // classic 5-point star waist ratio
 const LABEL_FONT = 7.3;
 const LABEL_TRACKING = LABEL_FONT * 0.16; // mono-micro tracking
-const LEADER_LEN = 4;
 
 // A 5-point star centered at (cx, cy), first point straight up.
 function starPath(cx: number, cy: number) {
@@ -153,25 +152,31 @@ function starPath(cx: number, cy: number) {
   return `M${pts.join(" L")} Z`;
 }
 
-// Georgetown sits on the map's western side; its upper-right is dense
-// neighborhood interior, so the label reads into the open paper to the
-// upper-LEFT instead (the spec's fallback when the right side collides — see
-// verification note in the commit). Leader runs from the star's outer edge out
-// to the label; the label hangs off the leader's end.
-const LABEL_SIDE: "left" | "right" = "left";
-const DIAG = Math.SQRT1_2; // cos/sin of 45°
-const LABEL = (() => {
-  const dir = LABEL_SIDE === "left" ? -1 : 1;
-  const edge = { x: GEORGETOWN.x + dir * STAR_OUTER * DIAG, y: GEORGETOWN.y - STAR_OUTER * DIAG };
-  const tip = { x: edge.x + dir * LEADER_LEN * DIAG, y: edge.y - LEADER_LEN * DIAG };
-  const gap = 1.4;
-  return {
-    leader: { x1: edge.x, y1: edge.y, x2: tip.x, y2: tip.y },
-    textX: tip.x + dir * gap,
-    textY: tip.y,
-    anchor: (LABEL_SIDE === "left" ? "end" : "start") as "start" | "end",
-  };
-})();
+// The label reads OUTSIDE the District boundary, in the open paper to the
+// upper-left of the map. The interlock gap between the text column and the
+// map's west vertex is deliberately tight (~50px), so a horizontal label seated
+// in that gap cannot clear 24px on both sides at any width — the spec's stated
+// fallback condition. The only wide band of open paper outside the boundary is
+// the NW triangle around y≈58 (~70 units across), so the label goes there and a
+// leader connects it to the star: horizontal off the label's right edge, one
+// 90° hard elbow, then straight down to the star. The leader crosses the
+// boundary hairline on its way in — a callout on a technical drawing, no
+// knockout or paper-gap where they cross. Placement holds without touching the
+// viewBox, so the map size and the verified interlock are unchanged.
+const LABEL_RIGHT_X = 98; // right edge of the label (textAnchor="end")
+const LABEL_Y = 58; // vertical centre of the label, in the NW paper band
+const LEADER_GAP = 2; // breath between label→leader and leader→star
+const LABEL = {
+  textX: LABEL_RIGHT_X,
+  textY: LABEL_Y,
+  anchor: "end" as const,
+  // horizontal run, one elbow above the star, vertical down to its top point.
+  leaderPoints: [
+    `${LABEL_RIGHT_X + LEADER_GAP},${LABEL_Y}`,
+    `${GEORGETOWN.x.toFixed(2)},${LABEL_Y}`,
+    `${GEORGETOWN.x.toFixed(2)},${(GEORGETOWN.y - STAR_OUTER - LEADER_GAP).toFixed(2)}`,
+  ].join(" "),
+};
 
 export default function HeroFigure() {
   return (
@@ -201,11 +206,9 @@ export default function HeroFigure() {
         {/* Georgetown mark — above the neighborhood fills, below the outer
             boundary. The star is the site's single use of `mark` #C8952E. */}
         <g data-georgetown aria-hidden="true">
-          <line
-            x1={LABEL.leader.x1}
-            y1={LABEL.leader.y1}
-            x2={LABEL.leader.x2}
-            y2={LABEL.leader.y2}
+          <polyline
+            points={LABEL.leaderPoints}
+            fill="none"
             stroke="#9B9382"
             strokeWidth={0.5}
             vectorEffect="non-scaling-stroke"
