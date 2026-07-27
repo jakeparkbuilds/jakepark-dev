@@ -1,49 +1,74 @@
+import { Fragment } from "react";
 import SectionShell from "./section-shell";
 
-// § 05 skills — a compact technical plate. The pipeline is a shallow stepped
-// hairline descending left→right; each station hangs below its own run on a
-// downward tick. A staircase, not a table. The spine is one continuous SVG
-// <path>; the layout math lives in globals.css (.skills-*), where
-// percentage-X / pixel-Y keeps the path touching every tick at every width
-// without any client JS. See docs/motion-spec.md § 05.
+// § 05 skills — a compact technical plate. Four categories staged along a
+// shallow stepped hairline; each hangs below its own run on a downward tick.
+// The spine is one continuous SVG <path> used purely as composition (not a
+// directional pipeline). The layout math lives in globals.css (.skills-*),
+// where percentage-X / pixel-Y keeps the path touching every tick at every
+// width without any client JS. See docs/motion-spec.md § 05.
 type Station = {
   num: string;
   domain: string;
   primary: string;
-  supporting: string;
+  // Authored as an array (never a pre-joined string), so no separator can be
+  // emitted after the final item — see SupportingList for how it renders.
+  supporting: string[];
 };
 
 const STATIONS: Station[] = [
   {
     num: "01",
-    domain: "data",
+    domain: "languages",
     primary: "python",
-    supporting: "pandas · numpy · sql · postgresql",
+    supporting: ["typescript", "java", "c++", "sql", "r"],
   },
   {
     num: "02",
-    domain: "models",
+    domain: "ml & data",
     primary: "pytorch",
-    supporting: "scikit-learn · xgboost · hugging face",
+    supporting: [
+      "scikit-learn",
+      "xgboost",
+      "hugging face",
+      "pandas",
+      "numpy",
+      "tensorflow",
+      "shap",
+    ],
   },
   {
     num: "03",
-    domain: "systems",
+    domain: "infrastructure",
     primary: "aws",
-    supporting: "docker · terraform · fastapi",
+    supporting: ["docker", "terraform", "postgresql", "mongodb", "git", "ci/cd"],
   },
   {
     num: "04",
-    domain: "interface",
+    domain: "interfaces",
     primary: "next.js",
-    supporting: "typescript · react · shap",
+    supporting: ["react", "fastapi", "node.js", "flask", "express"],
   },
 ];
 
-// Everything real but not central to a station. Hangs quietly in the negative
-// space the staircase opens up — one mono line, allowed to wrap.
-const ADDITIONAL =
-  "java · c++ · r · express · flask · tensorflow · seaborn · git · ci/cd";
+// Middot-separated list that never orphans a separator at a line break. Each
+// item (past the first) is bound to its leading "· " inside a nowrap span, and
+// the only break opportunity is the plain space *between* spans — so a wrapped
+// line always ends on a whole item and the continuation starts on "· item",
+// never a floating separator. A multi-word item ("hugging face") also stays
+// intact because its span is nowrap.   = non-breaking space.
+function SupportingList({ items }: { items: string[] }) {
+  return (
+    <>
+      {items.map((item, i) => (
+        <Fragment key={item}>
+          {i > 0 ? " " : null}
+          <span className="whitespace-nowrap">{i > 0 ? `· ${item}` : item}</span>
+        </Fragment>
+      ))}
+    </>
+  );
+}
 
 function StationBlock({ station, index }: { station: Station; index: number }) {
   return (
@@ -56,11 +81,14 @@ function StationBlock({ station, index }: { station: Station; index: number }) {
       </p>
       <p className="skills-domain font-display font-medium text-ink">{station.domain}</p>
 
-      {/* primary tool + supporting list — reserved a fixed height so all four
+      {/* primary tool + supporting list — reserved a fixed height (globals.css
+          --lead-h, sized to the tallest station's two-line list) so all four
           stations bottom out at the same offset from their own spine run. */}
       <div className="skills-lead">
         <p className="skills-primary font-display text-body">{station.primary}</p>
-        <p className="skills-support font-mono text-label">{station.supporting}</p>
+        <p className="skills-support font-mono text-label">
+          <SupportingList items={station.supporting} />
+        </p>
       </div>
     </div>
   );
@@ -77,12 +105,12 @@ export default function Skills({
 }) {
   return (
     <SectionShell number={number} id={id} label={label}>
-      <div className="skills-stage" data-spine="pipeline">
+      <div className="skills-stage" data-spine="composition">
         {/* The spine + stations. Three spine variants, one shown per layout
-            regime (globals.css): horizontal staircase (>=1024), two stepped
-            segments (900–1024), and a vertical run (<900). Each is one
-            continuous <path>. The track collapses (display: contents) at >=900
-            so its children position against the stage. */}
+            regime (globals.css): horizontal staircase (four-across), two
+            stepped segments (two-by-two), and a vertical run (<900). Each is
+            one continuous <path>. The track collapses (display: contents) at
+            >=900 so its children position against the stage. */}
         <div className="skills-track">
           <svg
             aria-hidden="true"
@@ -131,28 +159,9 @@ export default function Skills({
           </svg>
           <span aria-hidden="true" className="skills-spine skills-spine--v" />
 
-          <span className="skills-terminal skills-terminal--raw font-mono text-mono-micro uppercase text-label">
-            raw
-          </span>
-          <span className="skills-terminal skills-terminal--shipped font-mono text-mono-micro uppercase text-label">
-            shipped
-          </span>
-
           {STATIONS.map((station, i) => (
             <StationBlock key={station.num} station={station} index={i} />
           ))}
-        </div>
-
-        {/* additional — an annotation hanging from the plate, not a band below
-            it. One tick ties it to the staircase; no rules, no box. */}
-        <div className="skills-additional">
-          <span aria-hidden="true" className="skills-add-tick" />
-          <p className="skills-add-label font-mono text-[12px] font-medium uppercase leading-none tracking-[0.22em] text-label">
-            additional
-          </p>
-          <p className="skills-add-list font-mono text-[12px] leading-[1.7] text-label">
-            {ADDITIONAL}
-          </p>
         </div>
       </div>
     </SectionShell>

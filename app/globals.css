@@ -177,10 +177,11 @@
     }
   }
 
-  /* 05 skills — a compact stepped plate (see docs/motion-spec.md § 05). The
-     pipeline is a shallow staircase: one continuous 0.5px ink spine descending
-     left→right in four short runs, each station hanging below its own run on a
-     downward tick, plus a fifth quieter tick for the ADDITIONAL annotation.
+  /* 05 skills — a compact stepped plate (see docs/motion-spec.md § 05). Four
+     categories are staged along a shallow staircase: one continuous 0.5px ink
+     spine descending left→right in four short runs, each category hanging below
+     its own run on a downward tick. The spine is composition, not a directional
+     pipeline — there are no end terminals.
      Geometry trick that keeps the SVG spine touching every CSS-positioned tick
      at every width WITHOUT any client JS: the spine <svg> uses
      preserveAspectRatio="none", so X and Y scale independently. X is driven off
@@ -189,16 +190,18 @@
      3 × --step — so a viewBox drop of 100 renders as exactly --step px, and the
      station tops (also --step multiples) sit on the runs. Reflow regimes:
        <900       vertical spine down the left edge, ticks point right, stacked
-       900–1200   two stepped segments, two rows of two (--step: 24px)
-       >=1200     four-across staircase, shallow drop (--step: 40px)
-     (Four-across can't start at 1024: the locked 46px domains won't fit a 25%
-     column once the 180px nav gutter is removed, so the two-by-two holds to
-     1200 per the spec's <190px collision-avoidance rule.)
-     --lead-h reserves the primary+supporting block height so all four stations
-     bottom out at the same offset from their own spine run. The .skills-track
-     collapses to display: contents at >=900 so its children (spine, stations,
-     terminals) position against the stage while ADDITIONAL, a sibling of the
-     track, is placed absolutely in the negative space the descent opens up. */
+       900–1680   two stepped segments, two rows of two (--step: 24px)
+       >=1680     four-across staircase, shallow drop (--step: 40px)
+     Four-across can't start at 1200 (or even 1440): with the locked 46px
+     domains the widest category, "infrastructure" (279px), needs a ~300px inner
+     column, which a 25% track only reaches near 1680px once the 180px nav
+     gutter is removed — below that it collides with the next category. So per
+     the spec's own <190px collision-avoidance rule the two-by-two (50% columns,
+     ample room) holds to 1680 and the four-across is a wide-screen enhancement.
+     --lead-h reserves the primary + two-line-supporting height so all four
+     stations bottom out at the same offset from their own spine run, regardless
+     of how many items a given list carries. The .skills-track collapses to
+     display: contents at >=900 so its children position against the stage. */
   .skills-stage {
     --lead-h: 92px;
     position: relative;
@@ -261,68 +264,29 @@
   }
 
   /* supporting: mono, middot-separated, flows INLINE and wraps to at most two
-     lines — never a vertical stack. */
+     lines — never a vertical stack. Size steps down per breakpoint (below) so
+     the seven-item station stays within two lines; all four use the same size
+     at a given width for typographic consistency. */
   .skills-support {
     font-size: 12px;
     line-height: 1.7;
     margin-top: 8px;
   }
 
-  /* additional — base (<900): last item in the stack, full width, no rule.
-     Its tick matches the station ticks (horizontal, pointing right). */
-  .skills-additional {
-    position: relative;
-    padding-left: 28px;
-  }
-
-  .skills-add-tick {
-    position: absolute;
-    top: 4px;
-    left: 0;
-    width: 16px;
-    height: 0.5px;
-    background: theme("colors.ink");
-  }
-
-  .skills-add-list {
-    margin-top: 10px;
-    max-width: 560px;
-  }
-
-  /* terminals — base (vertical): RAW above the spine top, SHIPPED below its
-     bottom, both at the left edge. */
-  .skills-terminal {
-    position: absolute;
-    left: 0;
-  }
-
-  .skills-terminal--raw {
-    top: 0;
-    transform: translateY(-150%);
-  }
-
-  .skills-terminal--shipped {
-    bottom: 0;
-    transform: translateY(150%);
-  }
-
   /* ---- 900px+: absolute staircase / segmented layout ---- */
   @media (min-width: 900px) {
     /* Two stepped segments, two rows of two. --step drives both the SVG drop
        and the station tops; --st-h is the reserved content height below a run;
-       --rowgap is the space between the two rows; --add-h reserves ADDITIONAL. */
+       --rowgap is the space between the two rows. */
     .skills-stage {
       --step: 24px;
-      --st-h: 180px;
+      --st-h: 195px;
       --rowgap: 48px;
       --lead-h: 88px;
-      --add-h: 64px;
       display: block;
       /* row2 base = st-h + step + rowgap; station 04 sits one more step below
-         and extends st-h past that; then ADDITIONAL hangs 56px lower. */
-      height: calc(
-        var(--st-h) * 2 + var(--step) * 2 + var(--rowgap) + 56px + var(--add-h)
-      );
+         and extends st-h past that. */
+      height: calc(var(--st-h) * 2 + var(--step) * 2 + var(--rowgap));
       gap: 0;
     }
 
@@ -396,60 +360,23 @@
       font-weight: 400;
       margin-top: 12px;
     }
+    /* 11px keeps the seven-item list to two lines in the 50% column down to
+       900px (the narrowest two-by-two). */
+    .skills-support {
+      font-size: 11px;
+    }
     .skills-lead {
       min-height: var(--lead-h);
     }
-
-    /* ADDITIONAL absolute, hanging below the staircase in the left negative
-       space. Vertical position = station 04 content bottom + 56px. The tick
-       becomes a 16px vertical stub above the label's left edge — the fifth,
-       quieter tap echoing the station ticks. */
-    .skills-additional {
-      position: absolute;
-      left: 0;
-      width: 75%;
-      padding-left: 0;
-      top: calc(var(--st-h) * 2 + var(--step) * 2 + var(--rowgap) + 56px);
-    }
-
-    .skills-add-tick {
-      top: -16px;
-      left: 0;
-      width: 0.5px;
-      height: 16px;
-    }
-
-    .skills-add-list {
-      margin-top: 8px;
-      max-width: none;
-    }
-
-    .skills-terminal--raw {
-      top: 0;
-      left: 0;
-      transform: translateY(calc(-100% - 10px));
-    }
-    .skills-terminal--shipped {
-      top: calc(var(--st-h) + var(--step) * 2 + var(--rowgap));
-      bottom: auto;
-      left: auto;
-      right: 0;
-      transform: translateY(calc(-100% - 10px));
-    }
   }
 
-  /* ---- 1200px+: four-across staircase (shallow drop) ----
-     The four-across staircase only engages here, not at 1024. With the locked
-     46px domains and the 180px nav gutter, a 25% column drops below ~190px
-     under ~1200px and "interface" / "systems" would collide with the next
-     station — so per the spec's own rule the two-by-two holds down to 1200
-     and the four-across takes over above it. */
-  @media (min-width: 1200px) {
+  /* ---- 1680px+: four-across staircase (shallow drop) ---- */
+  @media (min-width: 1680px) {
     .skills-stage {
       --step: 40px;
-      --st-h: 180px;
-      /* station 04 bottoms at step*3 + st-h; ADDITIONAL hangs 56px lower. */
-      height: calc(var(--step) * 3 + var(--st-h) + 56px + var(--add-h));
+      --st-h: 195px;
+      /* station 04 bottoms at step*3 + st-h — the stage's full height. */
+      height: calc(var(--step) * 3 + var(--st-h));
     }
 
     /* one continuous stepped path across the full width */
@@ -485,23 +412,6 @@
     .skills-station--4 {
       left: 75%;
       top: calc(var(--step) * 3);
-    }
-
-    /* runs to the right edge of station 03's column (75%) */
-    .skills-additional {
-      width: 75%;
-      top: calc(var(--step) * 3 + var(--st-h) + 56px);
-    }
-
-    .skills-terminal--raw {
-      top: 0;
-      transform: translateY(calc(-100% - 10px));
-    }
-    .skills-terminal--shipped {
-      top: calc(var(--step) * 3);
-      right: 0;
-      left: auto;
-      transform: translateY(calc(-100% - 10px));
     }
   }
 

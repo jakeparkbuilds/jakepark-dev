@@ -143,12 +143,16 @@ Mobile and reduced motion: figures render in final state, no animation.
 
 ### 05 skills — the axis break
 
-*Claim: the work composes into a pipeline — data in, interface out.*
+*Claim: the work spans four distinct categories, staged as one composition.*
 
 This is the site's one horizontal composition. Every other section is a vertical
-stack; skills reads left to right along a single 0.5px spine with four stations —
-data → models → systems → interface, `IN` at one end and `OUT` at the other — so
-the page stops feeling like one long column.
+stack; skills reads left to right along a single stepped 0.5px spine with four
+categories — languages, ml & data, infrastructure, interfaces — each hanging
+below its own run on a downward tick, so the page stops feeling like one long
+column. The spine is a **compositional device that stages the four categories,
+not a directional pipeline** — the categories are not sequential stages, so
+there are no `IN` / `OUT` (or `RAW` / `SHIPPED`) terminals, and no arrow of flow
+is implied.
 
 This is where the standing question of whether an *earlier* section should break
 the axis is answered: **no.** § 04 projects stays vertically composed — it earns
@@ -158,10 +162,10 @@ against a "the not-just-scrolling-down idea" section that never actually existed
 in this file; the decision is recorded here, in the section it governs.)
 
 Motion is micro only, layered in a later pass, never in the static build: each
-station's spine segment and tick draw in on the standard hairline-draw grammar;
-the number, name, tools, and evidence use the standard reveal with a short
-stagger. No badges, no pills, no bars, no proficiency indicators — the stations
-are defined by the spine, the ticks, and whitespace, nothing enclosed.
+category's spine segment and tick draw in on the standard hairline-draw grammar;
+the number, name, and tools use the standard reveal with a short stagger. No
+badges, no pills, no bars, no proficiency indicators — the categories are defined
+by the spine, the ticks, and whitespace, nothing enclosed.
 
 **Candidate set piece (unresolved).** §05 spine draw — the stepped path draws
 itself along its length on entry via `stroke-dashoffset`, 1200ms, `draw` easing,
