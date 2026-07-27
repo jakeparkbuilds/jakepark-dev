@@ -1,59 +1,41 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 
-// § 01 hero — the glyph cycle. At rest "Jake Park" is static and legible. On a
-// randomized timer one character briefly substitutes through a few glyphs and
-// lands back on itself — a plate resettling, not a decode effect. See
-// docs/motion-spec.md ("Glyph cycle") and CLAUDE.md. This is the only place on
-// the site where type is animated by substitution rather than being drawn.
+// § 01 hero — the display name roll. At rest "Jake Park" is static and legible.
+// On a randomized timer one character rolls vertically and lands on ITSELF: two
+// identical copies of the glyph are stacked inside a clip box and the stack
+// translates by exactly one box height, so the outgoing copy exits the bottom
+// as the incoming copy arrives from the top. The glyph never changes — the eye
+// sees one letter roll and resettle, a plate resettling on the bed. Transform
+// translate only: no opacity, blur, scale, rotation, colour, or skew. See
+// docs/motion-spec.md and CLAUDE.md. This is the site's one animated-type moment.
 
 const WORDS = ["Jake", "Park"] as const;
 
-// Substitutes are drawn from the site's own vocabulary: the other letters of
-// "jakeprk" (case-matched to the character being swapped) plus a short set of
-// symbols. ∆ (U+2206) from the original set is deliberately omitted — it has no
-// glyph in the Bricolage subset, and substituting an absent glyph would fall
-// back to another font. Verified the six below are all present.
-const SYMBOLS = ["×", "÷", "§", "¶", "ø", "#"];
-const LETTER_POOL = "jakeprk";
-
-// Cycle cadence.
+// Cadence: every 2.6–4.2s roll one random character. A roll is a single 620ms
+// transform on the soft `draw` curve (long, nothing snappy). At most two rolls
+// may overlap, their starts ≥400ms apart — a coincidence, never a wave.
 const TICK_MIN = 2600;
 const TICK_MAX = 4200;
-const SWAP_MS = 55; // each substitute holds this long
-const SUB_MIN = 5; // 5–6 substitutes -> ~275–330ms per event
-const SUB_MAX = 6;
-
-function substitutesFor(ch: string): string[] {
-  const lower = ch.toLowerCase();
-  const isUpper = ch !== lower && ch === ch.toUpperCase();
-  const letters = Array.from(new Set(LETTER_POOL.split(""))).filter((l) => l !== lower);
-  const cased = isUpper ? letters.map((l) => l.toUpperCase()) : letters;
-  return [...cased, ...SYMBOLS];
-}
+const ROLL_MS = 620;
+const ROLL_EASE = "cubic-bezier(0.22, 1, 0.36, 1)"; // the site's `draw` curve
+const MAX_CONCURRENT = 2;
+const MIN_GAP = 400; // ms between two starts
+const DOUBLE_CHANCE = 0.16; // odds a tick fires a coincidental second roll
+const HEADROOM = 0.08; // clip-box slack over the font's ascent+descent
 
 function randInt(min: number, max: number) {
   return min + Math.floor(Math.random() * (max - min + 1));
 }
 
-// A few distinct substitutes for one event, in random order.
-function pickSubs(ch: string): string[] {
-  const pool = substitutesFor(ch).slice();
-  const n = randInt(SUB_MIN, SUB_MAX);
-  const out: string[] = [];
-  for (let i = 0; i < n && pool.length > 0; i++) {
-    out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-  }
-  return out;
-}
-
 export default function HeroName() {
   const reducedMotion = useReducedMotion();
   const headingRef = useRef<HTMLHeadingElement | null>(null);
+  const [armed, setArmed] = useState(false);
 
-  // The cycle must not begin until the loader intro has finished (its own map
+  // The roll must not begin until the loader intro has finished (its own map
   // draw and content reveal own the opening). If the intro isn't running
   // (reduced motion / return visit) or has already completed, start at once;
   // otherwise wait for the one-shot completion signal HeroIntro dispatches.
@@ -69,56 +51,104 @@ export default function HeroName() {
     return () => document.removeEventListener("hero-intro-done", open);
   }, [gateOpen]);
 
-  const getSpans = (): HTMLSpanElement[] =>
+  const getChars = (): HTMLSpanElement[] =>
     headingRef.current
       ? Array.from(headingRef.current.querySelectorAll<HTMLSpanElement>("span[data-char]"))
       : [];
 
-  // ---- fixed per-character widths (measured, never guessed) ----
-  // Each character box is frozen to its own rendered advance width once the
-  // real font is ready, so swapping in a wider glyph never reflows the line.
-  // Re-measured on resize because the display size is fluid (clamp/vw).
-  useEffect(() => {
-    const spans = getSpans();
-    if (spans.length === 0) return;
+  // ---- measurement: freeze each clip box to the real font's metrics ----
+  // Advance width per character (measured, never guessed) so no glyph reflows;
+  // clip height from the font's ascent+descent at the rendered display size plus
+  // 8% headroom, so the "J" descender and "k" ascender are never clipped. Both
+  // are re-measured on resize (the display size is fluid) and after fonts load —
+  // measuring against the fallback font would bake in the wrong box. Until this
+  // runs the name renders as plain inline text (CSS, pre-`is-armed`), identical
+  // to the static hero and correct in the SSR HTML.
+  useLayoutEffect(() => {
+    if (reducedMotion) return; // static type: never measured, never armed
+    const chars = getChars();
+    if (chars.length === 0) return;
+
+    let done = false;
+    function measure() {
+      const first = chars[0];
+      const cs = window.getComputedStyle(first);
+      const fontPx = parseFloat(cs.fontSize);
+      // Font vertical metrics via canvas (fontBoundingBox = the font's own
+      // ascent/descent, not the visible ink of any one letter).
+      const ctx = document.createElement("canvas").getContext("2d");
+      let ascent = fontPx * 0.75;
+      let descent = fontPx * 0.25;
+      if (ctx) {
+        ctx.font = `${cs.fontWeight} ${fontPx}px ${cs.fontFamily}`;
+        const m = ctx.measureText("Hjgpq");
+        if (m.fontBoundingBoxAscent && m.fontBoundingBoxDescent) {
+          ascent = m.fontBoundingBoxAscent;
+          descent = m.fontBoundingBoxDescent;
+        }
+      }
+      // Natural single-line height of a word (the display line-height at this
+      // size). The `.char` layout box keeps THIS height, exactly like the plain
+      // inline text — so the armed line occupies the identical footprint and the
+      // Jake/Park spacing never moves. The taller clip window is decoupled: it
+      // is an absolutely-positioned child that bleeds past the layout box without
+      // driving the line height.
+      const block = headingRef.current?.querySelector<HTMLElement>("[data-hero-reveal]");
+      const naturalLine = block ? block.getBoundingClientRect().height : fontPx;
+      const box = ascent + descent;
+      const windowH = Math.max(naturalLine, box * (1 + HEADROOM));
+      const pad = (windowH - naturalLine) / 2; // slack above and below the glyph
+      // The stack holds two copies one natural line apart; a roll translates it
+      // by exactly one natural line, so the resting copy exits the bottom as its
+      // twin arrives from the top. Rest position seats the resting copy in the
+      // natural slot (offset `pad` down from the clip's top edge).
+      const rest = pad - naturalLine;
+
+      for (const el of chars) {
+        const clip = el.querySelector<HTMLElement>(".char__clip");
+        if (clip) {
+          clip.style.top = `${-pad}px`;
+          clip.style.height = `${windowH}px`;
+        }
+        const inner = el.querySelector<HTMLElement>(".char__inner");
+        if (inner) inner.style.transform = `translate3d(0, ${rest}px, 0)`;
+        for (const c of Array.from(el.querySelectorAll<HTMLElement>(".char__copy"))) {
+          c.style.height = `${naturalLine}px`;
+          c.style.lineHeight = `${naturalLine}px`;
+        }
+        el.dataset.rest = String(rest);
+        el.dataset.roll = String(naturalLine);
+      }
+      if (!done) {
+        done = true;
+        setArmed(true);
+      }
+    }
 
     let raf = 0;
-    function measure() {
-      // Reset to intrinsic width and restore the true glyph before reading.
-      for (const el of spans) {
-        el.style.width = "";
-        el.textContent = el.dataset.char ?? el.textContent;
-      }
-      // One reflow, then read + freeze.
-      raf = requestAnimationFrame(() => {
-        for (const el of spans) {
-          const w = el.getBoundingClientRect().width;
-          el.style.width = `${w}px`;
-        }
-      });
-    }
+    const run = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(measure);
+    };
 
     let ready = false;
     const start = () => {
+      if (ready) return;
       ready = true;
-      measure();
+      run();
     };
-    // Fonts-ready or a short timeout, whichever first (a name measured against
-    // the fallback font would freeze the wrong widths).
     const timer = window.setTimeout(start, 400);
     if (document.fonts?.ready) {
       document.fonts.ready.then(() => {
-        if (!ready) {
-          window.clearTimeout(timer);
-          start();
-        }
+        window.clearTimeout(timer);
+        start();
       });
     }
 
     let resizeTimer: number | undefined;
     const onResize = () => {
       window.clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(measure, 150);
+      resizeTimer = window.setTimeout(run, 200);
     };
     window.addEventListener("resize", onResize);
     return () => {
@@ -127,70 +157,100 @@ export default function HeroName() {
       window.removeEventListener("resize", onResize);
       cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [reducedMotion]);
 
-  // ---- the cycle ----
-  // setTimeout chaining only — no persistent rAF loop. When paused (offscreen,
-  // tab hidden, disabled) every timer is cleared and any mid-swap character is
-  // restored, so nothing is left pending and nothing is left substituted.
+  // ---- the roll scheduler ----
+  // setTimeout chaining only, never a persistent rAF loop; each roll is one
+  // WAAPI transform (its own rAF is native and ends when the roll does). When
+  // paused (offscreen, tab hidden) every timer is cleared and every in-flight
+  // roll cancelled back to rest, so nothing is left pending or mid-roll.
   useEffect(() => {
-    if (reducedMotion || !gateOpen) return;
-    const spans = getSpans();
-    if (spans.length === 0) return;
+    if (reducedMotion || !armed || !gateOpen) return;
+    const chars = getChars();
+    if (chars.length === 0) return;
 
-    let timer: number | undefined;
-    let activeSpan: HTMLSpanElement | null = null;
-    let running = false;
+    const timers = new Set<number>();
+    const running = new Map<HTMLElement, Animation>();
+    let lastStart = 0;
+    let active = false;
 
-    function restoreActive() {
-      if (activeSpan) {
-        activeSpan.textContent = activeSpan.dataset.char ?? "";
-        activeSpan = null;
-      }
-    }
-
-    function scheduleTick() {
-      timer = window.setTimeout(runEvent, randInt(TICK_MIN, TICK_MAX));
-    }
-
-    function runEvent() {
-      const span = spans[Math.floor(Math.random() * spans.length)];
-      const ch = span.dataset.char ?? "";
-      const subs = pickSubs(ch);
-      activeSpan = span;
-      let i = 0;
-      const step = () => {
-        if (i < subs.length) {
-          span.textContent = subs[i++];
-          timer = window.setTimeout(step, SWAP_MS);
-        } else {
-          span.textContent = ch;
-          activeSpan = null;
-          scheduleTick();
-        }
+    function rollOne() {
+      if (running.size >= MAX_CONCURRENT) return;
+      const now = performance.now();
+      if (now - lastStart < MIN_GAP) return;
+      const free = chars.filter((c) => !running.has(c));
+      if (free.length === 0) return;
+      const el = free[Math.floor(Math.random() * free.length)];
+      const inner = el.querySelector<HTMLElement>(".char__inner");
+      const face = el.querySelector<HTMLElement>(".char__face");
+      const clip = el.querySelector<HTMLElement>(".char__clip");
+      const rest = parseFloat(el.dataset.rest ?? "0");
+      const roll = parseFloat(el.dataset.roll ?? "0");
+      if (!inner || !roll) return;
+      lastStart = now;
+      // Swap the in-flow resting glyph for the clip stack — both show the same
+      // glyph in the same place, so the swap is invisible — then translate the
+      // stack down by exactly one natural line: the resting copy exits the
+      // bottom as its identical twin arrives from the top.
+      if (face) face.style.visibility = "hidden";
+      if (clip) clip.style.visibility = "visible";
+      const anim = inner.animate(
+        [
+          { transform: `translate3d(0, ${rest}px, 0)` },
+          { transform: `translate3d(0, ${rest + roll}px, 0)` },
+        ],
+        { duration: ROLL_MS, easing: ROLL_EASE, fill: "none" }
+      );
+      running.set(el, anim);
+      const clear = () => {
+        running.delete(el);
+        // Back to the in-flow glyph (fill:none has reverted the stack to rest).
+        if (clip) clip.style.visibility = "hidden";
+        if (face) face.style.visibility = "";
       };
-      step();
+      anim.onfinish = clear;
+      anim.oncancel = clear;
+    }
+
+    function tick() {
+      rollOne();
+      // A coincidental second roll now and then — never choreographed.
+      if (Math.random() < DOUBLE_CHANCE) {
+        const t = window.setTimeout(() => {
+          timers.delete(t);
+          rollOne();
+        }, randInt(MIN_GAP, 720));
+        timers.add(t);
+      }
+      const next = window.setTimeout(() => {
+        timers.delete(next);
+        tick();
+      }, randInt(TICK_MIN, TICK_MAX));
+      timers.add(next);
     }
 
     function play() {
-      if (running) return;
-      running = true;
-      scheduleTick();
+      if (active) return;
+      active = true;
+      const t = window.setTimeout(() => {
+        timers.delete(t);
+        tick();
+      }, randInt(TICK_MIN, TICK_MAX));
+      timers.add(t);
     }
     function pause() {
-      running = false;
-      if (timer !== undefined) window.clearTimeout(timer);
-      timer = undefined;
-      restoreActive();
+      active = false;
+      for (const t of timers) window.clearTimeout(t);
+      timers.clear();
+      for (const a of running.values()) a.cancel();
+      running.clear();
     }
 
-    // Only run while on-screen and the tab is visible.
     let onScreen = false;
     const sync = () => {
       if (onScreen && !document.hidden) play();
       else pause();
     };
-
     const io = new IntersectionObserver(
       (entries) => {
         onScreen = entries[0]?.isIntersecting ?? false;
@@ -199,31 +259,39 @@ export default function HeroName() {
       { threshold: 0 }
     );
     if (headingRef.current) io.observe(headingRef.current);
-
     document.addEventListener("visibilitychange", sync);
     return () => {
       io.disconnect();
       document.removeEventListener("visibilitychange", sync);
       pause();
     };
-  }, [reducedMotion, gateOpen]);
+  }, [reducedMotion, armed, gateOpen]);
 
   return (
     <h1
       id="hero-heading"
       ref={headingRef}
       aria-label="Jake Park"
-      className="font-display text-display text-ink"
+      className={`hero-roll font-display text-display text-ink${armed ? " is-armed" : ""}`}
     >
       {WORDS.map((word) => (
         <span key={word} aria-hidden="true" data-hero-reveal className="block">
           {word.split("").map((ch, ci) => (
-            <span
-              key={ci}
-              data-char={ch}
-              className="inline-block text-center align-baseline"
-            >
-              {ch}
+            <span key={ci} data-char={ch} className="char">
+              {/* The in-flow resting glyph: anchors the baseline and is what
+                  shows at rest, so the line is pixel-identical to the static
+                  hero. Hidden only while this character is mid-roll. */}
+              <span className="char__face">{ch}</span>
+              {/* The roll window: an absolute overlay (bleeds past the layout
+                  box without changing the line's footprint), shown only during
+                  a roll. `a` arrives from the top; `b` rests and exits the
+                  bottom — same glyph, so it reads as one letter rolling. */}
+              <span className="char__clip">
+                <span className="char__inner">
+                  <span className="char__copy char__copy--a">{ch}</span>
+                  <span className="char__copy char__copy--b">{ch}</span>
+                </span>
+              </span>
             </span>
           ))}
         </span>

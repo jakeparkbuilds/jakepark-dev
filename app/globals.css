@@ -76,6 +76,47 @@
   html.intro [data-dc-map] {
     visibility: hidden;
   }
+
+  /* § 01 hero — the display-name roll (HeroName). Pre-measure (no `is-armed`)
+     the name is plain inline text, so it is pixel-identical to the static hero
+     and correct in the SSR HTML. Once measured, `is-armed` turns each character
+     into a clip window over a two-copy stack; the per-element width, height,
+     vertical-align, line-height, and resting transform are set inline from the
+     real font metrics. Only the display/overflow switch lives here. */
+  .hero-roll .char,
+  .hero-roll .char__face,
+  .hero-roll .char__inner,
+  .hero-roll .char__copy {
+    display: inline;
+  }
+  .hero-roll .char__clip {
+    display: none;
+  }
+  /* Armed: `.char` is an inline-block whose in-flow `.char__face` sets its
+     baseline and height, so the line's footprint is identical to the plain
+     text. The clip window is an absolute overlay (top/height set inline) that
+     does not enlarge the line box; it is shown only while its character rolls,
+     and the face is hidden for exactly that span — an invisible swap. */
+  .hero-roll.is-armed .char {
+    position: relative;
+    display: inline-block;
+    text-align: center;
+  }
+  .hero-roll.is-armed .char__clip {
+    position: absolute;
+    left: 0;
+    right: 0;
+    display: block;
+    overflow: hidden;
+    visibility: hidden;
+  }
+  .hero-roll.is-armed .char__inner {
+    display: block;
+    will-change: transform;
+  }
+  .hero-roll.is-armed .char__copy {
+    display: block;
+  }
 }
 
 @layer components {
