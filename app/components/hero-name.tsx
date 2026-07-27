@@ -109,13 +109,17 @@ export default function HeroName() {
         if (c.actualBoundingBoxAscent) cap = c.actualBoundingBoxAscent;
       }
       const box = ascent + descent;
-      const clipH = box * (1 + HEADROOM);
+      // Whole pixels only. Fractional box dimensions round inconsistently
+      // between the clip mask and the travelling stack, so the glyph shivers
+      // against its own mask; integer boxes + integer travel keep the two in
+      // lockstep and let the roll stay compositor-only.
+      const clipH = Math.round(box * (1 + HEADROOM));
       // Natural single-line height of a word (the display line-height). The
       // in-flow `.char__face` keeps this footprint, so the armed line is
       // pixel-identical and no line inflates; the clip is an absolute overlay.
       const block = headingRef.current?.querySelector<HTMLElement>("[data-hero-reveal]");
       const naturalLine = block ? block.getBoundingClientRect().height : fontPx;
-      const pad = (clipH - naturalLine) / 2; // clip sits centred on the char box
+      const pad = Math.round((clipH - naturalLine) / 2); // clip sits centred on the char box
 
       const report: string[] = [];
       for (const el of chars) {
@@ -130,6 +134,7 @@ export default function HeroName() {
           r.selectNodeContents(node);
           advance = r.getBoundingClientRect().width || advance;
         }
+        advance = Math.round(advance); // whole pixels — see clipH note above
         // Min-travel guard: a horizontal roll travels one advance width; if
         // that is short relative to the glyph it reads as a twitch, so narrow
         // characters are vertical-only. The rule is about travel vs the visible
@@ -218,11 +223,24 @@ export default function HeroName() {
     const chars = getChars();
     if (chars.length === 0) return;
 
+    type Roll = { anim: Animation | null; raf: number };
     const timers = new Set<number>();
-    const running = new Map<HTMLElement, Animation>();
+    const running = new Map<HTMLElement, Roll>();
     const recent: number[] = []; // last ≤2 rolled — no repeat within three events
     let lastStart = 0;
     let active = false;
+
+    function restore(el: HTMLElement) {
+      const inner = el.querySelector<HTMLElement>(".char__inner");
+      const face = el.querySelector<HTMLElement>(".char__face");
+      const clip = el.querySelector<HTMLElement>(".char__clip");
+      if (clip) clip.style.visibility = "hidden";
+      if (face) face.style.visibility = "";
+      if (inner) {
+        inner.style.transform = "translate3d(0, 0px, 0)";
+        inner.style.willChange = "";
+      }
+    }
 
     function rollOne() {
       if (running.size >= MAX_CONCURRENT) return;
@@ -259,24 +277,43 @@ export default function HeroName() {
       recent.push(idx);
       if (recent.length > 2) recent.shift();
 
-      // Seat the entering neighbour, then swap the in-flow glyph for the clip
-      // stack (both show the same glyph in the same place — invisible swap).
+      // Promote to its own layer and seat the entering neighbour, then swap the
+      // in-flow glyph for the clip stack (both show the same glyph in the same
+      // place — invisible swap). The layer must exist BEFORE the animation
+      // starts, or Chrome ticks the first frames on the main thread — so the
+      // .animate() call is deferred one frame, long enough for the promotion
+      // and the single start-frame paint to land, after which the roll is pure
+      // compositor transform.
+      inner.style.willChange = "transform";
       inner.style.transform = start;
       if (face) face.style.visibility = "hidden";
       if (clip) clip.style.visibility = "visible";
-      const anim = inner.animate(
-        [{ transform: start }, { transform: end }],
-        { duration: ROLL_MS, easing: ROLL_EASE, fill: "none" }
-      );
-      running.set(el, anim);
-      const clear = () => {
-        running.delete(el);
-        inner.style.transform = "translate3d(0, 0px, 0)";
-        if (clip) clip.style.visibility = "hidden";
-        if (face) face.style.visibility = "";
-      };
-      anim.onfinish = clear;
-      anim.oncancel = clear;
+      const rec: Roll = { anim: null, raf: 0 };
+      running.set(el, rec);
+      rec.raf = requestAnimationFrame(() => {
+        if (running.get(el) !== rec) return; // paused before it started
+        const anim = inner.animate(
+          [{ transform: start }, { transform: end }],
+          { duration: ROLL_MS, easing: ROLL_EASE, fill: "none" }
+        );
+        rec.anim = anim;
+        const clear = () => {
+          if (running.get(el) !== rec) return; // superseded by pause()
+          running.delete(el);
+          // Hand the slot back to the in-flow glyph, then reset the stack and
+          // drop the layer on the next frame so the snap-to-rest never paints
+          // through an intermediate position.
+          if (clip) clip.style.visibility = "hidden";
+          if (face) face.style.visibility = "";
+          requestAnimationFrame(() => {
+            if (running.has(el)) return; // a new roll already claimed it
+            inner.style.transform = "translate3d(0, 0px, 0)";
+            inner.style.willChange = "";
+          });
+        };
+        anim.onfinish = clear;
+        anim.oncancel = clear;
+      });
     }
 
     function tick() {
@@ -301,8 +338,13 @@ export default function HeroName() {
       active = false;
       for (const t of timers) window.clearTimeout(t);
       timers.clear();
-      for (const a of running.values()) a.cancel();
+      const rolling = Array.from(running.keys());
+      for (const rec of running.values()) {
+        cancelAnimationFrame(rec.raf);
+        rec.anim?.cancel();
+      }
       running.clear();
+      for (const el of rolling) restore(el); // synchronous reset, nothing left mid-roll
     }
 
     let onScreen = false;

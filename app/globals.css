@@ -112,13 +112,14 @@
     overflow: hidden;
     visibility: hidden;
   }
-  /* The travelling stack: a 2×2 grid of four identical copies. */
+  /* The travelling stack: a 2×2 grid of four identical copies. `will-change`
+     is applied per-roll from JS (promote on start, drop on complete) — never
+     left on permanently, which would hold eight layers resident. */
   .hero-roll.is-armed .char__inner {
     position: absolute;
     top: 0;
     left: 0;
     display: grid;
-    will-change: transform;
   }
   .hero-roll.is-armed .char__cell {
     display: block;
