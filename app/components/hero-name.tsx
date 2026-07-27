@@ -17,12 +17,12 @@ const WORDS = ["Jake", "Park"] as const;
 // rolls; a roll is 1150ms on a long-tailed curve (most distance early, the last
 // sliver takes a disproportionate share of the time — the dragged-into-place,
 // settling quality). Rolls overlap: up to three at once, starts ≥250ms apart.
-const TICK_MIN = 2600;
-const TICK_MAX = 4200;
-const ROLL_MS = 620;
-const ROLL_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
-const MAX_CONCURRENT = 2;
-const MIN_GAP = 400; // ms between two starts
+const TICK_MIN = 900;
+const TICK_MAX = 1800;
+const ROLL_MS = 1150;
+const ROLL_EASE = "cubic-bezier(0.16, 1, 0.3, 1)"; // long tail — dragged, settling
+const MAX_CONCURRENT = 3;
+const MIN_GAP = 250; // ms between two starts
 const HEADROOM = 0.08; // clip slack over the font's ascent+descent
 const H_MIN_RATIO = 0.55; // advance must be ≥55% of clip height to roll horizontally
 const VERTICAL_WEIGHT = 0.6; // 60% vertical (down/up), 40% horizontal (left/right)
@@ -220,6 +220,7 @@ export default function HeroName() {
 
     const timers = new Set<number>();
     const running = new Map<HTMLElement, Animation>();
+    const recent: number[] = []; // last ≤2 rolled — no repeat within three events
     let lastStart = 0;
     let active = false;
 
@@ -228,8 +229,12 @@ export default function HeroName() {
       const now = performance.now();
       if (now - lastStart < MIN_GAP) return;
       // Eligible: not currently mid-roll (a busy character is skipped, never
-      // restarted, so one roll never blocks another).
-      const eligible = chars.map((_, i) => i).filter((i) => !running.has(chars[i]));
+      // restarted, so one roll never blocks another) and not one of the last
+      // two rolled (random selection over eight letters otherwise visibly
+      // repeats and reads as a bug).
+      const eligible = chars
+        .map((_, i) => i)
+        .filter((i) => !running.has(chars[i]) && !recent.includes(i));
       if (eligible.length === 0) return;
       const idx = eligible[Math.floor(Math.random() * eligible.length)];
       const el = chars[idx];
@@ -251,6 +256,8 @@ export default function HeroName() {
       const { start, end } = transforms(dir, w, h);
 
       lastStart = now;
+      recent.push(idx);
+      if (recent.length > 2) recent.shift();
 
       // Seat the entering neighbour, then swap the in-flow glyph for the clip
       // stack (both show the same glyph in the same place — invisible swap).
