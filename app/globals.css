@@ -177,9 +177,10 @@
     }
   }
 
-  /* 05 skills — the stepped plate (see docs/motion-spec.md § 05). The pipeline
-     is a staircase: one continuous 0.5px ink spine descending left→right in
-     four runs, each station hanging below its own run on a downward tick.
+  /* 05 skills — a compact stepped plate (see docs/motion-spec.md § 05). The
+     pipeline is a shallow staircase: one continuous 0.5px ink spine descending
+     left→right in four short runs, each station hanging below its own run on a
+     downward tick, plus a fifth quieter tick for the ADDITIONAL annotation.
      Geometry trick that keeps the SVG spine touching every CSS-positioned tick
      at every width WITHOUT any client JS: the spine <svg> uses
      preserveAspectRatio="none", so X and Y scale independently. X is driven off
@@ -188,13 +189,25 @@
      3 × --step — so a viewBox drop of 100 renders as exactly --step px, and the
      station tops (also --step multiples) sit on the runs. Reflow regimes:
        <900       vertical spine down the left edge, ticks point right, stacked
-       900–1024   two stepped segments, two rows of two (--step: 96px)
-       1024–1200  four-across staircase, shorter drop (--step: 96px)
-       >=1200     four-across staircase, full drop (--step: 132px)
-     --lead-h reserves the primary+supporting block height so every station's
-     rule / figure / caption land on identical baselines. */
+       900–1200   two stepped segments, two rows of two (--step: 24px)
+       >=1200     four-across staircase, shallow drop (--step: 40px)
+     (Four-across can't start at 1024: the locked 46px domains won't fit a 25%
+     column once the 180px nav gutter is removed, so the two-by-two holds to
+     1200 per the spec's <190px collision-avoidance rule.)
+     --lead-h reserves the primary+supporting block height so all four stations
+     bottom out at the same offset from their own spine run. The .skills-track
+     collapses to display: contents at >=900 so its children (spine, stations,
+     terminals) position against the stage while ADDITIONAL, a sibling of the
+     track, is placed absolutely in the negative space the descent opens up. */
   .skills-stage {
     --lead-h: 92px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 44px;
+  }
+
+  .skills-track {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -206,8 +219,8 @@
     color: theme("colors.ink"); /* drives the SVG stroke (currentColor) */
   }
 
-  /* base (<900): a single continuous vertical run down the content's left
-     edge. Ticks (per station) point 16px to the right into each station. */
+  /* base (<900): a single continuous vertical run down the track's left edge.
+     Ticks (per station) point 16px to the right into each station. */
   .skills-spine--v {
     display: block;
     position: absolute;
@@ -247,30 +260,33 @@
     margin-top: 10px;
   }
 
-  /* supporting: mono, middot-separated, flows INLINE and wraps — never a
-     vertical stack. min-height reserves two lines so baselines below align. */
+  /* supporting: mono, middot-separated, flows INLINE and wraps to at most two
+     lines — never a vertical stack. */
   .skills-support {
     font-size: 12px;
     line-height: 1.7;
     margin-top: 8px;
   }
 
-  .skills-rule {
+  /* additional — base (<900): last item in the stack, full width, no rule.
+     Its tick matches the station ticks (horizontal, pointing right). */
+  .skills-additional {
+    position: relative;
+    padding-left: 28px;
+  }
+
+  .skills-add-tick {
+    position: absolute;
+    top: 4px;
+    left: 0;
+    width: 16px;
     height: 0.5px;
-    background: theme("colors.muted");
-    margin-top: 32px;
+    background: theme("colors.ink");
   }
 
-  .skills-figure {
-    font-size: 28px;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-    margin-top: 16px;
-  }
-
-  .skills-caption {
+  .skills-add-list {
     margin-top: 10px;
-    max-width: 220px;
+    max-width: 560px;
   }
 
   /* terminals — base (vertical): RAW above the spine top, SHIPPED below its
@@ -294,17 +310,25 @@
   @media (min-width: 900px) {
     /* Two stepped segments, two rows of two. --step drives both the SVG drop
        and the station tops; --st-h is the reserved content height below a run;
-       --rowgap is the space between the two rows. */
+       --rowgap is the space between the two rows; --add-h reserves ADDITIONAL. */
     .skills-stage {
-      --step: 96px;
-      --st-h: 340px;
-      --rowgap: 84px;
-      --lead-h: 76px;
+      --step: 24px;
+      --st-h: 180px;
+      --rowgap: 48px;
+      --lead-h: 88px;
+      --add-h: 64px;
       display: block;
       /* row2 base = st-h + step + rowgap; station 04 sits one more step below
-         and extends st-h past that, so the stage must reserve both steps. */
-      height: calc(var(--st-h) * 2 + var(--step) * 2 + var(--rowgap));
+         and extends st-h past that; then ADDITIONAL hangs 56px lower. */
+      height: calc(
+        var(--st-h) * 2 + var(--step) * 2 + var(--rowgap) + 56px + var(--add-h)
+      );
       gap: 0;
+    }
+
+    /* collapse the track so its children resolve against the stage */
+    .skills-track {
+      display: contents;
     }
 
     .skills-spine--v {
@@ -372,11 +396,32 @@
       font-weight: 400;
       margin-top: 12px;
     }
-    .skills-figure {
-      font-size: 34px;
-    }
     .skills-lead {
       min-height: var(--lead-h);
+    }
+
+    /* ADDITIONAL absolute, hanging below the staircase in the left negative
+       space. Vertical position = station 04 content bottom + 56px. The tick
+       becomes a 16px vertical stub above the label's left edge — the fifth,
+       quieter tap echoing the station ticks. */
+    .skills-additional {
+      position: absolute;
+      left: 0;
+      width: 75%;
+      padding-left: 0;
+      top: calc(var(--st-h) * 2 + var(--step) * 2 + var(--rowgap) + 56px);
+    }
+
+    .skills-add-tick {
+      top: -16px;
+      left: 0;
+      width: 0.5px;
+      height: 16px;
+    }
+
+    .skills-add-list {
+      margin-top: 8px;
+      max-width: none;
     }
 
     .skills-terminal--raw {
@@ -393,12 +438,18 @@
     }
   }
 
-  /* ---- 1024px+: four-across staircase (shorter drop) ---- */
-  @media (min-width: 1024px) {
+  /* ---- 1200px+: four-across staircase (shallow drop) ----
+     The four-across staircase only engages here, not at 1024. With the locked
+     46px domains and the 180px nav gutter, a 25% column drops below ~190px
+     under ~1200px and "interface" / "systems" would collide with the next
+     station — so per the spec's own rule the two-by-two holds down to 1200
+     and the four-across takes over above it. */
+  @media (min-width: 1200px) {
     .skills-stage {
-      --step: 96px;
-      --st-h: 320px;
-      height: calc(var(--step) * 3 + var(--st-h));
+      --step: 40px;
+      --st-h: 180px;
+      /* station 04 bottoms at step*3 + st-h; ADDITIONAL hangs 56px lower. */
+      height: calc(var(--step) * 3 + var(--st-h) + 56px + var(--add-h));
     }
 
     /* one continuous stepped path across the full width */
@@ -436,6 +487,12 @@
       top: calc(var(--step) * 3);
     }
 
+    /* runs to the right edge of station 03's column (75%) */
+    .skills-additional {
+      width: 75%;
+      top: calc(var(--step) * 3 + var(--st-h) + 56px);
+    }
+
     .skills-terminal--raw {
       top: 0;
       transform: translateY(calc(-100% - 10px));
@@ -445,108 +502,6 @@
       right: 0;
       left: auto;
       transform: translateY(calc(-100% - 10px));
-    }
-  }
-
-  /* ---- 1200px+: full drop ---- */
-  @media (min-width: 1200px) {
-    .skills-stage {
-      --step: 132px;
-    }
-  }
-
-  /* ---- bottom band: adjacent list + engineering title block ---- */
-  .skills-band {
-    margin-top: 96px;
-    padding-top: 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-  }
-
-  .skills-adjacent {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  @media (min-width: 640px) {
-    .skills-adjacent {
-      flex-direction: row;
-      align-items: baseline;
-      gap: 24px;
-    }
-  }
-
-  /* Title block — cells defined ENTIRELY by shared hairlines: internal rules
-     only, no outer floating border. Base (<900) is a single stacked column,
-     six rows separated by top rules (none on the first). */
-  .skills-tblock {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .skills-cell {
-    height: 68px;
-    padding: 0 12px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 8px;
-    border-top: 0.5px solid theme("colors.muted");
-  }
-
-  .skills-cell:first-child {
-    border-top: none;
-  }
-
-  .skills-cell-value {
-    font-variant-numeric: tabular-nums;
-  }
-
-  @media (min-width: 900px) {
-    /* 3 × 2 grid. Internal rules only: every cell gets a top + left rule, then
-       row-1 tops (1,2,3) and col-1 lefts (1,4) are removed → no outer border. */
-    .skills-band {
-      flex-direction: row;
-      align-items: flex-start;
-      justify-content: space-between;
-    }
-
-    .skills-adjacent {
-      flex: 1 1 auto;
-    }
-
-    .skills-tblock {
-      flex: 0 0 auto;
-      width: 400px;
-      grid-template-columns: repeat(3, 1fr);
-    }
-
-    .skills-cell {
-      border-top: 0.5px solid theme("colors.muted");
-      border-left: 0.5px solid theme("colors.muted");
-    }
-
-    .skills-cell:nth-child(1),
-    .skills-cell:nth-child(2),
-    .skills-cell:nth-child(3) {
-      border-top: none;
-    }
-
-    .skills-cell:nth-child(1),
-    .skills-cell:nth-child(4) {
-      border-left: none;
-    }
-  }
-
-  /* 1024–1200: title block drops below the adjacent list, full width. */
-  @media (min-width: 1024px) and (max-width: 1199.98px) {
-    .skills-band {
-      flex-direction: column;
-    }
-    .skills-tblock {
-      width: 100%;
     }
   }
 
