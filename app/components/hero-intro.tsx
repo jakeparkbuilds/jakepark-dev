@@ -22,11 +22,11 @@ const REVEAL = cubicBezier(0.33, 1, 0.68, 1); // soft settle
 // cap; a 3000ms failsafe force-finishes regardless of animation state.
 const T = {
   boundary: 120,
-  hoods: 760,
+  hoods: 900,
   star: 1180,
   transit: 1400,
   reveal: 1500,
-  finish: 2200,
+  finish: 2100,
   failsafe: 3000,
 };
 
@@ -62,15 +62,10 @@ export default function HeroIntro() {
     const boundary = document.querySelector<SVGPathElement>("[data-dc-boundary]");
     const star = document.querySelector<SVGGElement>("[data-georgetown]");
     const overlay = overlayRef.current;
-    const hoods = Array.from(
-      document.querySelectorAll<SVGPathElement>("[data-dc-hoods] path")
-    ).sort((a, b) => {
-      // north (smaller y) to south, by vertical centroid, so the fill sweeps
-      // down the district rather than appearing at random.
-      const ba = a.getBBox();
-      const bb = b.getBBox();
-      return ba.y + ba.height / 2 - (bb.y + bb.height / 2);
-    });
+    // Scope cut: the 46 clusters fade in together as ONE group (a single
+    // opacity animation), not 46 staggered stroke draws — cheaper on bundle and
+    // CPU, and the first thing to trim.
+    const hoodGroup = document.querySelector<SVGGElement>("[data-dc-hoods]");
     const reveals = Array.from(
       document.querySelectorAll<HTMLElement>("[data-hero-reveal]")
     );
@@ -89,7 +84,7 @@ export default function HeroIntro() {
       // Stop anime touching these, then strip every inline style so the natural
       // CSS (final, visible) governs. Remove html.intro first so its hiding
       // rules are gone before the inline styles are cleared — no flash.
-      const all: (Element | null)[] = [mapSvg, boundary, star, overlay, ...hoods, ...reveals];
+      const all: (Element | null)[] = [mapSvg, boundary, star, overlay, hoodGroup, ...reveals];
       utils.remove(all.filter(Boolean) as Element[]);
       document.documentElement.classList.remove("intro");
       const clear = (el: Element | null, props: string[]) => {
@@ -100,7 +95,7 @@ export default function HeroIntro() {
       clear(mapSvg, ["transform", "visibility", "z-index", "position", "will-change"]);
       clear(star, ["opacity"]);
       clear(boundary, ["stroke-dasharray", "stroke-dashoffset"]);
-      for (const p of hoods) clear(p, ["stroke-dasharray", "stroke-dashoffset"]);
+      clear(hoodGroup, ["opacity"]);
       for (const r of reveals) clear(r, ["opacity", "transform"]);
       setRunning(false); // unmount the overlay
       markDone(); // release the glyph cycle
@@ -123,10 +118,7 @@ export default function HeroIntro() {
 
     const boundaryLen = boundary.getTotalLength();
     utils.set(boundary, { strokeDasharray: boundaryLen, strokeDashoffset: boundaryLen });
-    for (const p of hoods) {
-      const len = p.getTotalLength();
-      utils.set(p, { strokeDasharray: len, strokeDashoffset: len });
-    }
+    if (hoodGroup) utils.set(hoodGroup, { opacity: 0 });
     if (star) utils.set(star, { opacity: 0 });
     utils.set(mapSvg, {
       position: "relative",
@@ -144,12 +136,11 @@ export default function HeroIntro() {
       { strokeDashoffset: [boundaryLen, 0], duration: 900, ease: DRAW },
       T.boundary
     );
-    if (hoods.length > 0) {
-      tl.add(
-        hoods,
-        { strokeDashoffset: 0, duration: 340, delay: stagger(14), ease: REVEAL },
-        T.hoods
-      );
+    if (hoodGroup) {
+      // Fade the whole cluster group in as one unit. Ends at opacity 1 — the
+      // settled hero's state (each path already carries strokeOpacity 0.34) —
+      // so finishing hands off with no pop.
+      tl.add(hoodGroup, { opacity: [0, 1], duration: 420, ease: REVEAL }, T.hoods);
     }
     if (star) {
       tl.add(star, { opacity: [0, 1], duration: 260, ease: "linear" }, T.star);
