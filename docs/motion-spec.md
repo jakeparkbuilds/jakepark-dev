@@ -163,6 +163,12 @@ the number, name, tools, and evidence use the standard reveal with a short
 stagger. No badges, no pills, no bars, no proficiency indicators — the stations
 are defined by the spine, the ticks, and whitespace, nothing enclosed.
 
+**Candidate set piece (unresolved).** §05 spine draw — the stepped path draws
+itself along its length on entry via `stroke-dashoffset`, 1200ms, `draw` easing,
+once. This would be a 4th set piece against a stated max of 3; taking it requires
+dropping or merging an existing one. Not committed. The static build wires
+nothing to it (the section ships `data-spine` / `data-station` hooks only).
+
 ### 06 education
 
 Two entries, standard reveal grammar. Nothing else. Resist the urge.
