@@ -141,11 +141,27 @@ accent. Nothing moves, nothing lifts, nothing shadows.
 
 Mobile and reduced motion: figures render in final state, no animation.
 
-### 05 skills
+### 05 skills — the axis break
 
-Micro only. Mono text grouped by category, separated by `·`. Standard reveal with
-`stagger({ grid: [n, 1], from: 'center' })`, 20ms. No badges, no pills, no bars,
-no proficiency indicators.
+*Claim: the work composes into a pipeline — data in, interface out.*
+
+This is the site's one horizontal composition. Every other section is a vertical
+stack; skills reads left to right along a single 0.5px spine with four stations —
+data → models → systems → interface, `IN` at one end and `OUT` at the other — so
+the page stops feeling like one long column.
+
+This is where the standing question of whether an *earlier* section should break
+the axis is answered: **no.** § 04 projects stays vertically composed — it earns
+its weight as a set piece, not as a layout inversion. Skills is the single axis
+break, and there is exactly one. (Note: the original open question was phrased
+against a "the not-just-scrolling-down idea" section that never actually existed
+in this file; the decision is recorded here, in the section it governs.)
+
+Motion is micro only, layered in a later pass, never in the static build: each
+station's spine segment and tick draw in on the standard hairline-draw grammar;
+the number, name, tools, and evidence use the standard reveal with a short
+stagger. No badges, no pills, no bars, no proficiency indicators — the stations
+are defined by the spine, the ticks, and whitespace, nothing enclosed.
 
 ### 06 education
 
