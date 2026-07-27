@@ -197,7 +197,7 @@ export default function HeroFigure() {
               d={d}
               fill="none"
               stroke="#1A1815"
-              strokeOpacity={0.34}
+              strokeOpacity={0.28}
               strokeWidth={0.5}
               vectorEffect="non-scaling-stroke"
             />
@@ -236,8 +236,8 @@ export default function HeroFigure() {
           d={DC_OUTLINE}
           fill="none"
           stroke="#1A1815"
-          strokeOpacity={0.95}
-          strokeWidth={0.5}
+          strokeOpacity={1}
+          strokeWidth={0.9}
           vectorEffect="non-scaling-stroke"
           data-dc-boundary
         />

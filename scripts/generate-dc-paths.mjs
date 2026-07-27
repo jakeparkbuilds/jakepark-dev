@@ -129,16 +129,58 @@ async function main() {
     ];
   }
 
+  // The boundary and the neighborhood clusters come from two different DC Open
+  // Data layers and are simplified at different tolerances, so each traces the
+  // shared shoreline slightly differently — the coastal edge renders as two
+  // near-identical curves a pixel or two apart (a muddy doubled line). Fix: the
+  // boundary is the single source of truth for the perimeter; every cluster
+  // vertex that lands within SNAP_PX of the simplified boundary polyline is
+  // snapped onto it, so coastal cluster edges become collinear with the
+  // boundary and render as one line. The boundary itself is untouched.
+  const SNAP_PX = 2.5;
+  const boundaryProjected = simplifyRDP(boundaryRing.map(project), BOUNDARY_TOLERANCE_PX);
+
+  // Closest point on segment ab to p, and its squared distance.
+  function closestOnSeg(p, a, b) {
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    let t = 0;
+    const len2 = dx * dx + dy * dy;
+    if (len2 > 0) t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    const cx = a[0] + t * dx;
+    const cy = a[1] + t * dy;
+    const ex = p[0] - cx;
+    const ey = p[1] - cy;
+    return { pt: [cx, cy], d2: ex * ex + ey * ey };
+  }
+
+  const snapSq = SNAP_PX * SNAP_PX;
+  function snapToBoundary(p) {
+    let best = null;
+    let bestD = snapSq;
+    for (let i = 0; i < boundaryProjected.length; i++) {
+      const a = boundaryProjected[i];
+      const b = boundaryProjected[(i + 1) % boundaryProjected.length];
+      const c = closestOnSeg(p, a, b);
+      if (c.d2 < bestD) {
+        bestD = c.d2;
+        best = c.pt;
+      }
+    }
+    return best ? [round1(best[0]), round1(best[1])] : p;
+  }
+
   function processRing(rawRing, tolerance) {
     const ring = dropClosingDuplicate(rawRing);
-    const projected = ring.map(project);
+    // Snap near-boundary vertices onto the boundary polyline before simplifying,
+    // so a shared coastal edge collapses onto the boundary rather than doubling.
+    const projected = ring.map(project).map(snapToBoundary);
     const simplified = simplifyRDP(projected, tolerance);
     return ringToPath(simplified);
   }
 
-  const DC_OUTLINE = ringToPath(
-    simplifyRDP(boundaryRing.map(project), BOUNDARY_TOLERANCE_PX)
-  );
+  const DC_OUTLINE = ringToPath(boundaryProjected);
 
   const DC_NEIGHBORHOODS = neighborhoodsFC.features
     .map((f) => processRing(f.geometry.coordinates[0], NEIGHBORHOOD_TOLERANCE_PX))
