@@ -1,4 +1,5 @@
 import HeroFigure from "./hero-figure";
+import HeroName from "./hero-name";
 
 type LinkKey = "github" | "linkedin" | "instagram" | "email";
 
@@ -89,10 +90,7 @@ export default function Hero() {
             CS + Math @ Georgetown
           </p>
 
-          <h1 id="hero-heading" className="font-display text-display text-ink">
-            <span className="block">Jake</span>
-            <span className="block">Park</span>
-          </h1>
+          <HeroName />
 
           <p
             data-hero-blurb
