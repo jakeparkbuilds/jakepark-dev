@@ -58,6 +58,24 @@
     user-select: none;
     scrollbar-gutter: stable;
   }
+
+  /* § 01 hero loader intro. Set on <html> by a pre-paint inline script (see
+     layout.tsx) ONLY on the first visit of a session and ONLY when motion is
+     allowed, so the page opens as empty paper with no flash of the final hero.
+     HeroIntro draws the map at viewport center, travels it to its slot, reveals
+     the content, then removes this class (on completion or a 3s failsafe).
+     Under prefers-reduced-motion or on a return visit the class is never set,
+     so the hero server-renders in its final, visible state. */
+  html.intro [data-hero-reveal] {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  /* The map is hidden until the controller has preset its stroke-dashoffsets
+     (ink invisible) and centered it — otherwise a fully drawn map would flash
+     at its slot before the first animation frame. */
+  html.intro [data-dc-map] {
+    visibility: hidden;
+  }
 }
 
 @layer components {

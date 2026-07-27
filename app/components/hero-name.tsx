@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 
 // § 01 hero — the glyph cycle. At rest "Jake Park" is static and legible. On a
@@ -49,9 +49,25 @@ function pickSubs(ch: string): string[] {
   return out;
 }
 
-export default function HeroName({ enabled = true }: { enabled?: boolean }) {
+export default function HeroName() {
   const reducedMotion = useReducedMotion();
   const headingRef = useRef<HTMLHeadingElement | null>(null);
+
+  // The cycle must not begin until the loader intro has finished (its own map
+  // draw and content reveal own the opening). If the intro isn't running
+  // (reduced motion / return visit) or has already completed, start at once;
+  // otherwise wait for the one-shot completion signal HeroIntro dispatches.
+  const [gateOpen, setGateOpen] = useState<boolean>(() => {
+    if (typeof document === "undefined") return false;
+    const w = window as unknown as { __heroIntroDone?: boolean };
+    return !document.documentElement.classList.contains("intro") || !!w.__heroIntroDone;
+  });
+  useEffect(() => {
+    if (gateOpen) return;
+    const open = () => setGateOpen(true);
+    document.addEventListener("hero-intro-done", open, { once: true });
+    return () => document.removeEventListener("hero-intro-done", open);
+  }, [gateOpen]);
 
   const getSpans = (): HTMLSpanElement[] =>
     headingRef.current
@@ -118,7 +134,7 @@ export default function HeroName({ enabled = true }: { enabled?: boolean }) {
   // tab hidden, disabled) every timer is cleared and any mid-swap character is
   // restored, so nothing is left pending and nothing is left substituted.
   useEffect(() => {
-    if (reducedMotion || !enabled) return;
+    if (reducedMotion || !gateOpen) return;
     const spans = getSpans();
     if (spans.length === 0) return;
 
@@ -190,7 +206,7 @@ export default function HeroName({ enabled = true }: { enabled?: boolean }) {
       document.removeEventListener("visibilitychange", sync);
       pause();
     };
-  }, [reducedMotion, enabled]);
+  }, [reducedMotion, gateOpen]);
 
   return (
     <h1
@@ -200,7 +216,7 @@ export default function HeroName({ enabled = true }: { enabled?: boolean }) {
       className="font-display text-display text-ink"
     >
       {WORDS.map((word) => (
-        <span key={word} aria-hidden="true" className="block">
+        <span key={word} aria-hidden="true" data-hero-reveal className="block">
           {word.split("").map((ch, ci) => (
             <span
               key={ci}

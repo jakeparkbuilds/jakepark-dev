@@ -169,7 +169,7 @@ const LABEL = (() => {
     leader: { x1: edge.x, y1: edge.y, x2: tip.x, y2: tip.y },
     textX: tip.x + dir * gap,
     textY: tip.y,
-    anchor: LABEL_SIDE === "left" ? "end" : "start",
+    anchor: (LABEL_SIDE === "left" ? "end" : "start") as "start" | "end",
   };
 })();
 
@@ -183,17 +183,21 @@ export default function HeroFigure() {
         className="w-full min-w-[220px]"
         data-dc-map
       >
-        {DC_NEIGHBORHOODS.map((d, i) => (
-          <path
-            key={i}
-            d={d}
-            fill="none"
-            stroke="#1A1815"
-            strokeOpacity={0.34}
-            strokeWidth={0.5}
-            vectorEffect="non-scaling-stroke"
-          />
-        ))}
+        {/* data-dc-hoods: the loader draws these 46 cluster paths in, north to
+            south, during the intro (HeroIntro). */}
+        <g data-dc-hoods>
+          {DC_NEIGHBORHOODS.map((d, i) => (
+            <path
+              key={i}
+              d={d}
+              fill="none"
+              stroke="#1A1815"
+              strokeOpacity={0.34}
+              strokeWidth={0.5}
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+        </g>
         {/* Georgetown mark — above the neighborhood fills, below the outer
             boundary. The star is the site's single use of `mark` #C8952E. */}
         <g data-georgetown aria-hidden="true">
