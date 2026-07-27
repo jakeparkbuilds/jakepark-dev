@@ -1,4 +1,4 @@
-import { DC_NEIGHBORHOODS, DC_OUTLINE } from "./dc-paths";
+import { DC_NEIGHBORHOODS, DC_OUTLINE, DC_PROJECTION } from "./dc-paths";
 
 // The long, clean southeast boundary segment of DC_OUTLINE — south point
 // to east point, the straight 1791 survey line untouched by the 1846
@@ -116,6 +116,63 @@ const VIEWBOX = `${VIEWBOX_MIN_X} ${VIEWBOX_MIN_Y} ${VIEWBOX_MAX_X - VIEWBOX_MIN
   VIEWBOX_MAX_Y - VIEWBOX_MIN_Y
 }`;
 
+// Georgetown University, 38.9076°N 77.0723°W, pushed through the SAME affine
+// projection scripts/generate-dc-paths.mjs used to build the map (DC_PROJECTION
+// from dc-paths.ts) — not a second, eyeballed set of bounds. Same math as the
+// cursor's inverse in PlotterCursor.screenToLatLon, run forward.
+function projectLatLon(lat: number, lon: number) {
+  return {
+    x: (lon - DC_PROJECTION.lonMin) * DC_PROJECTION.cosLat * DC_PROJECTION.scale + DC_PROJECTION.offsetX,
+    y: (DC_PROJECTION.latMax - lat) * DC_PROJECTION.scale + DC_PROJECTION.offsetY,
+  };
+}
+
+const GEORGETOWN = projectLatLon(38.9076, -77.0723);
+
+// The star and its label are drawn in user units, so they scale with the map
+// (they must NOT use non-scaling-stroke — the star is a filled mark, not a
+// hairline). At the enlarged hero the map renders ~1.5px per user unit, so
+// these unit sizes land at roughly their intended pixel sizes there:
+//   star  ~9px across  -> outer radius 3 units
+//   label ~11px        -> 7.3 units
+//   leader ~6px        -> 4 units
+const STAR_OUTER = 3;
+const STAR_INNER = STAR_OUTER * 0.382; // classic 5-point star waist ratio
+const LABEL_FONT = 7.3;
+const LABEL_TRACKING = LABEL_FONT * 0.16; // mono-micro tracking
+const LEADER_LEN = 4;
+
+// A 5-point star centered at (cx, cy), first point straight up.
+function starPath(cx: number, cy: number) {
+  const pts: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? STAR_OUTER : STAR_INNER;
+    const a = (-90 + i * 36) * (Math.PI / 180);
+    pts.push(`${(cx + r * Math.cos(a)).toFixed(2)},${(cy + r * Math.sin(a)).toFixed(2)}`);
+  }
+  return `M${pts.join(" L")} Z`;
+}
+
+// Georgetown sits on the map's western side; its upper-right is dense
+// neighborhood interior, so the label reads into the open paper to the
+// upper-LEFT instead (the spec's fallback when the right side collides — see
+// verification note in the commit). Leader runs from the star's outer edge out
+// to the label; the label hangs off the leader's end.
+const LABEL_SIDE: "left" | "right" = "left";
+const DIAG = Math.SQRT1_2; // cos/sin of 45°
+const LABEL = (() => {
+  const dir = LABEL_SIDE === "left" ? -1 : 1;
+  const edge = { x: GEORGETOWN.x + dir * STAR_OUTER * DIAG, y: GEORGETOWN.y - STAR_OUTER * DIAG };
+  const tip = { x: edge.x + dir * LEADER_LEN * DIAG, y: edge.y - LEADER_LEN * DIAG };
+  const gap = 1.4;
+  return {
+    leader: { x1: edge.x, y1: edge.y, x2: tip.x, y2: tip.y },
+    textX: tip.x + dir * gap,
+    textY: tip.y,
+    anchor: LABEL_SIDE === "left" ? "end" : "start",
+  };
+})();
+
 export default function HeroFigure() {
   return (
     <figure className="flex w-full flex-col items-center gap-3">
@@ -137,6 +194,34 @@ export default function HeroFigure() {
             vectorEffect="non-scaling-stroke"
           />
         ))}
+        {/* Georgetown mark — above the neighborhood fills, below the outer
+            boundary. The star is the site's single use of `mark` #C8952E. */}
+        <g data-georgetown aria-hidden="true">
+          <line
+            x1={LABEL.leader.x1}
+            y1={LABEL.leader.y1}
+            x2={LABEL.leader.x2}
+            y2={LABEL.leader.y2}
+            stroke="#9B9382"
+            strokeWidth={0.5}
+            vectorEffect="non-scaling-stroke"
+          />
+          <text
+            x={LABEL.textX}
+            y={LABEL.textY}
+            textAnchor={LABEL.anchor}
+            dominantBaseline="middle"
+            fontFamily="var(--font-plex-mono)"
+            fontSize={LABEL_FONT}
+            letterSpacing={LABEL_TRACKING}
+            fill="#6B6455"
+            style={{ textTransform: "uppercase" }}
+          >
+            Georgetown
+          </text>
+          <path d={starPath(GEORGETOWN.x, GEORGETOWN.y)} fill="#C8952E" />
+        </g>
+
         {/* data-dc-boundary: the District's real boundary geometry, used by
             PlotterCursor's isPointInFill() hit test (not a bounding-box
             approximation) to gate the map coordinate readout. */}
