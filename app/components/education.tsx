@@ -74,8 +74,12 @@ function EntryRow({ entry }: { entry: EducationEntry }) {
         </p>
       </div>
 
-      <div className="edu-course font-mono text-[12px] leading-[1.7] text-label">
-        <p>{entry.coursework.join(" · ")}</p>
+      <div className="edu-course">
+        <ul className="edu-course-list">
+          {entry.coursework.map((course) => (
+            <li key={course}>{course}</li>
+          ))}
+        </ul>
       </div>
     </div>
   );

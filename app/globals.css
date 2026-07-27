@@ -155,6 +155,7 @@
     column-gap: 32px;
     row-gap: 24px;
     align-items: start;
+    align-content: start;
     border-top: 0.5px solid theme("colors.muted");
   }
 
@@ -168,6 +169,41 @@
 
   .edu-course {
     grid-area: course;
+  }
+
+  /* Coursework as an aligned list, not a middot run (§ item 4). CSS multi-column
+     gives column-first flow — items fill the left column top to bottom, then the
+     right — so the reading order is vertical. One course per line, no
+     separators; alignment and space do the work. Single column here; two at
+     >=1200px (below). IBM Plex Mono 12px/400, #6B6455, line-height 1.0 with the
+     10px row gap providing the rhythm. Items never wrap. */
+  .edu-course-list {
+    column-count: 1;
+    column-gap: 32px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1;
+    color: #6b6455;
+  }
+  .edu-course-list li {
+    break-inside: avoid;
+    margin: 0 0 10px;
+    white-space: nowrap;
+  }
+  .edu-course-list li:last-child {
+    margin-bottom: 0;
+  }
+  /* Two columns where there is room, one where there isn't — column-width does
+     the deciding, so it resolves to 2 only when the zone can hold two >=210px
+     tracks and 1 otherwise, no width guessing. Single column below 1200px. */
+  @media (min-width: 1200px) {
+    .edu-course-list {
+      columns: 2 210px;
+    }
   }
 
   /* Inline SVG logos are injected with their own baked-in width/height
@@ -234,6 +270,22 @@
     .edu-row:hover .edu-course,
     .edu-row:focus-visible .edu-course {
       clip-path: inset(0 0 0 0);
+    }
+  }
+
+  /* Between 1100 and ~1360px the beside coursework column is too narrow (down to
+     ~112px) to hold a single-line course title, because the locked 620px body +
+     the 180px nav-gutter leave little room. Rather than clip the titles or drop
+     to unreadable type, the coursework drops to a full-width row beneath the
+     school block here — the body stays in its 620px column (so the left side is
+     unchanged) and the list gets the width to stay one item per line (two auto
+     columns where they fit). This band's rows are correspondingly taller, the
+     way they already are below 1100px where the list also sits beneath. */
+  @media (min-width: 1100px) and (max-width: 1359.98px) {
+    .edu-row {
+      grid-template-areas:
+        "logo body   ."
+        "logo course course";
     }
   }
 
