@@ -86,7 +86,7 @@ export default function Hero() {
       className="relative flex min-h-svh w-full flex-col border-t-[0.5px] border-ink"
     >
       <HeroIntro />
-      <div className="section-pad mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-section md:flex-row md:items-center md:gap-x-12 min-[1200px]:gap-x-[44px]">
+      <div className="section-pad mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-section md:flex-row md:items-center md:gap-x-12 min-[1200px]:gap-x-[44px] min-[1440px]:max-w-[1720px]">
         <div className="flex max-w-col flex-1 flex-col gap-8 md:justify-center min-[1200px]:w-[clamp(456px,36vw,500px)] min-[1200px]:max-w-[500px] min-[1200px]:flex-none">
           <p
             data-hero-reveal
@@ -133,7 +133,12 @@ export default function Hero() {
         </div>
 
         <div className="flex flex-[1.4] items-center md:justify-start min-[1200px]:flex-1">
-          <div className="w-full md:w-[90%] min-[1200px]:w-full">
+          {/* Enlarged at wide viewports (§ item 3). The flex gap fixes the
+              text↔map spacing, so the flex-1 column absorbing the widened
+              container enlarges the map while the interlock gap holds; the cap
+              keeps it near ~132% of its 1440 size rather than overshooting at
+              1920. Below 1440 this is inert (current sizing). */}
+          <div className="w-full md:w-[90%] min-[1200px]:w-full min-[1440px]:max-w-[715px]">
             <HeroFigure />
           </div>
         </div>
