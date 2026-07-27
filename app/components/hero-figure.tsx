@@ -18,6 +18,27 @@ const TEXT_VIEWBOX_CLEARANCE = 12; // min. clear space between the glyph ink and
 
 const BASE_VIEWBOX = 400;
 
+// The DC diamond is taller than wide, so the projection centers it in the
+// 0–400 viewBox with ~46 units of empty margin on the west and east. The west
+// band is pure dead space (the SE caption lives on the east/south edge, never
+// the west), and it is what pushes the map's visual "western edge" far from the
+// text column. Crop the viewBox to hug the shape's real western extent — read
+// off DC_OUTLINE, not guessed — leaving a small clearance. This both enlarges
+// the rendered ink for a given footprint and lets the map nest closer to the
+// ragged text edge, without touching a single path coordinate. The cursor's
+// screenToLatLon reads svg.viewBox.baseVal.x, so it follows this automatically.
+const WEST_CLEARANCE = 6; // units of empty space kept west of the boundary
+function outlineWestExtent() {
+  let minX = Infinity;
+  // DC_OUTLINE is "M x,y L x,y …"; pull every x coordinate.
+  for (const m of DC_OUTLINE.matchAll(/[ML]\s*(-?\d+(?:\.\d+)?)/g)) {
+    const x = parseFloat(m[1]);
+    if (x < minX) minX = x;
+  }
+  return minX;
+}
+const WEST_CROP_X = outlineWestExtent() - WEST_CLEARANCE;
+
 function computeCaptionPlacement() {
   const dx = SE_BOUNDARY_END.x - SE_BOUNDARY_START.x;
   const dy = SE_BOUNDARY_END.y - SE_BOUNDARY_START.y;
@@ -87,7 +108,7 @@ const CAPTION_PLACEMENT = computeCaptionPlacement();
 // caption's real rotated bounding box, computed above, sits fully inside
 // with TEXT_VIEWBOX_CLEARANCE to spare. The DC geometry keeps its original
 // 0–400 coordinates; this only widens the window it's viewed through.
-const VIEWBOX_MIN_X = Math.min(0, CAPTION_PLACEMENT.textMinX - TEXT_VIEWBOX_CLEARANCE);
+const VIEWBOX_MIN_X = Math.min(WEST_CROP_X, CAPTION_PLACEMENT.textMinX - TEXT_VIEWBOX_CLEARANCE);
 const VIEWBOX_MIN_Y = Math.min(0, CAPTION_PLACEMENT.textMinY - TEXT_VIEWBOX_CLEARANCE);
 const VIEWBOX_MAX_X = Math.max(BASE_VIEWBOX, CAPTION_PLACEMENT.textMaxX + TEXT_VIEWBOX_CLEARANCE);
 const VIEWBOX_MAX_Y = Math.max(BASE_VIEWBOX, CAPTION_PLACEMENT.textMaxY + TEXT_VIEWBOX_CLEARANCE);
