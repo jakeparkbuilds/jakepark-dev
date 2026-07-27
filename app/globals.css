@@ -177,6 +177,142 @@
     }
   }
 
+  /* 05 skills — the pipeline (see docs/motion-spec.md § 05, the site's one
+     horizontal composition). A single 0.5px ink spine with four stations
+     along it, IN…OUT at the ends. The spine is not one element: every station
+     draws its own spine segment + tick in .skill-rail, and the stations are
+     laid out flush (no grid gap — the gutters live inside .skill-body) so
+     adjacent segments read as one continuous line. That is what lets the same
+     markup reflow across three layouts without re-authoring the spine:
+       <900        vertical spine down the left edge, ticks point right
+       900–1100    two-by-two — the row-gap splits the spine into two segments
+       >=1100      four across — one continuous spine, four ticks
+     IN lives in the first station, OUT in the last, so they always land at the
+     right corner of whichever layout is active (far ends when horizontal;
+     top/bottom when vertical). */
+  .skill-stations {
+    display: grid;
+    grid-template-columns: 1fr; /* <900: vertical stack */
+    row-gap: 40px;
+  }
+
+  .skill-station {
+    position: relative;
+  }
+
+  /* base (<900): rail is a vertical spine segment. It runs the full height of
+     its station AND across the row-gap below it (bottom: -40px) so segments
+     meet end to end; the last station stops at its own bottom. */
+  .skill-rail {
+    position: absolute;
+    top: 0;
+    bottom: -40px;
+    left: 0;
+    width: 0.5px;
+    background: theme("colors.ink");
+  }
+
+  .skill-station:last-child .skill-rail {
+    bottom: 0;
+  }
+
+  .skill-tick {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 10px;
+    height: 0.5px;
+    background: theme("colors.ink");
+  }
+
+  .skill-body {
+    padding-left: 26px; /* clear the vertical spine + tick */
+  }
+
+  /* IN / OUT caps — rendered only in the first / last station (see
+     skills.tsx). Vertical layout: IN above the spine top, OUT below its
+     bottom, both left-aligned to the spine. */
+  .skill-cap {
+    position: absolute;
+    left: 0;
+  }
+
+  .skill-in {
+    top: 0;
+    transform: translateY(-150%);
+  }
+
+  .skill-out {
+    bottom: 0;
+    transform: translateY(150%);
+  }
+
+  @media (min-width: 900px) {
+    /* 900–1100: two-by-two. Padding reserves room at the ends for IN / OUT
+       while the per-station spine segments still span the full content width
+       between them. */
+    .skill-stations {
+      grid-template-columns: 1fr 1fr;
+      column-gap: 0;
+      row-gap: 76px;
+      padding-left: 38px;
+      padding-right: 42px;
+    }
+
+    /* rail flips to a horizontal spine segment along the station's top edge,
+       spanning the full station width (incl. the body's right gutter) so it
+       meets the next segment flush. */
+    .skill-rail {
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: auto;
+      width: auto;
+      height: 0.5px;
+    }
+
+    .skill-station:last-child .skill-rail {
+      bottom: auto;
+    }
+
+    /* tick: 0.5px vertical stroke, 10px ABOVE the spine only, at the station's
+       (and its content's) left edge. */
+    .skill-tick {
+      top: -10px;
+      left: 0;
+      width: 0.5px;
+      height: 10px;
+    }
+
+    .skill-body {
+      padding-left: 0;
+      padding-top: 14px; /* number sits 14px below the spine */
+      padding-right: 40px; /* gutter between stations */
+    }
+
+    .skill-in {
+      top: 0;
+      left: 0;
+      transform: translate(calc(-100% - 10px), -50%);
+    }
+
+    .skill-out {
+      top: 0;
+      bottom: auto;
+      left: auto;
+      right: 0;
+      transform: translate(calc(100% + 10px), -50%);
+    }
+  }
+
+  @media (min-width: 1100px) {
+    /* four across — one row, one continuous spine, four ticks. */
+    .skill-stations {
+      grid-template-columns: repeat(4, 1fr);
+      row-gap: 0;
+    }
+  }
+
   /* Custom pointer system ("the plotter head" — see PlotterCursor.tsx). The
      native cursor is hidden only where a real fine pointer + hover surface
      exist; touch and coarse pointers keep it, and the JS side mirrors this

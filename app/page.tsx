@@ -4,6 +4,7 @@ import Education from "./components/education";
 import Hero from "./components/hero";
 import Nav from "./components/nav";
 import Section from "./components/section";
+import Skills from "./components/skills";
 import { CONTENT_SECTIONS } from "./lib/sections";
 
 export default function Home() {
@@ -16,6 +17,8 @@ export default function Home() {
           <About key={id} number={number} id={id} label={label} />
         ) : id === "education" ? (
           <Education key={id} number={number} id={id} label={label} />
+        ) : id === "skills" ? (
+          <Skills key={id} number={number} id={id} label={label} />
         ) : id === "connect" ? (
           <Connect key={id} id={id} />
         ) : (
