@@ -4,30 +4,50 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 
 // § 01 hero — the display name roll. At rest "Jake Park" is static and legible.
-// On a randomized timer one character rolls vertically and lands on ITSELF: two
-// identical copies of the glyph are stacked inside a clip box and the stack
-// translates by exactly one box height, so the outgoing copy exits the bottom
-// as the incoming copy arrives from the top. The glyph never changes — the eye
-// sees one letter roll and resettle, a plate resettling on the bed. Transform
-// translate only: no opacity, blur, scale, rotation, colour, or skew. See
-// docs/motion-spec.md and CLAUDE.md. This is the site's one animated-type moment.
+// On a randomized timer a character rolls and lands on ITSELF: four identical
+// copies of the glyph sit in a 2×2 grid inside a clip window, and the grid
+// translates by exactly one cell so an identical copy enters one edge as the
+// resting copy exits the opposite one. The glyph never changes — transform
+// translate only, on two axes (vertical dominant, horizontal the accent). See
+// docs/motion-spec.md and CLAUDE.md.
 
 const WORDS = ["Jake", "Park"] as const;
 
-// Cadence: every 2.6–4.2s roll one random character. A roll is a single 620ms
-// transform on the soft `draw` curve (long, nothing snappy). At most two rolls
-// may overlap, their starts ≥400ms apart — a coincidence, never a wave.
+// Cadence: heavy and near-continuous. Every 0.9–1.8s an eligible character
+// rolls; a roll is 1150ms on a long-tailed curve (most distance early, the last
+// sliver takes a disproportionate share of the time — the dragged-into-place,
+// settling quality). Rolls overlap: up to three at once, starts ≥250ms apart.
 const TICK_MIN = 2600;
 const TICK_MAX = 4200;
 const ROLL_MS = 620;
-const ROLL_EASE = "cubic-bezier(0.22, 1, 0.36, 1)"; // the site's `draw` curve
+const ROLL_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 const MAX_CONCURRENT = 2;
 const MIN_GAP = 400; // ms between two starts
-const DOUBLE_CHANCE = 0.16; // odds a tick fires a coincidental second roll
-const HEADROOM = 0.08; // clip-box slack over the font's ascent+descent
+const HEADROOM = 0.08; // clip slack over the font's ascent+descent
+const H_MIN_RATIO = 0.55; // advance must be ≥55% of clip height to roll horizontally
+const VERTICAL_WEIGHT = 0.6; // 60% vertical (down/up), 40% horizontal (left/right)
+
+type Dir = "down" | "up" | "left" | "right";
 
 function randInt(min: number, max: number) {
   return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+// Start/end transforms per direction (px). Cells are one clip-height tall and
+// one advance wide; a roll travels exactly one cell, and for the directions
+// whose entering neighbour would otherwise be off-grid the stack starts offset
+// so an identical copy is always abutting on the entering side.
+function transforms(dir: Dir, w: number, h: number) {
+  switch (dir) {
+    case "down":
+      return { start: `translate3d(0, ${-h}px, 0)`, end: "translate3d(0, 0px, 0)" };
+    case "up":
+      return { start: "translate3d(0, 0px, 0)", end: `translate3d(0, ${-h}px, 0)` };
+    case "left":
+      return { start: "translate3d(0, 0px, 0)", end: `translate3d(${-w}px, 0, 0)` };
+    case "right":
+      return { start: `translate3d(${-w}px, 0, 0)`, end: "translate3d(0, 0px, 0)" };
+  }
 }
 
 export default function HeroName() {
@@ -56,14 +76,14 @@ export default function HeroName() {
       ? Array.from(headingRef.current.querySelectorAll<HTMLSpanElement>("span[data-char]"))
       : [];
 
-  // ---- measurement: freeze each clip box to the real font's metrics ----
-  // Advance width per character (measured, never guessed) so no glyph reflows;
-  // clip height from the font's ascent+descent at the rendered display size plus
-  // 8% headroom, so the "J" descender and "k" ascender are never clipped. Both
-  // are re-measured on resize (the display size is fluid) and after fonts load —
-  // measuring against the fallback font would bake in the wrong box. Until this
-  // runs the name renders as plain inline text (CSS, pre-`is-armed`), identical
-  // to the static hero and correct in the SSR HTML.
+  // ---- measurement ----
+  // Clip height from the font's ascent+descent (canvas fontBoundingBox) at the
+  // rendered display size + 8% headroom — not the ink of any one letter — so the
+  // J descender and k/P ascenders never clip. Advance is the measured glyph
+  // advance. Both re-measured on resize (the display size is fluid) and after
+  // fonts load; measuring against the fallback font would bake in the wrong box.
+  // Until this runs the name is plain inline text (CSS, pre-`is-armed`),
+  // identical to the static hero and correct in the SSR HTML.
   useLayoutEffect(() => {
     if (reducedMotion) return; // static type: never measured, never armed
     const chars = getChars();
@@ -74,11 +94,10 @@ export default function HeroName() {
       const first = chars[0];
       const cs = window.getComputedStyle(first);
       const fontPx = parseFloat(cs.fontSize);
-      // Font vertical metrics via canvas (fontBoundingBox = the font's own
-      // ascent/descent, not the visible ink of any one letter).
       const ctx = document.createElement("canvas").getContext("2d");
       let ascent = fontPx * 0.75;
       let descent = fontPx * 0.25;
+      let cap = fontPx * 0.7; // cap height (the visible glyph height)
       if (ctx) {
         ctx.font = `${cs.fontWeight} ${fontPx}px ${cs.fontFamily}`;
         const m = ctx.measureText("Hjgpq");
@@ -86,38 +105,67 @@ export default function HeroName() {
           ascent = m.fontBoundingBoxAscent;
           descent = m.fontBoundingBoxDescent;
         }
+        const c = ctx.measureText("H");
+        if (c.actualBoundingBoxAscent) cap = c.actualBoundingBoxAscent;
       }
-      // Natural single-line height of a word (the display line-height at this
-      // size). The `.char` layout box keeps THIS height, exactly like the plain
-      // inline text — so the armed line occupies the identical footprint and the
-      // Jake/Park spacing never moves. The taller clip window is decoupled: it
-      // is an absolutely-positioned child that bleeds past the layout box without
-      // driving the line height.
+      const box = ascent + descent;
+      const clipH = box * (1 + HEADROOM);
+      // Natural single-line height of a word (the display line-height). The
+      // in-flow `.char__face` keeps this footprint, so the armed line is
+      // pixel-identical and no line inflates; the clip is an absolute overlay.
       const block = headingRef.current?.querySelector<HTMLElement>("[data-hero-reveal]");
       const naturalLine = block ? block.getBoundingClientRect().height : fontPx;
-      const box = ascent + descent;
-      const windowH = Math.max(naturalLine, box * (1 + HEADROOM));
-      const pad = (windowH - naturalLine) / 2; // slack above and below the glyph
-      // The stack holds two copies one natural line apart; a roll translates it
-      // by exactly one natural line, so the resting copy exits the bottom as its
-      // twin arrives from the top. Rest position seats the resting copy in the
-      // natural slot (offset `pad` down from the clip's top edge).
-      const rest = pad - naturalLine;
+      const pad = (clipH - naturalLine) / 2; // clip sits centred on the char box
 
+      const report: string[] = [];
       for (const el of chars) {
+        // Measured advance via a Range over the face glyph's text node (excludes
+        // the parent's inter-character letter-spacing, which still applies
+        // between the boxes, exactly as in the plain text).
+        const face = el.querySelector<HTMLElement>(".char__face");
+        const node = face?.firstChild;
+        let advance = el.getBoundingClientRect().width;
+        if (node) {
+          const r = document.createRange();
+          r.selectNodeContents(node);
+          advance = r.getBoundingClientRect().width || advance;
+        }
+        // Min-travel guard: a horizontal roll travels one advance width; if
+        // that is short relative to the glyph it reads as a twitch, so narrow
+        // characters are vertical-only. The rule is about travel vs the visible
+        // glyph height, so it is measured against cap height — measuring against
+        // the full clip height (which includes descender + headroom, ~168px)
+        // would exclude every letter here (widest advance ~67px) and remove the
+        // horizontal axis entirely, against the spec's intent that the wide
+        // letters qualify. Against cap height the split lands as expected: the
+        // narrow J and r stay vertical-only, the rest roll on both axes.
+        const horizontal = advance >= H_MIN_RATIO * cap;
+
         const clip = el.querySelector<HTMLElement>(".char__clip");
         if (clip) {
           clip.style.top = `${-pad}px`;
-          clip.style.height = `${windowH}px`;
+          clip.style.width = `${advance}px`;
+          clip.style.height = `${clipH}px`;
         }
         const inner = el.querySelector<HTMLElement>(".char__inner");
-        if (inner) inner.style.transform = `translate3d(0, ${rest}px, 0)`;
-        for (const c of Array.from(el.querySelectorAll<HTMLElement>(".char__copy"))) {
-          c.style.height = `${naturalLine}px`;
-          c.style.lineHeight = `${naturalLine}px`;
+        if (inner) {
+          inner.style.gridTemplateColumns = `${advance}px ${advance}px`;
+          inner.style.gridTemplateRows = `${clipH}px ${clipH}px`;
+          inner.style.transform = "translate3d(0, 0px, 0)";
         }
-        el.dataset.rest = String(rest);
-        el.dataset.roll = String(naturalLine);
+        for (const c of Array.from(el.querySelectorAll<HTMLElement>(".char__cell"))) {
+          c.style.height = `${clipH}px`;
+          c.style.lineHeight = `${clipH}px`;
+        }
+        el.dataset.w = String(advance);
+        el.dataset.h = String(clipH);
+        el.dataset.hq = horizontal ? "1" : "0";
+        report.push(
+          `${el.dataset.char}: adv=${advance.toFixed(1)} clipH=${clipH.toFixed(1)} h-roll=${horizontal}`
+        );
+      }
+      if (typeof window !== "undefined" && (window as unknown as { __rollDebug?: boolean }).__rollDebug) {
+        console.log("[roll]", report.join(" | "));
       }
       if (!done) {
         done = true;
@@ -161,9 +209,10 @@ export default function HeroName() {
 
   // ---- the roll scheduler ----
   // setTimeout chaining only, never a persistent rAF loop; each roll is one
-  // WAAPI transform (its own rAF is native and ends when the roll does). When
-  // paused (offscreen, tab hidden) every timer is cleared and every in-flight
-  // roll cancelled back to rest, so nothing is left pending or mid-roll.
+  // independent WAAPI transform (native rAF, ends with the roll). One character
+  // mid-roll never blocks another — a character already animating is skipped,
+  // not restarted. When paused (offscreen / hidden) every timer is cleared and
+  // every in-flight roll cancelled to rest, so nothing is left pending.
   useEffect(() => {
     if (reducedMotion || !armed || !gateOpen) return;
     const chars = getChars();
@@ -178,33 +227,44 @@ export default function HeroName() {
       if (running.size >= MAX_CONCURRENT) return;
       const now = performance.now();
       if (now - lastStart < MIN_GAP) return;
-      const free = chars.filter((c) => !running.has(c));
-      if (free.length === 0) return;
-      const el = free[Math.floor(Math.random() * free.length)];
+      // Eligible: not currently mid-roll (a busy character is skipped, never
+      // restarted, so one roll never blocks another).
+      const eligible = chars.map((_, i) => i).filter((i) => !running.has(chars[i]));
+      if (eligible.length === 0) return;
+      const idx = eligible[Math.floor(Math.random() * eligible.length)];
+      const el = chars[idx];
       const inner = el.querySelector<HTMLElement>(".char__inner");
       const face = el.querySelector<HTMLElement>(".char__face");
       const clip = el.querySelector<HTMLElement>(".char__clip");
-      const rest = parseFloat(el.dataset.rest ?? "0");
-      const roll = parseFloat(el.dataset.roll ?? "0");
-      if (!inner || !roll) return;
+      const w = parseFloat(el.dataset.w ?? "0");
+      const h = parseFloat(el.dataset.h ?? "0");
+      if (!inner || !h) return;
+      const canH = el.dataset.hq === "1";
+      const vertical = Math.random() < VERTICAL_WEIGHT || !canH;
+      const dir: Dir = vertical
+        ? Math.random() < 0.5
+          ? "down"
+          : "up"
+        : Math.random() < 0.5
+          ? "left"
+          : "right";
+      const { start, end } = transforms(dir, w, h);
+
       lastStart = now;
-      // Swap the in-flow resting glyph for the clip stack — both show the same
-      // glyph in the same place, so the swap is invisible — then translate the
-      // stack down by exactly one natural line: the resting copy exits the
-      // bottom as its identical twin arrives from the top.
+
+      // Seat the entering neighbour, then swap the in-flow glyph for the clip
+      // stack (both show the same glyph in the same place — invisible swap).
+      inner.style.transform = start;
       if (face) face.style.visibility = "hidden";
       if (clip) clip.style.visibility = "visible";
       const anim = inner.animate(
-        [
-          { transform: `translate3d(0, ${rest}px, 0)` },
-          { transform: `translate3d(0, ${rest + roll}px, 0)` },
-        ],
+        [{ transform: start }, { transform: end }],
         { duration: ROLL_MS, easing: ROLL_EASE, fill: "none" }
       );
       running.set(el, anim);
       const clear = () => {
         running.delete(el);
-        // Back to the in-flow glyph (fill:none has reverted the stack to rest).
+        inner.style.transform = "translate3d(0, 0px, 0)";
         if (clip) clip.style.visibility = "hidden";
         if (face) face.style.visibility = "";
       };
@@ -214,14 +274,6 @@ export default function HeroName() {
 
     function tick() {
       rollOne();
-      // A coincidental second roll now and then — never choreographed.
-      if (Math.random() < DOUBLE_CHANCE) {
-        const t = window.setTimeout(() => {
-          timers.delete(t);
-          rollOne();
-        }, randInt(MIN_GAP, 720));
-        timers.add(t);
-      }
       const next = window.setTimeout(() => {
         timers.delete(next);
         tick();
@@ -282,14 +334,16 @@ export default function HeroName() {
                   shows at rest, so the line is pixel-identical to the static
                   hero. Hidden only while this character is mid-roll. */}
               <span className="char__face">{ch}</span>
-              {/* The roll window: an absolute overlay (bleeds past the layout
-                  box without changing the line's footprint), shown only during
-                  a roll. `a` arrives from the top; `b` rests and exits the
-                  bottom — same glyph, so it reads as one letter rolling. */}
+              {/* The clip window: an absolute overlay the exact size of the
+                  character cell, shown only during a roll. Inside, a 2×2 grid of
+                  four identical copies; the grid translates one cell so a copy
+                  enters one edge as another exits the opposite — same glyph. */}
               <span className="char__clip">
                 <span className="char__inner">
-                  <span className="char__copy char__copy--a">{ch}</span>
-                  <span className="char__copy char__copy--b">{ch}</span>
+                  <span className="char__cell">{ch}</span>
+                  <span className="char__cell">{ch}</span>
+                  <span className="char__cell">{ch}</span>
+                  <span className="char__cell">{ch}</span>
                 </span>
               </span>
             </span>

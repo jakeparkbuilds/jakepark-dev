@@ -86,17 +86,20 @@
   .hero-roll .char,
   .hero-roll .char__face,
   .hero-roll .char__inner,
-  .hero-roll .char__copy {
+  .hero-roll .char__cell {
     display: inline;
   }
   .hero-roll .char__clip {
     display: none;
   }
   /* Armed: `.char` is an inline-block whose in-flow `.char__face` sets its
-     baseline and height, so the line's footprint is identical to the plain
-     text. The clip window is an absolute overlay (top/height set inline) that
-     does not enlarge the line box; it is shown only while its character rolls,
-     and the face is hidden for exactly that span — an invisible swap. */
+     baseline and height, so the line's footprint is pixel-identical to the
+     plain text and no line inflates. The clip is an absolute overlay the exact
+     size of the character cell (width/height/top set inline from the measured
+     metrics), overflow-hidden on BOTH axes; it is shown only while its
+     character rolls and the face is hidden for exactly that span — an invisible
+     swap. (An in-flow inline-block of the full clip height would inflate the
+     tight 0.9 display line, so the clip is positioned, not in-flow.) */
   .hero-roll.is-armed .char {
     position: relative;
     display: inline-block;
@@ -105,17 +108,21 @@
   .hero-roll.is-armed .char__clip {
     position: absolute;
     left: 0;
-    right: 0;
     display: block;
     overflow: hidden;
     visibility: hidden;
   }
+  /* The travelling stack: a 2×2 grid of four identical copies. */
   .hero-roll.is-armed .char__inner {
-    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
     will-change: transform;
   }
-  .hero-roll.is-armed .char__copy {
+  .hero-roll.is-armed .char__cell {
     display: block;
+    text-align: center;
   }
 }
 
