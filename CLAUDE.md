@@ -25,7 +25,7 @@ library, an animation library not listed above, or any icon package. Ask first.
 
 ---
 
-## Palette — exactly 4 colors + 1 softened ink
+## Palette — exactly 4 colors + 1 softened ink + 1 single-use mark
 
 ```
 paper    #F5F1E8   base surface
@@ -33,11 +33,16 @@ ink      #1A1815   primary type, strong hairlines
 muted    #9B9382   secondary hairlines, frame, reserved-zone outline
 accent   #22384F   ink blue — section marks + link underlines ONLY
 body     #2E2A24   softened ink for body copy (same hue, not a 5th color)
+mark     #C8952E   warm ochre — the Georgetown star, hero map ONLY
 ```
 
 Rules:
 - Accent appears on **~3% of any given viewport**. If you are reaching for it a
   third time in one section, you are wrong.
+- `mark` #C8952E is used in **exactly one place on the entire site**: the filled
+  Georgetown star on the hero map. No other element, in any section, now or
+  later, may use it. If a future section wants ochre, the answer is no — it is
+  the one warm point on a cool paper field precisely because it appears once.
 - Never pure white, never pure black, never a gray with blue in it.
 - No dark mode. This site is paper. Do not add a theme toggle.
 - Mono labels use `#7C7566` (muted, one step darker) when they need to be

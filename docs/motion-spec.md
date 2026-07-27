@@ -13,6 +13,12 @@ motion is *asserting*, delete it.
 There are exactly **two set pieces**. Everything else is quiet. Adding a third
 set piece requires asking first.
 
+**Hero / loader — the DC map draws itself on a paper field, then travels to its
+hero position as the page arrives. One continuous event.** This is the hero's
+set piece; the loader is not a separate, fourth piece — it is the opening act of
+the same drawing. The old "hero: the map draws itself in" entry is subsumed by
+it.
+
 ---
 
 ## The vocabulary
@@ -37,6 +43,12 @@ as a template.
 
 **Stagger** — 34ms base between siblings, capped at 8 items. Longer chains use
 `anime.stagger` with `from: 'first'`, never `'random'`.
+
+**Glyph cycle** — the one exception to "drawn, not faded." A single character
+substitutes in place — one glyph swapped for another for ~55ms and back — with no
+travel, no opacity change, no scale, no color shift. It is a plate resettling,
+not a decode effect. Permitted **only on the hero display type** ("Jake Park"),
+one character at a time, never a wave or a stagger across the word. Nowhere else.
 
 **Banned motion**: parallax on images, letter-by-letter typewriter on body copy,
 counting numbers, marquee/infinite ticker, hover-lift with shadow, page-load
