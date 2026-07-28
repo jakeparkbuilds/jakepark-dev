@@ -396,7 +396,8 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
 - 60fps under 6× CPU throttle through a full page scroll
 - Zero persistent rAF loops and zero pending timers once the page settles
 - anime.js imported modularly, never the whole bundle
-- The portrait is the only raster image on the site. Everything else is SVG or type.
+- Raster images are limited to three — the about-section portrait and one photo
+  per education row. Everything else is SVG or type.
 
 ---
 
