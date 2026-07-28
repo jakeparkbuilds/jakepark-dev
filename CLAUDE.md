@@ -116,18 +116,47 @@ Rules:
 | 01 | hero (no number shown — it's the cover) | done |
 | 02 | about + portrait | done, copy rewrite pending |
 | 03 | experience | **not built** |
-| 04 | projects | **not built** |
+| 04 | projects | done |
 | 05 | skills | done |
 | 06 | education | done |
 | 07 | connect | done |
 
-**Content still owed by Jake** before §03 and §04 can be built: project
-descriptions (2–3 sentences each for My 5, CapitolCast, transit/APC) and a
-decision on how much prose each of the five roles gets. Never write placeholder
-copy. If content is missing, stop and ask.
+**Content still owed by Jake** before §03 can be built: a decision on how much
+prose each of the five roles gets. Never write placeholder copy. If content is
+missing, stop and ask.
+
+Still outstanding for §04: the GitHub repo URLs for My 5 and CapitolCast. Each
+is a one-line addition to that project's `links` array in `app/lib/projects.ts`.
+Row 03 has no repo and no deployment and is **not** to be padded with a
+disabled link — that asymmetry is honest.
 
 **§05 skills is the quality bar.** Match its level of composition when building
-§03 and §04.
+§03.
+
+### §04 projects
+A drawing register, vertically composed — §05 holds the site's one axis break.
+A column header that appears once (never repeats, never sticks), then one 68px
+ruled row per project on a 12-column grid: NO. / PROJECT / STACK / YEAR.
+Clicking a row unfolds it in place.
+
+- All content lives in one typed array, `app/lib/projects.ts`. **Adding a
+  project is one entry and no layout work.** `figure` is optional: an entry
+  without one spans its text across cols 2–10 and the gap drops to its content
+  height instead of holding open an empty well.
+- Figures are generated from real path math behind a **fixed integer seed**
+  (mulberry32) evaluated at module scope, so SSR and client agree byte for byte.
+  Never `Math.random()` at render time.
+- The unfold's marker and gap must be driven as **one** gesture: same duration,
+  same curve, and the wrapper's overflow clips the marker so the drawn tip and
+  the gap's edge are literally the same edge. Verify frame-by-frame; the
+  measured divergence is 0.01px.
+- Dash lengths are in **CSS pixels**, never user units — the marker's viewBox is
+  1×100 but it renders at the gap's full height, so `getTotalLength()`
+  understates it ~3.6× and paints the marker as a dashed line. See §7.
+- An accordion that pushes content down requires per-frame reflow; that is
+  inherent, and its cost is independent of figure complexity (measured: rows
+  with 4, 51 and 40 paths cost the same). Do not go looking for it in the
+  figures.
 
 ### Hero
 Two-column. Left: mono label `CS + MATH @ GEORGETOWN`, "Jake" / "Park" at display
