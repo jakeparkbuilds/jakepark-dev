@@ -684,13 +684,28 @@
   /* The wrapper is what the unfold animates. overflow:hidden means the panel's
      visible bottom edge IS the wrapper's edge, so the marker's drawn tip and
      the gap's edge cannot drift apart. */
+  /* The gap is ONE grid row animated 0fr -> 1fr — never height:auto, never
+     max-height with a guessed ceiling. The inner element does the clipping, so
+     the panel keeps its natural height throughout and the marker (which is as
+     tall as the panel) is simply cropped by the row. That is what pins the
+     marker's drawn tip to the gap's bottom edge. */
+  /* `display: grid` is an author rule and so beats the UA stylesheet's
+     `[hidden] { display: none }`. Without this the closed panels stay in the
+     layout and — worse — in the accessibility tree. */
+  .proj-panel-wrap[hidden] {
+    display: none;
+  }
   .proj-panel-wrap {
-    overflow: hidden;
-    /* The unfold animates this element's height, which is a layout property.
-       Containment stops that from re-laying-out and repainting the panel's
-       contents (the figures are ~50-100 hairline paths) on every frame — the
-       panel's own size never changes, only the window onto it. */
+    display: grid;
+    grid-template-rows: 0fr;
+    /* Containment keeps the row's size change from re-laying-out and
+       repainting the panel's contents (the figures are 50-100 hairline paths);
+       the panel's own size never changes, only the window onto it. */
     contain: layout paint;
+  }
+  .proj-panel-clip {
+    overflow: hidden;
+    min-height: 0;
   }
 
   .proj-panel {

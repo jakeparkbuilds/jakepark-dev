@@ -154,6 +154,14 @@ const HAIR = {
 
 export type FigureKind = "convergence" | "arcs" | "trajectories";
 
+// Seeded per-path draw delays (0–160ms), so a figure's paths start at staggered
+// but DETERMINISTIC moments rather than sweeping in index order. Same seed every
+// call, so the choreography is identical on every load.
+export function figureDelays(n: number) {
+  const rand = seeded(4801);
+  return Array.from({ length: n }, () => Math.round(rand() * 160));
+}
+
 // `data-fig-path` marks every stroked path the draw animation walks. The
 // figure renders complete without JS; motion only replays it.
 export default function ProjectFigure({ kind }: { kind: FigureKind }) {

@@ -1,16 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createTimeline, cubicBezier, utils } from "animejs";
 import { PROJECTS, type Project, type ProjectLink } from "../lib/projects";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import ProjectFigure, { FIG_W } from "./project-figures";
+import ProjectFigure, { FIG_W, figureDelays } from "./project-figures";
 import SectionShell from "./section-shell";
 
 // Motion tokens (CLAUDE.md § 7).
-const DRAW = "cubic-bezier(0.22, 1, 0.36, 1)";
-const REVEAL = "cubic-bezier(0.33, 1, 0.68, 1)";
+const DRAW = cubicBezier(0.22, 1, 0.36, 1);
+const REVEAL = cubicBezier(0.33, 1, 0.68, 1);
+// The close gets its OWN curve, never the open's reversed: `draw` is an
+// ease-out, so running it backwards is heavily back-loaded — it crawls and then
+// snaps. Symmetric and quick; only opening gets the long drawn feel.
+const CLOSE_EASE = cubicBezier(0.4, 0, 0.2, 1);
 const OPEN_MS = 420;
-const CLOSE_MS = 300;
+const CLOSE_MS = 340;
+const CONTENT_OUT_MS = 160;
 const FIGURE_MS = 900;
 const FIGURE_DELAY = 200;
 
@@ -19,31 +25,12 @@ const FIGURE_DELAY = 200;
 // survives unmounts and re-renders and resets only on reload.
 const DRAWN = new Set<string>();
 
-// `len` is the path's length in CSS PIXELS, never in user units — the caller
-// converts. These paths carry vector-effect="non-scaling-stroke", which makes
-// the browser resolve the dash pattern in the SVG's viewBox→CSS space, so a
-// dasharray taken straight from getTotalLength() is wrong by the viewBox scale
-// factor and leaves part of the path sitting in the pattern's gap. (That is the
-// bug that made the hero map's boundary vanish after its transit; CLAUDE.md
-// § 7. The marker is the sharp case here: its viewBox is 1×100 but it renders
-// at the gap's full height, so user units understate it ~3.6×.)
-function drawPath(el: SVGGeometryElement, len: number, duration: number, delay: number) {
-  el.style.strokeDasharray = String(len);
-  el.style.strokeDashoffset = String(len);
-  const anim = el.animate(
-    [{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
-    { duration, delay, easing: DRAW, fill: "none" }
-  );
-  // Strip the dash properties outright on completion. A path left carrying
-  // dash geometry re-evaluates it against any later scale change.
-  const clear = () => {
-    el.style.removeProperty("stroke-dasharray");
-    el.style.removeProperty("stroke-dashoffset");
-  };
-  anim.onfinish = clear;
-  anim.oncancel = clear;
-  return anim;
-}
+// Dash lengths are computed in CSS PIXELS, never in user units. These paths
+// carry vector-effect="non-scaling-stroke", so the browser resolves the dash
+// pattern in the SVG's viewBox→CSS space; a dasharray taken straight from
+// getTotalLength() is wrong by the viewBox scale factor and leaves part of the
+// path sitting in the pattern's gap. The marker is the sharp case — its viewBox
+// is 1×100 but it renders at the gap's full height. See CLAUDE.md § 7.
 
 // § 04 projects — a drawing register. At rest the section is a legible catalog:
 // one ruled line per project, everything visible, nothing hidden behind an
@@ -135,21 +122,30 @@ function ProjectRow({
 
     const figurePaths = () =>
       Array.from(panel.querySelectorAll<SVGPathElement>("[data-fig-path]"));
-    const svgScale = () => {
-      const svg = panel.querySelector("svg.proj-fig-svg");
-      return svg ? svg.getBoundingClientRect().width / FIG_W : 1;
-    };
     const revealTargets = () =>
       Array.from(panel.querySelectorAll<HTMLElement>("[data-reveal]"));
+    const line = lineRef.current;
+
+    // The gap is one grid row that goes 0fr -> 1fr. Never height:auto, never
+    // max-height with a guessed ceiling.
+    const setGap = (p: number) => {
+      wrap.style.gridTemplateRows = `${p}fr`;
+    };
+    const clearDash = (el: SVGGeometryElement) => {
+      el.style.removeProperty("stroke-dasharray");
+      el.style.removeProperty("stroke-dashoffset");
+    };
 
     // Settle to the final frame with no motion at all: the first commit (row 01
     // is server-rendered open) and every reduced-motion path.
     const settle = () => {
-      wrap.style.height = open ? "auto" : "0px";
+      setGap(open ? 1 : 0);
       for (const el of revealTargets()) {
         el.style.removeProperty("clip-path");
         el.style.removeProperty("transform");
       }
+      if (line) clearDash(line);
+      for (const p of figurePaths()) clearDash(p);
       if (open) DRAWN.add(project.no);
       if (!open) setVisible(false);
     };
@@ -165,114 +161,107 @@ function ProjectRow({
       return;
     }
 
-    const anims: Animation[] = [];
+    // ONE timeline drives the whole gesture. The gap and the marker are not two
+    // instances that happen to share a duration — they are written from a
+    // SINGLE progress value on every tick, so the marker's tip is pinned to the
+    // gap's bottom edge by construction and cannot drift by a frame.
+    const state = { p: open ? 0 : 1 };
+    const markerLen = panel.offsetHeight;
+    if (line) {
+      line.style.strokeDasharray = String(markerLen);
+      line.style.strokeDashoffset = String(markerLen * (1 - state.p));
+    }
 
-    const unpromote = () => panel.style.removeProperty("will-change");
-
-    if (open) {
-      const h = panel.offsetHeight;
-
-      // The gap and the marker run the SAME duration and the SAME curve, and
-      // the wrapper clips the marker — so the line's drawn tip and the gap's
-      // bottom edge are the same edge, frame for frame.
-      anims.push(
-        wrap.animate([{ height: "0px" }, { height: `${h}px` }], {
-          duration: OPEN_MS,
-          easing: DRAW,
-          fill: "none",
-        })
-      );
-      wrap.style.height = `${h}px`;
-      anims[0].onfinish = () => {
-        // Release to auto so the panel can reflow (resize, font swap) later.
-        wrap.style.height = "auto";
-        unpromote();
-      };
-
-      // The marker's rendered length IS the gap height.
-      if (lineRef.current) anims.push(drawPath(lineRef.current, h, OPEN_MS, 0));
-
-      // claim → stack → links → credit, in DOM order.
-      revealTargets().forEach((el, i) => {
-        el.style.clipPath = "inset(0 0 100% 0)";
-        anims.push(
-          el.animate(
-            [
-              { clipPath: "inset(0 0 100% 0)", transform: "translateY(10px)" },
-              { clipPath: "inset(0 0 0 0)", transform: "translateY(0px)" },
-            ],
-            { duration: 380, delay: 120 + i * 34, easing: REVEAL, fill: "both" }
-          )
-        );
-        const a = anims[anims.length - 1];
-        a.onfinish = () => {
+    const tl = createTimeline({
+      defaults: {},
+      onUpdate: () => {
+        setGap(state.p);
+        if (line) line.style.strokeDashoffset = String(markerLen * (1 - state.p));
+      },
+      onComplete: () => {
+        if (line) clearDash(line);
+        for (const el of revealTargets()) {
           el.style.removeProperty("clip-path");
           el.style.removeProperty("transform");
-          a.cancel();
-        };
+        }
+        if (open) {
+          setGap(1);
+        } else {
+          setGap(0);
+          // The accessibility unmount fires here and nowhere else — never
+          // during the retraction, which would collapse the gap instantly.
+          setVisible(false);
+        }
+      },
+    });
+
+    if (open) {
+      tl.add(state, { p: 1, duration: OPEN_MS, ease: DRAW }, 0);
+
+      // claim -> stack -> links -> credit, in DOM order.
+      revealTargets().forEach((el, i) => {
+        el.style.clipPath = "inset(0 0 100% 0)";
+        tl.add(
+          el,
+          {
+            clipPath: ["inset(0 0 100% 0)", "inset(0 0 0 0)"],
+            translateY: [10, 0],
+            duration: 380,
+            ease: REVEAL,
+          },
+          120 + i * 34
+        );
       });
 
       // The figure draws once, on the first open of this row.
       if (!DRAWN.has(project.no)) {
         DRAWN.add(project.no);
+        const svg = panel.querySelector("svg.proj-fig-svg");
+        const scale = svg ? svg.getBoundingClientRect().width / FIG_W : 1;
         const paths = figurePaths();
-        const scale = svgScale();
-        const per = 300;
-        const span = Math.max(0, FIGURE_MS - per);
-        paths.forEach((p, i) => {
-          const delay = FIGURE_DELAY + (paths.length > 1 ? (span * i) / (paths.length - 1) : 0);
-          anims.push(drawPath(p, p.getTotalLength() * scale, per, delay));
+        const delays = figureDelays(paths.length);
+        paths.forEach((path, i) => {
+          const len = path.getTotalLength() * scale;
+          path.style.strokeDasharray = String(len);
+          path.style.strokeDashoffset = String(len);
+          tl.add(
+            path,
+            {
+              strokeDashoffset: 0,
+              duration: FIGURE_MS - 160,
+              ease: DRAW,
+              onComplete: () => clearDash(path),
+            },
+            FIGURE_DELAY + delays[i]
+          );
         });
+        // The scale bar and its labels are a legend, not a drawn line — they
+        // arrive once the trails are mostly down.
+        const legend = panel.querySelector<SVGGElement>("[data-fig-legend]");
+        if (legend) tl.add(legend, { opacity: [0, 1], duration: 240, ease: "linear" }, 700);
       }
     } else {
-      // Content wipes out first; the gap and marker retract together and finish
-      // last. 300ms end to end.
-      for (const el of revealTargets()) {
-        anims.push(
-          el.animate(
-            [
-              { clipPath: "inset(0 0 0 0)", opacity: 1 },
-              { clipPath: "inset(0 0 100% 0)", opacity: 1 },
-            ],
-            { duration: 140, easing: REVEAL, fill: "forwards" }
-          )
+      // Content wipes out first, then the gap and marker retract together.
+      revealTargets().forEach((el) => {
+        tl.add(
+          el,
+          {
+            clipPath: ["inset(0 0 0 0)", "inset(0 0 100% 0)"],
+            duration: CONTENT_OUT_MS,
+            ease: CLOSE_EASE,
+          },
+          0
         );
-      }
-      const h = wrap.offsetHeight;
-      const gap = wrap.animate([{ height: `${h}px` }, { height: "0px" }], {
-        duration: CLOSE_MS - 60,
-        delay: 60,
-        easing: DRAW,
-        fill: "none",
       });
-      anims.push(gap);
-      wrap.style.height = "0px";
-      if (lineRef.current) {
-        const line = lineRef.current;
-        line.style.strokeDasharray = String(h);
-        const retract = line.animate(
-          [{ strokeDashoffset: 0 }, { strokeDashoffset: h }],
-          { duration: CLOSE_MS - 60, delay: 60, easing: DRAW, fill: "none" }
-        );
-        retract.onfinish = () => {
-          line.style.removeProperty("stroke-dasharray");
-          line.style.removeProperty("stroke-dashoffset");
-        };
-        anims.push(retract);
-      }
-      gap.onfinish = () => {
-        unpromote();
-        for (const el of revealTargets()) {
-          el.style.removeProperty("clip-path");
-          el.style.removeProperty("transform");
-        }
-        setVisible(false);
-      };
+      tl.add(state, { p: 0, duration: CLOSE_MS, ease: CLOSE_EASE }, CONTENT_OUT_MS);
     }
 
     return () => {
-      for (const a of anims) a.cancel();
-      unpromote();
+      tl.pause();
+      utils.remove(state);
+      const els: Element[] = [...revealTargets(), ...figurePaths()];
+      if (line) els.push(line);
+      utils.remove(els);
     };
   }, [open, visible, reduced, project.no]);
 
@@ -298,13 +287,14 @@ function ProjectRow({
       {/* The wrapper is what the unfold animates; it clips the panel so the
           marker's drawn tip and the gap's bottom edge are the same edge. */}
       <div className="proj-panel-wrap" ref={wrapRef} hidden={!visible}>
-        <div
-          id={panelId}
-          role="region"
-          aria-labelledby={btnId}
-          className="proj-panel"
-          ref={panelRef}
-        >
+        <div className="proj-panel-clip">
+          <div
+            id={panelId}
+            role="region"
+            aria-labelledby={btnId}
+            className="proj-panel"
+            ref={panelRef}
+          >
           {/* The marker that makes the entry read as unfolded rather than as a
               box that grew. Sits in the NO. column's gutter. */}
           <svg
@@ -359,12 +349,13 @@ function ProjectRow({
             )}
           </div>
 
-          {project.figure && (
-            <figure className="proj-figure" data-reveal>
-              <ProjectFigure kind={project.figure.kind} />
-              <figcaption className="proj-fig-caption">{project.figure.caption}</figcaption>
-            </figure>
-          )}
+            {project.figure && (
+              <figure className="proj-figure" data-reveal>
+                <ProjectFigure kind={project.figure.kind} />
+                <figcaption className="proj-fig-caption">{project.figure.caption}</figcaption>
+              </figure>
+            )}
+          </div>
         </div>
       </div>
     </li>
