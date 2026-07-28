@@ -172,6 +172,28 @@ Coursework column: two-column grid, column-first flow, one course per cell, no
 separators of any kind. Items must never wrap; reduce mono size at a breakpoint
 rather than allowing a wrap or truncating.
 
+Photo per row — the pinned callout. Reuses the hero map's callout grammar so it
+reads as native: a 7px hollow square 14px past the school name's last character,
+optically aligned to its cap height; a 0.5px muted tie to a `PHOTO` mono-micro
+label; and, on hover/focus, a 0.5px ink leader with exactly one hard 90° elbow
+running down and across to the photo. The photo sits directly on paper — no
+frame, no fill, no border box, no radius, no shadow. The leader is the tail.
+
+- The trigger is the **only** hover target. Hovering the row or the coursework
+  still does only what it already did.
+- The panel is an absolutely-positioned overlay: it reserves no space, never
+  reflows the coursework, and contributes **0** to CLS.
+- **The callout exists exactly where the coursework is a right-hand column,
+  i.e. ≥1360px.** Below that the coursework reflows to a full-width row beneath
+  the body and occupies the entire band the panel would open into — measured, it
+  runs to 366px below the trigger, and clearing it would need a ~398px vertical
+  leader, which is a rule down the page, not a callout. So below 1360px the
+  photo is simply inline and permanently visible, beneath the location line and
+  above the coursework. Tie the breakpoint to that layout change, not to a
+  number.
+- The two photos are **3:4**, not the 9:19.5 they were assumed to be. They are
+  never cropped; the panel is sized from the real ratio (150×200).
+
 ---
 
 ## 6. Interaction systems

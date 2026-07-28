@@ -296,6 +296,250 @@
     }
   }
 
+  /* ── § 06 education — the pinned photo callout (see EduPhotoCallout) ───────
+     Same callout grammar as the hero map: a small mark, a 0.5px leader with one
+     hard 90° elbow, a mono-micro label. No panel, no fill, no border box, no
+     radius, no shadow — the photo sits directly on paper and the leader is the
+     tail. The whole callout is an absolutely-positioned overlay, so it reserves
+     no space and cannot reflow the coursework column (CLS contribution: none).
+
+     Geometry, in the trigger's own coordinate space (origin = trigger top-left):
+       mark            7x7 at (0, 2), centre (3.5, 5.5)
+       tie             0.5px rule across the 10px gap, at the mark's centre line
+       label           starts at 17px (mark 7 + gap 10)
+       leader          M3.5,9 down to y=62, hard corner, right to x=40
+       panel top-left  (40, 62) — right and DOWN, never leftward
+     The leader drops before it turns so it never crosses its own label. */
+
+  /* The anchor owns BOTH the positioning context and the cap-height lift, so
+     the trigger's mark and the panel share one coordinate system — otherwise
+     the leader starts where the mark is not. It is inline-block because a
+     transform does not apply to a non-replaced inline box; the strut is safe
+     because the trigger is 11px/1 and sits entirely inside the name's 44px line
+     box, so the line's height is unchanged.
+
+     Optically align the mark to the school name's cap height: the name is the
+     h2 token, a fixed 40px/500, where Bricolage's cap height measures 28.4px,
+     so the cap band's centre sits 14.2px above the baseline. The anchor's
+     baseline is the label's, which puts the mark's centre 3.1px above it —
+     hence the remaining ~11px of lift. Measured, not guessed. */
+  .edu-photo-anchor {
+    position: relative;
+    display: inline-block;
+    vertical-align: baseline;
+    white-space: nowrap;
+    /* The 14px from the school name's last character lives HERE, not on the
+       trigger: the panel and the leader are positioned against the anchor, so
+       an offset applied further in would start the leader 14px left of the mark
+       it is supposed to leave from. */
+    margin-left: 14px;
+    transform: translateY(-11px);
+  }
+
+  /* Trigger. A real <button>, stripped to nothing but its type. The label text
+     is the trigger's own content, so the element's baseline IS the label's
+     baseline; the mark is positioned against that. */
+  .edu-photo-trigger {
+    position: relative;
+    display: inline-block;
+    padding-left: 17px;
+    border: 0;
+    background: none;
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #6b6455;
+    cursor: none;
+    vertical-align: baseline;
+  }
+  .edu-photo-square {
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 7px;
+    height: 7px;
+    border: 0.5px solid theme("colors.ink");
+    background: none;
+    transition:
+      background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .edu-photo-tie {
+    position: absolute;
+    left: 7px;
+    top: 5.5px;
+    width: 10px;
+    height: 0.5px;
+    background: theme("colors.muted");
+  }
+  /* The entire idle-state feedback: the mark fills, the label goes to ink. */
+  .edu-photo-trigger:hover,
+  .edu-photo-trigger:focus-visible {
+    color: theme("colors.ink");
+  }
+  .edu-photo-trigger:hover .edu-photo-square,
+  .edu-photo-trigger:focus-visible .edu-photo-square {
+    background: theme("colors.ink");
+  }
+  .edu-photo-trigger:focus-visible {
+    outline: 1px solid theme("colors.accent");
+    outline-offset: 2px;
+  }
+  .edu-photo-trigger:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* The panel. Absolutely positioned against the trigger, opening right and
+     down into the dead space. Never interactive — the trigger is the only hover
+     target, so the panel cannot steal or hold the pointer. */
+  .edu-photo-panel {
+    position: absolute;
+    left: 0;
+    top: 0;
+    /* The anchor is nowrap so "photo" can never break off the school name's
+       last line; the panel must opt back out or the caption runs on one long
+       line past the photo and into the coursework column. */
+    white-space: normal;
+    z-index: 30; /* above the education content, far below the cursor (9999) */
+    display: block;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+  }
+  .edu-photo-leader {
+    position: absolute;
+    left: 0;
+    top: 0;
+    overflow: visible;
+    /* Path length: 81px down + 16.5px across = 97.5. Drawn along its length, so
+       the line arrives before the photo unrolls from it. */
+    stroke-dasharray: 97.5;
+    stroke-dashoffset: 97.5;
+    transition: stroke-dashoffset 260ms cubic-bezier(0.33, 1, 0.68, 1) 300ms;
+  }
+  /* 20px, not more: the panel must clear the coursework column by ≥32px in the
+     TJHSST row too, whose longer name pushes the trigger ~22px further right
+     than Georgetown's. A larger rightward offset fits the first row and
+     collides in the second. */
+  /* 90px of drop, not 62: the TJHSST name runs to two lines, so its panel hangs
+     below a name block whose descenders end only a few pixels above the photo.
+     90px is what buys that row the same 32px clearance the single-line
+     Georgetown row gets horizontally. */
+  .edu-photo-frame {
+    position: absolute;
+    left: 20px;
+    top: 90px;
+    display: block;
+    width: 150px;
+    /* Uncovered, not faded, not scaled, not moved. */
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path 420ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  .edu-photo-img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  /* Caption is held to the photo's own width and wraps rather than running out
+     to the right: at 11px/0.16em the full string measures ~192px, which would
+     overhang a 150px photo and eat the coursework clearance. */
+  .edu-photo-caption {
+    position: absolute;
+    left: 20px;
+    /* directly beneath the photo: 150px wide at 3:4 is 200px tall, + 10px */
+    top: 300px;
+    display: block;
+    width: 150px;
+    line-height: 1.45;
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #6b6455;
+    opacity: 0;
+    transition: opacity 200ms linear;
+  }
+
+  /* Open. Leader first (no delay), photo wipes 60ms later, caption at 300ms. */
+  .edu-photo-panel[data-open] .edu-photo-leader {
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 260ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  .edu-photo-panel[data-open] .edu-photo-frame {
+    clip-path: inset(0 0 0 0);
+    transition: clip-path 420ms cubic-bezier(0.33, 1, 0.68, 1) 60ms;
+  }
+  .edu-photo-panel[data-open] .edu-photo-caption {
+    opacity: 1;
+    transition: opacity 200ms linear 300ms;
+  }
+  /* Exit: 300ms total, and the leader retracts LAST — so the caption goes
+     first, the photo rolls back up, and the line is the last thing to leave. */
+  .edu-photo-panel .edu-photo-caption {
+    transition: opacity 120ms linear;
+  }
+  .edu-photo-panel .edu-photo-frame {
+    transition: clip-path 220ms cubic-bezier(0.33, 1, 0.68, 1) 40ms;
+  }
+
+  /* The callout exists exactly where the coursework is a right-hand COLUMN,
+     which is ≥1360px. Below that the coursework reflows to a full-width row
+     beneath the body (see the 1100–1359.98px rule above), so it occupies the
+     whole band the panel would open into — measured, the coursework runs to
+     366px below the trigger at its worst, and clearing it would need a 398px
+     vertical leader, which is a rule down the page rather than a callout. So
+     below 1360px the photo is simply inline and permanently visible, the same
+     treatment mobile gets. The rule tracks the layout's own structure rather
+     than an arbitrary breakpoint. */
+
+  /* Below 1360px there is no callout at all — the photo is permanently inline
+     instead (.edu-photo-inline, inside .edu-body beneath the location line).
+     Neither variant is ever hidden from a reader; they are two presentations of
+     the same content. */
+  .edu-photo-inline {
+    display: block;
+    margin-top: 24px;
+    max-width: 150px;
+  }
+  .edu-photo-inline .edu-photo-caption {
+    position: static;
+    width: auto;
+    margin-top: 10px;
+    opacity: 1;
+    transition: none;
+  }
+  @media (min-width: 1360px) {
+    .edu-photo-inline {
+      display: none;
+    }
+  }
+  @media (max-width: 1359.98px) {
+    .edu-photo-anchor {
+      display: none;
+    }
+  }
+
+  /* Reduced motion: the panel appears and disappears instantly. No wipe, no
+     leader draw — but never permanently hidden from anyone. */
+  @media (prefers-reduced-motion: reduce) {
+    .edu-photo-leader,
+    .edu-photo-frame,
+    .edu-photo-caption,
+    .edu-photo-panel[data-open] .edu-photo-leader,
+    .edu-photo-panel[data-open] .edu-photo-frame,
+    .edu-photo-panel[data-open] .edu-photo-caption {
+      transition: none !important;
+    }
+    .edu-photo-panel[data-open] .edu-photo-leader {
+      stroke-dashoffset: 0;
+    }
+  }
+
   /* 05 skills — a compact stepped plate (see docs/motion-spec.md § 05). Four
      categories are staged along a shallow staircase: one continuous 0.5px ink
      spine descending left→right in four short runs, each category hanging below

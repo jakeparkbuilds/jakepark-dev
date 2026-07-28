@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { CSSProperties } from "react";
+import EduPhotoCallout, { EduPhotoInline, type EduPhoto } from "./edu-photo";
 import SectionShell from "./section-shell";
 
 type EducationEntry = {
@@ -10,6 +11,7 @@ type EducationEntry = {
   logoFile: string;
   logoAlt: string;
   coursework: string[];
+  photo: EduPhoto;
 };
 
 const ENTRIES: EducationEntry[] = [
@@ -27,6 +29,13 @@ const ENTRIES: EducationEntry[] = [
       "multivariable calculus",
       "intro to math statistics",
     ],
+    photo: {
+      src: "/georgetown.jpg",
+      alt: "An outdoor convocation on the Georgetown campus: two people standing together in front of a Gothic stone hall, one in an academic gown holding a ceremony program, with white tents and gowned faculty behind them",
+      caption: "washington, d.c. · 2026",
+      width: 4284,
+      height: 5712,
+    },
   },
   {
     institution: "Thomas Jefferson High School for Science and Technology",
@@ -46,6 +55,13 @@ const ENTRIES: EducationEntry[] = [
       "ap statistics",
       "statistical modeling",
     ],
+    photo: {
+      src: "/tjhsst.jpg",
+      alt: "Graduates in caps and gowns waiting together beneath a Thomas Jefferson High School for Science and Technology banner at commencement",
+      caption: "alexandria, virginia · 2025",
+      width: 2870,
+      height: 3826,
+    },
   },
 ];
 
@@ -67,11 +83,19 @@ function EntryRow({ entry }: { entry: EducationEntry }) {
       />
 
       <div className="edu-body">
-        <p className="font-display text-h2 text-ink">{entry.institution}</p>
+        {/* The trigger is appended to the school name so it sits on the name's
+            last line, 14px past its last character — nothing else in the left
+            block changes. At ≥900px it opens the pinned callout; below 900px it
+            is not rendered at all and EduPhotoInline below takes over. */}
+        <p className="font-display text-h2 text-ink">
+          {entry.institution}
+          <EduPhotoCallout photo={entry.photo} />
+        </p>
         <p className="mt-[10px] font-display text-body text-body">{entry.degree}</p>
         <p className="mt-[14px] font-mono text-mono-micro uppercase text-label">
           {entry.location}
         </p>
+        <EduPhotoInline photo={entry.photo} />
       </div>
 
       <div className="edu-course">
