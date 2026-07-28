@@ -234,12 +234,32 @@ A character rolls on one axis and lands on **itself**. The glyph never changes.
 Identical copies inside a clip box; the stack translates by exactly one box
 dimension so the outgoing copy exits as an identical copy arrives.
 
-- 1150ms, `cubic-bezier(0.16, 1, 0.3, 1)`. Long, soft, dragging. No overshoot.
-- Fires every 900–1800ms, randomized. Max three concurrent, starts ≥250ms apart.
-  Repeat guard: no character twice within three consecutive events.
+- 1500ms, `cubic-bezier(0.12, 0.9, 0.08, 1)`. Something viscous being pulled:
+  a fast initial pull, then a long slow drag into place. The curve front-loads
+  almost all the distance into the first ~25% of the time and spends the
+  remaining 75% on the last sliver — **the extreme asymmetry is the effect.** A
+  "smoother" curve reads as a flip again. No overshoot, bounce, elastic, spring,
+  or secondary settle: it drags and it stops.
+- Cadence is **clustered, not metronomic**. A uniform random interval reads as a
+  metronome with jitter, so the gap after every event is re-rolled from three
+  weighted modes: 30% CLUSTER (100–320ms), 45% NORMAL (700–1400ms), 25% PAUSE
+  (2200–3600ms). A rest must read as a rest, so a CLUSTER may never follow a
+  PAUSE directly — force at least one NORMAL between them. That demotion
+  necessarily shifts the realized mix a few points from CLUSTER to NORMAL; that
+  is the rule working, not drift.
+- Max **four** concurrent. A character already mid-roll is skipped, never
+  restarted — pick a different one. Repeat guard: no character twice within
+  three consecutive events.
+- **Direction is chosen once per CLUSTER, not per character.** Every roll that
+  starts inside one cluster window travels the same axis and the same sign;
+  independent per-character directions are what made a burst read as arbitrary.
+  A new direction is picked after any NORMAL or PAUSE gap. Cluster starts are
+  staggered by their natural 100–320ms interval — near-simultaneous, never
+  synchronised to one frame.
 - 60% vertical / 40% horizontal. Characters whose advance width is under 55% of
   the clip height are **vertical-only** — a short horizontal travel reads as a
-  twitch.
+  twitch. If a cluster's direction is horizontal they are simply not eligible
+  for it; they sit that cluster out rather than being forced onto the axis.
 - **All box dimensions and travel distances must be integer pixels.** Fractional
   values from the variable font cause the glyph to shiver against its own mask.
 - Measure only after `document.fonts.ready`, and **with the roll's own armed
@@ -287,7 +307,7 @@ from offscreen or scales up from nothing.
 draw    cubic-bezier(0.22, 1, 0.36, 1)   700–1400ms
 reveal  cubic-bezier(0.33, 1, 0.68, 1)   520ms
 micro   cubic-bezier(0.4, 0, 0.2, 1)     140–180ms
-settle  cubic-bezier(0.16, 1, 0.3, 1)    1150ms — the glyph roll only
+settle  cubic-bezier(0.12, 0.9, 0.08, 1) 1500ms — the glyph roll only
 ```
 
 Animate only `transform`, `opacity`, `stroke-dashoffset`, `clip-path`. Reveals

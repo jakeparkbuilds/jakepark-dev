@@ -13,16 +13,30 @@ import { useReducedMotion } from "../lib/use-reduced-motion";
 
 const WORDS = ["Jake", "Park"] as const;
 
-// Cadence: heavy and near-continuous. Every 0.9–1.8s an eligible character
-// rolls; a roll is 1150ms on a long-tailed curve (most distance early, the last
-// sliver takes a disproportionate share of the time — the dragged-into-place,
-// settling quality). Rolls overlap: up to three at once, starts ≥250ms apart.
-const TICK_MIN = 900;
-const TICK_MAX = 1800;
-const ROLL_MS = 1150;
-const ROLL_EASE = "cubic-bezier(0.16, 1, 0.3, 1)"; // long tail — dragged, settling
-const MAX_CONCURRENT = 3;
-const MIN_GAP = 250; // ms between two starts
+// A roll is something viscous being pulled, not a flip: a fast initial pull,
+// then a long slow drag into place. The curve front-loads almost all the
+// distance into the first ~25% of the time and spends the remaining 75% on the
+// last sliver. The extreme asymmetry IS the effect — a "smoother" curve reads
+// as a flip again. No overshoot, bounce, spring, or secondary settle: it drags
+// and it stops.
+const ROLL_MS = 1500;
+const ROLL_EASE = "cubic-bezier(0.12, 0.9, 0.08, 1)";
+
+// Cadence: clustered, not metronomic. A uniform random interval reads as a
+// metronome with jitter, so the gap after every event is drawn from one of
+// three modes. A run of CLUSTER-spaced events is what "a cluster" means — they
+// overlap, and they share one direction (see pickDirection).
+const MODES = [
+  { mode: "cluster" as const, weight: 0.3, min: 100, max: 320 },
+  { mode: "normal" as const, weight: 0.45, min: 700, max: 1400 },
+  { mode: "pause" as const, weight: 0.25, min: 2200, max: 3600 },
+];
+// Raised from 3 so a cluster can actually overlap four rolls. A character
+// already mid-roll is still skipped rather than restarted.
+const MAX_CONCURRENT = 4;
+// No separate minimum-gap guard: the interval schedule above governs spacing,
+// and a CLUSTER gap (100–320ms) is deliberately shorter than the old 250ms
+// floor, which would have swallowed most of a cluster's events.
 const HEADROOM = 0.08; // clip slack over the font's ascent+descent
 // Horizontal slack over a character's laid-out advance. The cell must hold the
 // glyph's INK, and at this display size the ink routinely overruns the advance:
@@ -301,11 +315,45 @@ export default function HeroName() {
     if (chars.length === 0) return;
 
     type Roll = { anim: Animation | null; raf: number };
+    type Mode = "cluster" | "normal" | "pause";
     const timers = new Set<number>();
     const running = new Map<HTMLElement, Roll>();
     const recent: number[] = []; // last ≤2 rolled — no repeat within three events
-    let lastStart = 0;
     let active = false;
+
+    // ---- cadence state ----
+    // `dir` is the direction the NEXT event will travel. It survives a CLUSTER
+    // gap (that is what makes a cluster read as one gesture rather than three
+    // unrelated motions) and is re-picked after any NORMAL or PAUSE gap.
+    let dir: Dir = pickDirection();
+    // Set when a PAUSE is scheduled, cleared when a NORMAL is. While set, a
+    // rolled CLUSTER is demoted to NORMAL, so a rest is never immediately
+    // undercut by a burst — there is always at least one NORMAL between a
+    // PAUSE and the next CLUSTER.
+    let needNormalBeforeCluster = false;
+
+    function pickDirection(): Dir {
+      const vertical = Math.random() < VERTICAL_WEIGHT;
+      if (vertical) return Math.random() < 0.5 ? "down" : "up";
+      return Math.random() < 0.5 ? "left" : "right";
+    }
+
+    function rollMode(): Mode {
+      let r = Math.random();
+      for (const m of MODES) {
+        if (r < m.weight) {
+          if (m.mode === "cluster" && needNormalBeforeCluster) return "normal";
+          return m.mode;
+        }
+        r -= m.weight;
+      }
+      return "normal";
+    }
+
+    function delayFor(mode: Mode) {
+      const m = MODES.find((x) => x.mode === mode) ?? MODES[1];
+      return randInt(m.min, m.max);
+    }
 
     function restore(el: HTMLElement) {
       const inner = el.querySelector<HTMLElement>(".char__inner");
@@ -319,17 +367,24 @@ export default function HeroName() {
       }
     }
 
-    function rollOne() {
+    function rollOne(rollDir: Dir) {
       if (running.size >= MAX_CONCURRENT) return;
-      const now = performance.now();
-      if (now - lastStart < MIN_GAP) return;
+      const horizontal = rollDir === "left" || rollDir === "right";
       // Eligible: not currently mid-roll (a busy character is skipped, never
-      // restarted, so one roll never blocks another) and not one of the last
-      // two rolled (random selection over eight letters otherwise visibly
-      // repeats and reads as a bug).
+      // restarted, so one roll never blocks another), not one of the last two
+      // rolled (random selection over eight letters otherwise visibly repeats
+      // and reads as a bug), and — when the cluster travels horizontally —
+      // wide enough that the travel doesn't read as a twitch. Narrow
+      // characters are not forced onto the horizontal axis; they simply sit
+      // that cluster out.
       const eligible = chars
         .map((_, i) => i)
-        .filter((i) => !running.has(chars[i]) && !recent.includes(i));
+        .filter(
+          (i) =>
+            !running.has(chars[i]) &&
+            !recent.includes(i) &&
+            (!horizontal || chars[i].dataset.hq === "1")
+        );
       if (eligible.length === 0) return;
       const idx = eligible[Math.floor(Math.random() * eligible.length)];
       const el = chars[idx];
@@ -339,18 +394,8 @@ export default function HeroName() {
       const w = parseFloat(el.dataset.w ?? "0");
       const h = parseFloat(el.dataset.h ?? "0");
       if (!inner || !h) return;
-      const canH = el.dataset.hq === "1";
-      const vertical = Math.random() < VERTICAL_WEIGHT || !canH;
-      const dir: Dir = vertical
-        ? Math.random() < 0.5
-          ? "down"
-          : "up"
-        : Math.random() < 0.5
-          ? "left"
-          : "right";
-      const { start, end } = transforms(dir, w, h);
+      const { start, end } = transforms(rollDir, w, h);
 
-      lastStart = now;
       recent.push(idx);
       if (recent.length > 2) recent.shift();
 
@@ -394,11 +439,21 @@ export default function HeroName() {
     }
 
     function tick() {
-      rollOne();
+      // Fire on the direction chosen for this event, then roll the gap that
+      // separates it from the next one. A CLUSTER gap keeps the direction, so
+      // consecutive cluster events share one axis and one sign; a NORMAL or
+      // PAUSE gap ends the cluster and picks a new direction.
+      rollOne(dir);
+
+      const mode = rollMode();
+      if (mode === "pause") needNormalBeforeCluster = true;
+      else if (mode === "normal") needNormalBeforeCluster = false;
+      if (mode !== "cluster") dir = pickDirection();
+
       const next = window.setTimeout(() => {
         timers.delete(next);
         tick();
-      }, randInt(TICK_MIN, TICK_MAX));
+      }, delayFor(mode));
       timers.add(next);
     }
 
@@ -408,7 +463,7 @@ export default function HeroName() {
       const t = window.setTimeout(() => {
         timers.delete(t);
         tick();
-      }, randInt(TICK_MIN, TICK_MAX));
+      }, delayFor("normal"));
       timers.add(t);
     }
     function pause() {
