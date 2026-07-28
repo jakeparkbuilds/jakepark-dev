@@ -17,16 +17,23 @@ import { createTimeline, cubicBezier, stagger, utils } from "animejs";
 
 const DRAW = cubicBezier(0.22, 1, 0.36, 1); // long, decisive
 const REVEAL = cubicBezier(0.33, 1, 0.68, 1); // soft settle
+// The two boundary halves ONLY. Near-linear through the middle so the pen speed
+// stays roughly constant: the west half is a ragged 24-vertex shoreline and the
+// east half is two straight survey lines, so they cover very different path
+// lengths per unit of visual distance. An ease-out curve here would visibly
+// stall the straight edge while the shoreline was still running.
+const BOUNDARY_EASE = cubicBezier(0.4, 0, 0.6, 1);
+const BOUNDARY_MS = 1000;
 
-// Choreography (ms from sequence start). Natural end ~2156ms < the 2400ms hard
+// Choreography (ms from sequence start). Natural end ~2256ms < the 2400ms hard
 // cap; a 3000ms failsafe force-finishes regardless of animation state.
 const T = {
   boundary: 120,
-  hoods: 900,
-  star: 1180,
-  transit: 1400,
-  reveal: 1500,
-  finish: 2100,
+  hoods: 1000,
+  star: 1280,
+  transit: 1500,
+  reveal: 1600,
+  finish: 2200,
   failsafe: 3000,
 };
 
@@ -59,7 +66,12 @@ export default function HeroIntro() {
     if (!running) return;
 
     const mapSvg = document.querySelector<SVGSVGElement>("[data-dc-map]");
-    const boundary = document.querySelector<SVGPathElement>("[data-dc-boundary]");
+    // The two visible halves. [data-dc-boundary] is the unpainted hit-test ring
+    // and is never animated.
+    const halves = [
+      document.querySelector<SVGPathElement>("[data-dc-boundary-west]"),
+      document.querySelector<SVGPathElement>("[data-dc-boundary-east]"),
+    ].filter(Boolean) as SVGPathElement[];
     const star = document.querySelector<SVGGElement>("[data-georgetown]");
     const overlay = overlayRef.current;
     // Scope cut: the 46 clusters fade in together as ONE group (a single
@@ -84,7 +96,7 @@ export default function HeroIntro() {
       // Stop anime touching these, then strip every inline style so the natural
       // CSS (final, visible) governs. Remove html.intro first so its hiding
       // rules are gone before the inline styles are cleared — no flash.
-      const all: (Element | null)[] = [mapSvg, boundary, star, overlay, hoodGroup, ...reveals];
+      const all: (Element | null)[] = [mapSvg, ...halves, star, overlay, hoodGroup, ...reveals];
       utils.remove(all.filter(Boolean) as Element[]);
       document.documentElement.classList.remove("intro");
       const clear = (el: Element | null, props: string[]) => {
@@ -94,7 +106,9 @@ export default function HeroIntro() {
       };
       clear(mapSvg, ["transform", "visibility", "z-index", "position", "will-change"]);
       clear(star, ["opacity"]);
-      clear(boundary, ["stroke-dasharray", "stroke-dashoffset"]);
+      // Normally already done by undashHalves() when the draw completed; this is
+      // the failsafe path (a forced finish mid-draw).
+      for (const h of halves) clear(h, ["stroke-dasharray", "stroke-dashoffset"]);
       clear(hoodGroup, ["opacity"]);
       for (const r of reveals) clear(r, ["opacity", "transform"]);
       setRunning(false); // unmount the overlay
@@ -102,7 +116,7 @@ export default function HeroIntro() {
     }
 
     // If the map isn't present for some reason, don't gate the page on it.
-    if (!mapSvg || !boundary) {
+    if (!mapSvg || halves.length === 0) {
       finish();
       return;
     }
@@ -116,8 +130,35 @@ export default function HeroIntro() {
     const tx = window.innerWidth / 2 - cx;
     const ty = window.innerHeight / 2 - cy;
 
-    const boundaryLen = boundary.getTotalLength();
-    utils.set(boundary, { strokeDasharray: boundaryLen, strokeDashoffset: boundaryLen });
+    // Dash length is measured in CSS px, not user units, and BEFORE the opening
+    // transform below is applied. Both halves of that are load-bearing.
+    //
+    // These paths carry vector-effect="non-scaling-stroke". That makes the
+    // browser resolve the dash pattern in the SVG's viewBox-to-CSS space —
+    // NOT in user units, and (measured, not assumed) NOT including the CSS
+    // transform applied to the <svg> element itself, even though getScreenCTM()
+    // reports that transform. So the correct dash length is the path's length in
+    // the space it occupies at scale 1.0, which is exactly what getScreenCTM()
+    // returns while the map is still untransformed.
+    //
+    // Both errors are observable:
+    //   - The old code used getTotalLength() alone (user units, 1098 for the
+    //     ring) against a real dash space length of 1655px. The pattern is
+    //     "dash 1098 / gap 1098", so the last 34% of the ring — exactly the two
+    //     north edges, which are the tail of DC_OUTLINE — fell in the gap. The
+    //     boundary appeared to vanish after the transit and popped back in when
+    //     finish() finally cleared the dash.
+    //   - Measuring after the 0.46 transform (dash 385 against a 838px dash
+    //     space) makes the pattern REPEAT inside the path, so a second
+    //     disconnected run paints near the south point while the first is still
+    //     descending from the north.
+    const dashLen = new Map<SVGPathElement, number>();
+    for (const h of halves) {
+      const len = h.getTotalLength() * (h.getScreenCTM()?.a ?? 1);
+      dashLen.set(h, len);
+      utils.set(h, { strokeDasharray: len, strokeDashoffset: len });
+    }
+
     if (hoodGroup) utils.set(hoodGroup, { opacity: 0 });
     if (star) utils.set(star, { opacity: 0 });
     utils.set(mapSvg, {
@@ -128,14 +169,37 @@ export default function HeroIntro() {
       scale: 0.46,
       visibility: "visible", // was hidden by html.intro until now
     });
+    // Strip the dash properties outright when the draw completes — before the
+    // transit begins. After this the path is an ordinary stroke with no dash
+    // geometry at all, so the transit's scale change has nothing to recompute
+    // against and no later re-render can resurrect the gaps.
+    //
+    // Safe to strip the inline styles directly: this runs from the draw's own
+    // onComplete, so that animation has ticked for the last time and anime will
+    // not write to these properties again.
+    const undashHalves = (el: SVGPathElement) => {
+      el.style.removeProperty("stroke-dasharray");
+      el.style.removeProperty("stroke-dashoffset");
+    };
 
     // ---- the timeline ----
     tl = createTimeline({ defaults: {} });
-    tl.add(
-      boundary,
-      { strokeDashoffset: [boundaryLen, 0], duration: 900, ease: DRAW },
-      T.boundary
-    );
+    // Both halves start in the SAME frame and run the same duration, so the
+    // outline unzips from the north corner and the two pens meet at the south
+    // point together.
+    for (const h of halves) {
+      const len = dashLen.get(h) ?? 0;
+      tl.add(
+        h,
+        {
+          strokeDashoffset: [len, 0],
+          duration: BOUNDARY_MS,
+          ease: BOUNDARY_EASE,
+          onComplete: () => undashHalves(h),
+        },
+        T.boundary
+      );
+    }
     if (hoodGroup) {
       // Fade the whole cluster group in as one unit. Ends at opacity 1 — the
       // settled hero's state (each path already carries strokeOpacity 0.34) —

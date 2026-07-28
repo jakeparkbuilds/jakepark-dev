@@ -7,7 +7,19 @@
 // 3px, neighborhood tolerance 0.75px).
 // Coordinates rounded to 1 decimal place.
 
+// The closed District ring. Kept as the single source of truth for the
+// geometry and as the cursor's isPointInFill() hit-test path; the visible
+// stroke is drawn as the two halves below.
 export const DC_OUTLINE = "M45.9,123.8 L71.8,165.9 L93,182.4 L120.6,187.6 L134.9,224.7 L142.1,226.6 L147.6,241.6 L153.4,240.7 L154.2,234.2 L163.7,245.7 L165.8,255.3 L158.6,257.2 L165.4,257.2 L169.9,264.7 L172.9,292.2 L167.1,302.3 L151.1,298.7 L157.9,317.3 L159.9,312.9 L165.8,319.3 L161.1,332.4 L168.3,348.5 L164.1,392 L354.1,201.6 L161.2,8 L45.9,123.8 Z";
+
+// The same ring cut at its north corner and its south point, so the loader
+// can draw both halves at once and the outline unzips symmetrically.
+// WEST runs north -> west corner -> Potomac shoreline -> south.
+// EAST runs north -> east corner -> southeast survey line -> south.
+// Shared endpoints are byte-identical between the two.
+export const DC_BOUNDARY_WEST = "M161.2,8 L45.9,123.8 L71.8,165.9 L93,182.4 L120.6,187.6 L134.9,224.7 L142.1,226.6 L147.6,241.6 L153.4,240.7 L154.2,234.2 L163.7,245.7 L165.8,255.3 L158.6,257.2 L165.4,257.2 L169.9,264.7 L172.9,292.2 L167.1,302.3 L151.1,298.7 L157.9,317.3 L159.9,312.9 L165.8,319.3 L161.1,332.4 L168.3,348.5 L164.1,392";
+
+export const DC_BOUNDARY_EAST = "M161.2,8 L354.1,201.6 L164.1,392";
 
 export const DC_NEIGHBORHOODS: string[] = [
   "M106.7,109 L100.9,109 L92.8,121.1 L100.7,136.8 L99.5,138.6 L98.8,148.6 L97.2,153 L99.2,154.8 L107,153.4 L110.8,153.8 L112.3,156 L115.2,156.8 L120.6,156.5 L124.6,153.4 L119.8,151.9 L118.1,146.4 L119.8,143.7 L122.8,142.4 L114.1,134.6 L115,122.8 L109.3,109 L108.1,109 Z",

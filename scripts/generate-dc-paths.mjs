@@ -83,6 +83,62 @@ function ringToPath(ring) {
   return ring.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x},${y}`).join(" ") + " Z";
 }
 
+// Open (unclosed) polyline — used for the two boundary halves, which are arcs
+// of the ring rather than closed rings.
+function lineToPath(points) {
+  return points.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x},${y}`).join(" ");
+}
+
+// Split the closed boundary ring into two arcs that both START at the north
+// corner and both END at the south point, so the loader can draw them
+// simultaneously and the outline "unzips" from the north and closes at the
+// south instead of tracing start-vertex to end-vertex in sequence.
+//
+// The ring is wound so that walking FORWARD from the north corner goes
+// north -> west corner -> down the Potomac shoreline -> south point, and
+// walking BACKWARD goes north -> east corner -> down the southeast survey
+// line -> south point. Both halves are cut from the same simplified vertex
+// array that produces DC_OUTLINE, so their shared endpoints are the exact
+// same rounded coordinate pairs — no seam, and the union of the two is the
+// same segment set as the closed ring.
+// Drop consecutive duplicate vertices. After projection + rounding to 1dp the
+// source ring's first and last vertices collapse onto the same coordinate, so
+// the closed DC_OUTLINE carries a zero-length closing segment. That is
+// invisible in a closed path but would leave a degenerate segment (and a
+// wasted slice of the draw's arc length) in a half, so the halves are
+// deduped. Rendering is unaffected — a zero-length segment paints nothing.
+function dedupeConsecutive(points) {
+  return points.filter(
+    (p, i) => i === 0 || p[0] !== points[i - 1][0] || p[1] !== points[i - 1][1]
+  );
+}
+
+function splitRingNorthToSouth(ring) {
+  let northIdx = 0;
+  let southIdx = 0;
+  for (let i = 1; i < ring.length; i++) {
+    if (ring[i][1] < ring[northIdx][1]) northIdx = i;
+    if (ring[i][1] > ring[southIdx][1]) southIdx = i;
+  }
+  const n = ring.length;
+  const west = [];
+  for (let i = northIdx; ; i = (i + 1) % n) {
+    west.push(ring[i]);
+    if (i === southIdx) break;
+  }
+  const east = [];
+  for (let i = northIdx; ; i = (i - 1 + n) % n) {
+    east.push(ring[i]);
+    if (i === southIdx) break;
+  }
+  return {
+    west: dedupeConsecutive(west),
+    east: dedupeConsecutive(east),
+    north: ring[northIdx],
+    south: ring[southIdx],
+  };
+}
+
 // GeoJSON rings repeat the first point as the last; drop the duplicate since
 // the SVG "Z" command closes the path itself.
 function dropClosingDuplicate(ring) {
@@ -182,6 +238,31 @@ async function main() {
 
   const DC_OUTLINE = ringToPath(boundaryProjected);
 
+  const halves = splitRingNorthToSouth(boundaryProjected);
+  const DC_BOUNDARY_WEST = lineToPath(halves.west);
+  const DC_BOUNDARY_EAST = lineToPath(halves.east);
+  // Assert the split is lossless and seamless before writing: identical shared
+  // endpoints, and every ring vertex accounted for exactly once (the two shared
+  // endpoints appear in both halves, hence the +2).
+  const sameCoord = (a, b) => a[0] === b[0] && a[1] === b[1];
+  if (!sameCoord(halves.west[0], halves.east[0])) {
+    throw new Error("boundary split: north endpoints differ");
+  }
+  if (!sameCoord(halves.west.at(-1), halves.east.at(-1))) {
+    throw new Error("boundary split: south endpoints differ");
+  }
+  // Every distinct ring vertex is covered exactly once, plus the two shared
+  // endpoints which appear in both halves. Compared against the ring with its
+  // consecutive duplicates removed cyclically — see dedupeConsecutive.
+  const ringDeduped = dedupeConsecutive(boundaryProjected).filter(
+    (p, i, a) => !(i === a.length - 1 && sameCoord(p, a[0]))
+  );
+  if (halves.west.length + halves.east.length !== ringDeduped.length + 2) {
+    throw new Error(
+      `boundary split: vertex count mismatch (${halves.west.length}+${halves.east.length} vs ${ringDeduped.length}+2)`
+    );
+  }
+
   const DC_NEIGHBORHOODS = neighborhoodsFC.features
     .map((f) => processRing(f.geometry.coordinates[0], NEIGHBORHOOD_TOLERANCE_PX))
     .sort();
@@ -219,7 +300,17 @@ async function main() {
 
   const contents =
     banner +
-    `\nexport const DC_OUTLINE = ${JSON.stringify(DC_OUTLINE)};\n\n` +
+    `\n// The closed District ring. Kept as the single source of truth for the\n` +
+    `// geometry and as the cursor's isPointInFill() hit-test path; the visible\n` +
+    `// stroke is drawn as the two halves below.\n` +
+    `export const DC_OUTLINE = ${JSON.stringify(DC_OUTLINE)};\n\n` +
+    `// The same ring cut at its north corner and its south point, so the loader\n` +
+    `// can draw both halves at once and the outline unzips symmetrically.\n` +
+    `// WEST runs north -> west corner -> Potomac shoreline -> south.\n` +
+    `// EAST runs north -> east corner -> southeast survey line -> south.\n` +
+    `// Shared endpoints are byte-identical between the two.\n` +
+    `export const DC_BOUNDARY_WEST = ${JSON.stringify(DC_BOUNDARY_WEST)};\n\n` +
+    `export const DC_BOUNDARY_EAST = ${JSON.stringify(DC_BOUNDARY_EAST)};\n\n` +
     `export const DC_NEIGHBORHOODS: string[] = ${JSON.stringify(DC_NEIGHBORHOODS, null, 2)};\n\n` +
     `// Inverts a point in the same 0-400 project() space above back to lon/lat:\n` +
     `//   lon = (x - offsetX) / cosLat / scale + lonMin\n` +
@@ -231,6 +322,10 @@ async function main() {
   const neighborhoodChars = DC_NEIGHBORHOODS.join("").length;
   console.log(`wrote ${outPath}`);
   console.log(`DC_OUTLINE: ${DC_OUTLINE.length} chars`);
+  console.log(
+    `boundary halves: west ${halves.west.length} verts / east ${halves.east.length} verts, ` +
+      `north ${halves.north.join(",")} south ${halves.south.join(",")}`
+  );
   console.log(
     `DC_NEIGHBORHOODS: ${DC_NEIGHBORHOODS.length} paths, ${neighborhoodChars} chars`
   );

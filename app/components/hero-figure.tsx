@@ -1,4 +1,10 @@
-import { DC_NEIGHBORHOODS, DC_OUTLINE, DC_PROJECTION } from "./dc-paths";
+import {
+  DC_BOUNDARY_EAST,
+  DC_BOUNDARY_WEST,
+  DC_NEIGHBORHOODS,
+  DC_OUTLINE,
+  DC_PROJECTION,
+} from "./dc-paths";
 
 // The long, clean southeast boundary segment of DC_OUTLINE — south point
 // to east point, the straight 1791 survey line untouched by the 1846
@@ -231,16 +237,29 @@ export default function HeroFigure() {
 
         {/* data-dc-boundary: the District's real boundary geometry, used by
             PlotterCursor's isPointInFill() hit test (not a bounding-box
-            approximation) to gate the map coordinate readout. */}
-        <path
-          d={DC_OUTLINE}
+            approximation) to gate the map coordinate readout. Geometry only —
+            it paints nothing. The visible stroke is the two halves below, which
+            cannot serve the hit test: they are open arcs, so filling either one
+            would describe a lobe rather than the District. */}
+        <path d={DC_OUTLINE} fill="none" stroke="none" data-dc-boundary />
+        {/* The visible boundary, cut at the north corner and the south point so
+            the loader draws both halves at once and the outline unzips from the
+            north rather than tracing one vertex to the other in sequence (see
+            HeroIntro). Together they are exactly DC_OUTLINE's segment set, and
+            they share byte-identical endpoints, so there is no seam. Round caps:
+            at the shared endpoints two butt-capped strokes would leave a notch
+            where the closed ring's miter join used to fill the corner. */}
+        <g
           fill="none"
           stroke="#1A1815"
           strokeOpacity={1}
           strokeWidth={0.9}
+          strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
-          data-dc-boundary
-        />
+        >
+          <path d={DC_BOUNDARY_WEST} vectorEffect="non-scaling-stroke" data-dc-boundary-west />
+          <path d={DC_BOUNDARY_EAST} vectorEffect="non-scaling-stroke" data-dc-boundary-east />
+        </g>
         <text
           x={CAPTION_PLACEMENT.x}
           y={CAPTION_PLACEMENT.y}

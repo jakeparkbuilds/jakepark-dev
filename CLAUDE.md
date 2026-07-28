@@ -282,16 +282,35 @@ Candidate, not committed: the §05 spine drawing itself along its length. This
 would be a 4th set piece and requires dropping or merging an existing one.
 
 ### The loader
-Empty paper → boundary draws via `stroke-dashoffset` (900ms) → neighborhood
-group fades in as **one unit** (not 46 staggered instances) → star and label fade
-→ whole map transits to its hero position while the loader background fades
-transparent → hero elements arrive staggered 34ms.
+Empty paper → the boundary's two halves draw via `stroke-dashoffset` (1000ms,
+both started in the same frame) → neighborhood group fades in as **one unit**
+(not 46 staggered instances) → star and label fade → whole map transits to its
+hero position while the loader background fades transparent → hero elements
+arrive staggered 34ms.
 
 - ≤2400ms total. Never gates on a network or font event. Global failsafe at
   3000ms force-unmounts and snaps to final state.
 - **First visit per session only** — sessionStorage flag.
 - The loader map and the hero map are the **same DOM node**. If you find yourself
   writing a cross-fade between two maps, the architecture is wrong.
+- The boundary is **two paths**, `DC_BOUNDARY_WEST` and `DC_BOUNDARY_EAST`, cut
+  from the same ring at the north corner and the south point, so the outline
+  unzips from the north and closes at the south rather than tracing one vertex
+  to the other. Their easing is `cubic-bezier(0.4, 0, 0.6, 1)` — near-linear, so
+  pen speed stays constant across the ragged shoreline and the straight survey
+  lines. Everything else in the loader keeps its own easing. `DC_OUTLINE` stays
+  as the unpainted `[data-dc-boundary]` hit-test ring for the cursor.
+- **`stroke-dasharray` on a `vector-effect="non-scaling-stroke"` path is measured
+  in the SVG's viewBox→CSS space** — not in user units, and *not* including a CSS
+  transform on the `<svg>` itself, even though `getScreenCTM()` reports that
+  transform. So the dash length is `getTotalLength() * getScreenCTM().a` read
+  **before** the loader's opening transform is applied. Getting this wrong does
+  not fail loudly, it silently puts part of the path in the dash pattern's gap:
+  measuring in user units dropped the two north edges for the whole transit, and
+  measuring after the 0.46 transform made the pattern repeat inside the path.
+- **Strip the dash properties entirely on the draw's `complete`** — set them to
+  nothing, before the transit starts. A path that still carries dash geometry
+  will re-evaluate it against any later scale change.
 - Hero text must be in the server-rendered HTML, visually masked. Do not defer
   its render — LCP target is <1.8s.
 
