@@ -146,6 +146,7 @@ function ProjectRow({
       }
       if (line) clearDash(line);
       for (const p of figurePaths()) clearDash(p);
+      panel.querySelector<SVGGElement>("[data-fig-legend]")?.style.removeProperty("opacity");
       if (open) DRAWN.add(project.no);
       if (!open) setVisible(false);
     };
@@ -180,6 +181,7 @@ function ProjectRow({
       },
       onComplete: () => {
         if (line) clearDash(line);
+        panel.querySelector<SVGGElement>("[data-fig-legend]")?.style.removeProperty("opacity");
         for (const el of revealTargets()) {
           el.style.removeProperty("clip-path");
           el.style.removeProperty("transform");
@@ -198,7 +200,7 @@ function ProjectRow({
     if (open) {
       tl.add(state, { p: 1, duration: OPEN_MS, ease: DRAW }, 0);
 
-      // claim -> stack -> links -> credit, in DOM order.
+      // claim -> stack -> links, in DOM order.
       revealTargets().forEach((el, i) => {
         el.style.clipPath = "inset(0 0 100% 0)";
         tl.add(
@@ -238,7 +240,12 @@ function ProjectRow({
         // The scale bar and its labels are a legend, not a drawn line — they
         // arrive once the trails are mostly down.
         const legend = panel.querySelector<SVGGElement>("[data-fig-legend]");
-        if (legend) tl.add(legend, { opacity: [0, 1], duration: 240, ease: "linear" }, 700);
+        if (legend) {
+          // Hidden only because it is about to be animated in; it renders at
+          // full opacity without JS and on the reduced-motion path.
+          legend.style.opacity = "0";
+          tl.add(legend, { opacity: [0, 1], duration: 240, ease: "linear" }, 700);
+        }
       }
     } else {
       // Content wipes out first, then the gap and marker retract together.
@@ -342,11 +349,6 @@ function ProjectRow({
                 );
               })}
             </ul>
-            {project.credit && (
-              <p className="proj-credit" data-reveal>
-                {project.credit}
-              </p>
-            )}
           </div>
 
             {project.figure && (

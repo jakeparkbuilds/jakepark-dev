@@ -774,15 +774,6 @@
     font-family: var(--font-bricolage), sans-serif;
     font-size: 15px;
   }
-  .proj-credit {
-    margin: 16px 0 0;
-    font-family: var(--font-plex-mono), ui-monospace, monospace;
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: #6b6455;
-  }
 
   .proj-figure {
     grid-column: 7 / 13;
@@ -807,15 +798,24 @@
     color: #6b6455;
   }
 
-  /* 900–1200px: the STACK column leaves the closed row entirely; the detail
-     panel keeps its two-part split and the figure scales back. */
-  @media (max-width: 1199.98px) {
+  /* The STACK column leaves the closed row below 1440px. The threshold is set
+     by the longest project name, not by a round number: "Bike Heat Exposure
+     Research" measures 321px of ink at 24px/500, and the PROJECT column (cols
+     2–5) only reaches that at about 1360px — where it clears by 2px, which one
+     font-metric change would turn into a wrap. At 1440 the name has 25px of
+     slack and still leaves a 50px gutter before the stack. Below the threshold
+     the name takes cols 2–10 and has room to spare. */
+  @media (max-width: 1439.98px) {
     .proj-stack {
       display: none;
     }
     .proj-name {
       grid-column: 2 / 11;
     }
+  }
+
+  /* 900–1200px: the detail panel keeps its two-part split, figure scaled back. */
+  @media (max-width: 1199.98px) {
     .proj-panel:has(.proj-figure) {
       min-height: 320px;
     }

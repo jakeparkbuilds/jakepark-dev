@@ -25,7 +25,6 @@ export type Project = {
   /** The complete list, shown only when expanded. */
   stack: string[];
   links: ProjectLink[];
-  credit?: string;
   figure?: { kind: FigureKind; caption: string };
 };
 
@@ -68,17 +67,18 @@ export const PROJECTS: Project[] = [
   },
   {
     no: "03",
-    name: "Wildfire Evacuation Model",
-    // ASSIP ran June–August 2024.
+    name: "Bike Heat Exposure Research",
     year: "2024",
-    closedStack: ["NetLogo", "Python", "ArcGIS"],
+    closedStack: ["ArcGIS Pro", "OpenStreetMap", "USGS", "NOAA"],
     claim:
-      "agent-based evacuation modeling that outperformed GPS-trace baselines.",
-    stack: ["NetLogo", "Python", "ArcGIS", "reinforcement learning"],
-    // No live deployment and no repo. That asymmetry is honest — it is not
-    // padded with a disabled link.
+      "mapping how land surface temperature and wind speed shape cycling across the DC metro area.",
+    stack: ["ArcGIS Pro", "OpenStreetMap", "USGS Earth Explorer", "NOAA NCEI"],
+    // ArcGIS Pro is the mapping and analysis tool; the rest are data sources.
+    // Nothing the poster does not name.
     links: [{ label: "poster (pdf)", href: "/assip-poster.pdf", icon: "pdf" }],
-    credit: "with Nazanin Tajik & Alireza Ermagun · George Mason ASSIP",
-    figure: { kind: "trajectories", caption: "~90% evacuated · n=40 sampled" },
+    figure: {
+      kind: "heat",
+      caption: "lst × bike trails · dc metro · jul–aug 2023",
+    },
   },
 ];

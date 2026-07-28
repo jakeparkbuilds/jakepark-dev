@@ -100,50 +100,81 @@ function arcDiagram() {
   return { baseline, nodes: nodes.map(n1), arcs, x0, x1 };
 }
 
-// ── 03 Wildfire Evacuation Model — trajectories ──────────────────────────────
-// Paths fanning from one origin with organic curvature (quadratic segments,
-// seeded jitter — never straight rays). Most clear the frame; a tenth stop
-// short, each marked by a dot. Overlap builds the density.
-function trajectories() {
-  const rand = seeded(3312);
-  const cx = 196;
-  const cy = 128;
-  const out: { d: string; stalled: [number, number] | null }[] = [];
-  for (let i = 0; i < 40; i++) {
-    let ang = (i / 40) * Math.PI * 2 + (rand() - 0.5) * 0.14;
-    const stalls = rand() < 0.1;
-    const limit = stalls ? 34 + rand() * 46 : 400;
-    let x = cx;
-    let y = cy;
+// ── 03 Bike Heat Exposure Research — thermal profile along the trail network ─
+// A loose dendritic network: three trunks pushing in from the edges, bending
+// toward the middle so the mesh thickens there, with branches spawning off
+// them. Not a grid, not a radial burst. Every stretch carries its own seeded
+// thermal value, and that value is expressed ONLY in stroke weight and opacity
+// — 0.5px/0.30 at the cool end up to 0.9px/0.85 at the hot end. No colour, no
+// heat-map palette, no gradient, no fill.
+function heatTrails() {
+  const rand = seeded(5133);
+  const cx = 198;
+  const cy = 116;
+  const out: { d: string; w: number; o: number }[] = [];
+  // Normalised to [-PI, PI]: without this a steering correction can take the
+  // long way round and the trail spirals into a loop instead of branching.
+  const norm = (a: number) => {
+    while (a > Math.PI) a -= 2 * Math.PI;
+    while (a < -Math.PI) a += 2 * Math.PI;
+    return a;
+  };
+  // [x, y, angle, depth, heat]
+  const queue: [number, number, number, number, number][] = [
+    [16, 226, -0.62, 0, 0.24],
+    [188, 254, -1.4, 0, 0.46],
+    [386, 196, -2.72, 0, 0.3],
+  ];
+  let guard = 0;
+  while (queue.length && out.length < 44 && guard++ < 160) {
+    const [sx, sy, sang, depth, sheat] = queue.shift()!;
+    let x = sx;
+    let y = sy;
+    let ang = sang;
+    let heat = sheat;
     let d = `M${n1(x)},${n1(y)}`;
-    let travelled = 0;
-    let stalledAt: [number, number] | null = null;
-    for (let step = 0; step < 7; step++) {
-      const len = 26 + rand() * 20;
-      ang += (rand() - 0.5) * 0.62; // organic drift, not a straight ray
-      const mx = x + Math.cos(ang) * len * 0.5;
-      const my = y + Math.sin(ang) * len * 0.5;
-      const nx = x + Math.cos(ang) * len;
-      const ny = y + Math.sin(ang) * len;
-      travelled += len;
-      d += ` Q${n1(mx)},${n1(my)} ${n1(nx)},${n1(ny)}`;
-      x = nx;
-      y = ny;
-      if (travelled >= limit) {
-        if (stalls) stalledAt = [n1(x), n1(y)];
-        break;
+    let held = 0;
+    const steps = depth === 0 ? 9 : 4 - depth;
+    for (let s = 0; s < steps; s++) {
+      // Trunks lean toward the middle until they arrive; branches never steer,
+      // so they radiate off their parent and the network reads as dendritic.
+      const dist = Math.hypot(cx - x, cy - y);
+      if (depth === 0 && dist > 64) ang += norm(Math.atan2(cy - y, cx - x) - ang) * 0.3;
+      ang += (rand() - 0.5) * 0.45;
+      const len = 17 + rand() * 19;
+      const mx = x + Math.cos(ang - 0.3) * len * 0.55;
+      const my = y + Math.sin(ang - 0.3) * len * 0.55;
+      x += Math.cos(ang) * len;
+      y += Math.sin(ang) * len;
+      d += ` Q${n1(mx)},${n1(my)} ${n1(x)},${n1(y)}`;
+      held++;
+      // Heat drifts, and runs hotter over the built-up middle.
+      heat = Math.max(0, Math.min(1,
+        heat + (rand() - 0.5) * 0.26 + (1 - Math.min(1, dist / 190)) * 0.09));
+      if (held === 2 || s === steps - 1) {
+        out.push({ d, w: +(0.5 + heat * 0.4).toFixed(2), o: +(0.3 + heat * 0.55).toFixed(2) });
+        d = `M${n1(x)},${n1(y)}`;
+        held = 0;
       }
-      if (x < -20 || x > FIG_W + 20 || y < -20 || y > FIG_H + 20) break;
+      // Splits are likelier near the middle, which is what thickens the mesh
+      // there rather than any change of scale.
+      if (depth < 2 && rand() < 0.26 + (1 - Math.min(1, dist / 190)) * 0.34) {
+        queue.push([x, y, ang + (rand() < 0.5 ? 1 : -1) * (0.55 + rand() * 0.6), depth + 1, heat]);
+      }
+      if (x < 6 || x > FIG_W - 6 || y < 6 || y > FIG_H - 26) break;
     }
-    out.push({ d, stalled: stalledAt });
   }
-  return { cx, cy, paths: out };
+  return out;
 }
+
+// The only legend: a short muted rule with the LST range's endpoints. No box,
+// no swatches — the weights in the network are the scale.
+const SCALE_BAR = { x1: 286, x2: 382, y: 226, lo: "32°C", hi: "79°C" };
 
 // Computed once at module scope — pure, seeded, so server and client agree.
 const CONVERGENCE = convergence();
 const ARCS = arcDiagram();
-const TRAJECTORIES = trajectories();
+const HEAT_TRAILS = heatTrails();
 
 const HAIR = {
   fill: "none" as const,
@@ -152,7 +183,7 @@ const HAIR = {
   vectorEffect: "non-scaling-stroke" as const,
 };
 
-export type FigureKind = "convergence" | "arcs" | "trajectories";
+export type FigureKind = "convergence" | "arcs" | "heat";
 
 // Seeded per-path draw delays (0–160ms), so a figure's paths start at staggered
 // but DETERMINISTIC moments rather than sweeping in index order. Same seed every
@@ -203,19 +234,55 @@ export default function ProjectFigure({ kind }: { kind: FigureKind }) {
         </>
       )}
 
-      {kind === "trajectories" && (
+      {kind === "heat" && (
         <>
-          {TRAJECTORIES.paths.map((p, i) => (
-            <path key={i} d={p.d} {...HAIR} strokeOpacity={0.45} data-fig-path />
+          {HEAT_TRAILS.map((t, i) => (
+            <path
+              key={i}
+              d={t.d}
+              fill="none"
+              stroke="#1A1815"
+              strokeWidth={t.w}
+              strokeOpacity={t.o}
+              vectorEffect="non-scaling-stroke"
+              data-fig-path
+            />
           ))}
-          {TRAJECTORIES.paths.map((p, i) =>
-            p.stalled ? (
-              <circle key={`s${i}`} cx={p.stalled[0]} cy={p.stalled[1]} r={1} fill="#1A1815" />
-            ) : null
-          )}
-          <circle cx={TRAJECTORIES.cx} cy={TRAJECTORIES.cy} r={1.5} fill="#1A1815" />
+          <g data-fig-legend>
+            <line
+              x1={SCALE_BAR.x1}
+              y1={SCALE_BAR.y}
+              x2={SCALE_BAR.x2}
+              y2={SCALE_BAR.y}
+              stroke="#9B9382"
+              strokeWidth={0.5}
+              vectorEffect="non-scaling-stroke"
+            />
+            <text
+              x={SCALE_BAR.x1}
+              y={SCALE_BAR.y + 14}
+              fontFamily="var(--font-plex-mono)"
+              fontSize={11}
+              letterSpacing={11 * 0.16}
+              fill="#6B6455"
+            >
+              {SCALE_BAR.lo}
+            </text>
+            <text
+              x={SCALE_BAR.x2}
+              y={SCALE_BAR.y + 14}
+              textAnchor="end"
+              fontFamily="var(--font-plex-mono)"
+              fontSize={11}
+              letterSpacing={11 * 0.16}
+              fill="#6B6455"
+            >
+              {SCALE_BAR.hi}
+            </text>
+          </g>
         </>
       )}
+
     </svg>
   );
 }
