@@ -540,6 +540,344 @@
     }
   }
 
+  /* ── § 04 projects — the drawing register (see Projects) ──────────────────
+     One ruled line per project on a 12-column grid, a column header that
+     appears exactly once, and an in-place unfold. Vertically composed: § 05
+     skills holds the site's one axis break and this section must not break it
+     again — no grid of cards, no second axis.
+
+     Columns, at ≥1200px:
+       1        NO.        2–5   PROJECT
+       6–10     STACK      11–12 YEAR (right-aligned)
+     The header row and every project row share one grid definition, so the
+     labels cannot drift out of alignment with the columns they name. */
+
+  .proj-register {
+    /* SectionShell puts 40px under the section's ink rule; the register's
+       column header belongs tight beneath it, so most of that is pulled back. */
+    margin-top: -24px;
+    --proj-gap: 24px;
+  }
+
+  .proj-colhead,
+  .proj-head {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--proj-gap);
+    align-items: center;
+    width: 100%;
+    text-align: left;
+  }
+
+  .proj-colhead {
+    padding-bottom: 12px;
+    border-bottom: 0.5px solid theme("colors.muted");
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #6b6455;
+  }
+
+  .proj-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* The row owns its own hairline so the hover rule can reach it, and so the
+     rule sits BELOW the opened panel rather than between header and detail. */
+  .proj-row {
+    border-bottom: 0.5px solid theme("colors.muted");
+    transition: border-bottom-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .proj-h3 {
+    margin: 0;
+    font: inherit;
+  }
+
+  .proj-head {
+    min-height: 68px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: none;
+    color: inherit;
+  }
+  .proj-head:focus-visible {
+    outline: 1px solid theme("colors.accent");
+    outline-offset: 2px;
+  }
+
+  .proj-no {
+    grid-column: 1 / 2;
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    color: #6b6455;
+    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .proj-name {
+    grid-column: 2 / 6;
+    font-family: var(--font-bricolage), sans-serif;
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    color: theme("colors.ink");
+    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  /* One line, never wrapped. If a stack ever outgrows its column it clips from
+     the tail rather than wrapping the row — the full list is in the panel. */
+  .proj-stack {
+    grid-column: 6 / 11;
+    margin: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 400;
+    color: #6b6455;
+  }
+  .proj-year {
+    grid-column: 11 / 13;
+    justify-self: end;
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    color: #6b6455;
+  }
+  /* The column header reuses the row's column classes, so it must not inherit
+     their type — only their placement. */
+  .proj-colhead .proj-name,
+  .proj-colhead .proj-year,
+  .proj-colhead .proj-no,
+  .proj-colhead .proj-stack {
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    color: #6b6455;
+  }
+
+  /* Hover: the name darkens and the row's own rule goes to ink. Nothing else —
+     no fill, no lift, no shadow, no chevron, no indent, no scale. */
+  @media (hover: hover) and (pointer: fine) {
+    .proj-row:has(.proj-head:hover) {
+      border-bottom-color: theme("colors.ink");
+    }
+    .proj-head:hover .proj-name {
+      color: #0a0908;
+    }
+  }
+  .proj-row:has(.proj-head:focus-visible) {
+    border-bottom-color: theme("colors.ink");
+  }
+  /* Open: the NO. goes to ink. Nothing in the header line moves. */
+  .proj-row[data-open] .proj-no {
+    color: theme("colors.ink");
+  }
+
+  /* The wrapper is what the unfold animates. overflow:hidden means the panel's
+     visible bottom edge IS the wrapper's edge, so the marker's drawn tip and
+     the gap's edge cannot drift apart. */
+  .proj-panel-wrap {
+    overflow: hidden;
+  }
+
+  .proj-panel {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--proj-gap);
+    align-items: center;
+    padding-bottom: 28px;
+  }
+  /* The gap's height belongs to the figure. An entry without one takes its
+     content's height instead of holding open an empty 360px well. */
+  .proj-panel:has(.proj-figure) {
+    min-height: 360px;
+  }
+
+  /* The vertical marker, in the NO. column's gutter: pinned to the right edge
+     of column 1 and pushed out by half the gap. */
+  .proj-marker {
+    grid-column: 1 / 2;
+    /* Spans every row of the panel: below 900px the figure wraps to a second
+       row, and the marker must still run the panel's full height. */
+    grid-row: 1 / -1;
+    justify-self: end;
+    align-self: stretch;
+    width: 1px;
+    height: 100%;
+    margin-right: calc(var(--proj-gap) / -2);
+    overflow: visible;
+  }
+
+  .proj-detail {
+    grid-column: 2 / 11;
+    align-self: start;
+    padding-top: 4px;
+  }
+  /* With a figure the text takes cols 2–6; without one it spans 2–10, which
+     reads as a deliberate full-width entry rather than a panel with a hole. */
+  .proj-detail[data-has-figure] {
+    grid-column: 2 / 7;
+  }
+
+  .proj-claim {
+    max-width: 400px;
+    margin: 0;
+    font-family: var(--font-bricolage), sans-serif;
+    font-size: 21px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: theme("colors.body");
+  }
+  .proj-fullstack {
+    margin: 24px 0 0;
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.7;
+    color: #6b6455;
+  }
+  .proj-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    margin: 24px 0 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--font-bricolage), sans-serif;
+    font-size: 15px;
+  }
+  .proj-credit {
+    margin: 16px 0 0;
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #6b6455;
+  }
+
+  .proj-figure {
+    grid-column: 7 / 13;
+    justify-self: end;
+    align-self: center;
+    margin: 0;
+    width: 100%;
+    max-width: 400px;
+  }
+  .proj-fig-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .proj-fig-caption {
+    margin-top: 10px;
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #6b6455;
+  }
+
+  /* 900–1200px: the STACK column leaves the closed row entirely; the detail
+     panel keeps its two-part split and the figure scales back. */
+  @media (max-width: 1199.98px) {
+    .proj-stack {
+      display: none;
+    }
+    .proj-name {
+      grid-column: 2 / 11;
+    }
+    .proj-panel:has(.proj-figure) {
+      min-height: 320px;
+    }
+    .proj-figure {
+      max-width: 312px; /* ~78% */
+    }
+  }
+
+  /* Below 900px: the figure moves BELOW the text at full content width and the
+     gap becomes auto-measured. The marker stays, running the panel's height.
+     The column gap tightens too — twelve 24px gutters consume more than a third
+     of the content width at these sizes. */
+  @media (max-width: 899.98px) {
+    .proj-register {
+      --proj-gap: 16px;
+    }
+    .proj-head {
+      min-height: 60px;
+    }
+    .proj-panel,
+    .proj-panel:has(.proj-figure) {
+      min-height: 0;
+      align-items: start;
+    }
+    .proj-detail,
+    .proj-detail[data-has-figure] {
+      grid-column: 2 / 13;
+    }
+    .proj-figure {
+      grid-column: 2 / 13;
+      justify-self: start;
+      /* Natural ratio, not a forced height: a fixed 220px box inside a
+         600px-wide column letterboxes the drawing and shrinks it to a third of
+         the space it was given. */
+      max-width: 460px;
+      margin-top: 28px;
+    }
+  }
+
+  /* Below 640px: a twelve-column grid has nothing left to divide, so NO. takes
+     a fixed column and everything else takes the rest. The name drops to 20px
+     and the YEAR leaves its column to sit beneath the name as a mono-micro
+     line — so the header stops labelling a column that no longer exists. */
+  @media (max-width: 639.98px) {
+    .proj-register {
+      --proj-gap: 16px;
+    }
+    .proj-colhead,
+    .proj-head,
+    .proj-panel {
+      grid-template-columns: 32px minmax(0, 1fr);
+    }
+    .proj-head {
+      row-gap: 4px;
+      padding: 14px 0;
+    }
+    .proj-no {
+      grid-column: 1 / 2;
+    }
+    .proj-name {
+      grid-column: 2 / 3;
+      font-size: 20px;
+    }
+    .proj-year {
+      grid-column: 2 / 3;
+      justify-self: start;
+      font-size: 11px;
+      letter-spacing: 0.16em;
+    }
+    .proj-colhead .proj-year {
+      display: none;
+    }
+    .proj-detail,
+    .proj-detail[data-has-figure],
+    .proj-figure {
+      grid-column: 2 / 3;
+    }
+    .proj-marker {
+      grid-column: 1 / 2;
+    }
+  }
+
   /* 05 skills — a compact stepped plate (see docs/motion-spec.md § 05). Four
      categories are staged along a shallow staircase: one continuous 0.5px ink
      spine descending left→right in four short runs, each category hanging below

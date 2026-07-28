@@ -3,6 +3,7 @@ import Connect from "./components/connect";
 import Education from "./components/education";
 import Hero from "./components/hero";
 import Nav from "./components/nav";
+import Projects from "./components/projects";
 import Section from "./components/section";
 import Skills from "./components/skills";
 import { CONTENT_SECTIONS } from "./lib/sections";
@@ -17,6 +18,8 @@ export default function Home() {
           <About key={id} number={number} id={id} label={label} />
         ) : id === "education" ? (
           <Education key={id} number={number} id={id} label={label} />
+        ) : id === "projects" ? (
+          <Projects key={id} number={number} id={id} label={label} />
         ) : id === "skills" ? (
           <Skills key={id} number={number} id={id} label={label} />
         ) : id === "connect" ? (
