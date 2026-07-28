@@ -24,6 +24,12 @@ const ROLL_EASE = "cubic-bezier(0.16, 1, 0.3, 1)"; // long tail — dragged, set
 const MAX_CONCURRENT = 3;
 const MIN_GAP = 250; // ms between two starts
 const HEADROOM = 0.08; // clip slack over the font's ascent+descent
+// Horizontal slack over a character's laid-out advance. The cell must hold the
+// glyph's INK, and at this display size the ink routinely overruns the advance:
+// the h1's -0.03em tracking and pair kerning shrink the laid-out advance while
+// the ink itself is unchanged, so e.g. the k in "Jake" lays out at 56px but its
+// ink reaches 61.17px. See the box solve in measure().
+const H_HEADROOM = 0.08;
 const H_MIN_RATIO = 0.55; // advance must be ≥55% of clip height to roll horizontally
 const VERTICAL_WEIGHT = 0.6; // 60% vertical (down/up), 40% horizontal (left/right)
 
@@ -91,6 +97,16 @@ export default function HeroName() {
 
     let done = false;
     function measure() {
+      // Arm before measuring, not after. Every metric below is read in the state
+      // the roll will actually run in: `.char` is an inline-block and
+      // `.char__clip` is an absolutely-positioned child of it. Measured
+      // unarmed, `.char` is not a containing block, so the clip offset came out
+      // as a viewport-relative distance (86px, 121px, …) instead of the couple
+      // of pixels of centring compensation it should be. React's own render
+      // sets the same class immediately afterwards, so this only brings the
+      // switch forward — it never fights the render.
+      headingRef.current?.classList.add("is-armed");
+
       const first = chars[0];
       const cs = window.getComputedStyle(first);
       const fontPx = parseFloat(cs.fontSize);
@@ -135,26 +151,64 @@ export default function HeroName() {
           advance = r.getBoundingClientRect().width || advance;
         }
         advance = Math.round(advance); // whole pixels — see clipH note above
-        // Min-travel guard: a horizontal roll travels one advance width; if
-        // that is short relative to the glyph it reads as a twitch, so narrow
-        // characters are vertical-only. The rule is about travel vs the visible
-        // glyph height, so it is measured against cap height — measuring against
-        // the full clip height (which includes descender + headroom, ~168px)
-        // would exclude every letter here (widest advance ~67px) and remove the
-        // horizontal axis entirely, against the spec's intent that the wide
-        // letters qualify. Against cap height the split lands as expected: the
-        // narrow J and r stay vertical-only, the rest roll on both axes.
-        const horizontal = advance >= H_MIN_RATIO * cap;
 
+        // ---- horizontal cell box ----
+        // The cell used to BE the laid-out advance, which is what sliced the
+        // glyph mid-roll: the advance is narrowed by the h1's -0.03em tracking
+        // and by pair kerning, but the ink is not. Measured at 129.6px, the ink
+        // overran the cell's right edge by 5.17px (k in "Jake"), 2.64px (P),
+        // 2.35px (r), 1.25px (k in "Park") and 0.85px (e). At rest that is
+        // invisible because the unclipped .char__face is what shows; the slice
+        // only appears while the clip is up, i.e. for the whole roll — which is
+        // exactly the reported symptom.
+        //
+        // Solve the box from the ink instead. With the glyph centred in a cell
+        // of width W, its origin sits at (W - advance) / 2, so the ink spans
+        // [(W-a)/2 + inkStart, (W-a)/2 + inkEnd] and must stay inside [0, W]:
+        //     W >= 2*inkEnd - a       (right edge)
+        //     W >= a - 2*inkStart     (left edge)
+        // taken together with the +8% headroom floor. Rounded up, then nudged so
+        // (W - advance) is even — that keeps the centring offset a whole pixel,
+        // which the roll needs to stay compositor-only and shiver-free.
+        let boxW = Math.ceil(advance * (1 + H_HEADROOM));
+        if (ctx) {
+          const im = ctx.measureText(el.dataset.char ?? "");
+          // actualBoundingBoxLeft is positive to the LEFT of the origin, so a
+          // glyph with a positive left side bearing reports it negative.
+          const inkStart = -im.actualBoundingBoxLeft;
+          const inkEnd = im.actualBoundingBoxRight;
+          if (Number.isFinite(inkStart) && Number.isFinite(inkEnd)) {
+            boxW = Math.max(
+              boxW,
+              Math.ceil(2 * inkEnd - advance),
+              Math.ceil(advance - 2 * inkStart)
+            );
+          }
+        }
+        if ((boxW - advance) % 2 !== 0) boxW += 1;
+        // Min-travel guard: a horizontal roll travels one cell width; if that is
+        // short relative to the glyph it reads as a twitch, so narrow characters
+        // are vertical-only. The rule is about travel vs the visible glyph
+        // height, so it is measured against cap height — measuring against the
+        // full clip height (which includes descender + headroom, ~168px) would
+        // exclude every letter here (widest cell ~73px) and remove the horizontal
+        // axis entirely, against the spec's intent that the wide letters qualify.
+        // Against cap height the split lands as expected: the narrow J and r stay
+        // vertical-only, the rest roll on both axes.
+        const horizontal = boxW >= H_MIN_RATIO * cap;
+
+        // Clip box, grid cell and travel distance are now one number per axis:
+        // boxW horizontally, clipH vertically. The travel in transforms() reads
+        // these same two values off the dataset, so the three cannot drift apart.
         const clip = el.querySelector<HTMLElement>(".char__clip");
         if (clip) {
           clip.style.top = `${-pad}px`;
-          clip.style.width = `${advance}px`;
+          clip.style.width = `${boxW}px`;
           clip.style.height = `${clipH}px`;
         }
         const inner = el.querySelector<HTMLElement>(".char__inner");
         if (inner) {
-          inner.style.gridTemplateColumns = `${advance}px ${advance}px`;
+          inner.style.gridTemplateColumns = `${boxW}px ${boxW}px`;
           inner.style.gridTemplateRows = `${clipH}px ${clipH}px`;
           inner.style.transform = "translate3d(0, 0px, 0)";
         }
@@ -162,11 +216,34 @@ export default function HeroName() {
           c.style.height = `${clipH}px`;
           c.style.lineHeight = `${clipH}px`;
         }
-        el.dataset.w = String(advance);
+
+        // Widening the cell moved the glyph right by the centring offset, so the
+        // clip is pulled back by the same amount and the rolling copy lands
+        // exactly where the resting face sits. Measured rather than derived:
+        // letter-spacing applies inside the cell too, so the centring offset is
+        // not simply (boxW - advance) / 2.
+        if (clip && face) {
+          const cell = el.querySelector<HTMLElement>(".char__cell");
+          const cellNode = cell?.firstChild;
+          if (cell && cellNode && node) {
+            const prevVis = clip.style.visibility;
+            clip.style.visibility = "visible";
+            clip.style.left = "0px";
+            const fr = document.createRange();
+            fr.selectNodeContents(node);
+            const cr = document.createRange();
+            cr.selectNodeContents(cellNode);
+            const dx = fr.getBoundingClientRect().left - cr.getBoundingClientRect().left;
+            clip.style.left = `${Math.round(dx)}px`;
+            clip.style.visibility = prevVis;
+          }
+        }
+
+        el.dataset.w = String(boxW);
         el.dataset.h = String(clipH);
         el.dataset.hq = horizontal ? "1" : "0";
         report.push(
-          `${el.dataset.char}: adv=${advance.toFixed(1)} clipH=${clipH.toFixed(1)} h-roll=${horizontal}`
+          `${el.dataset.char}: adv=${advance} cell=${boxW}x${clipH} h-roll=${horizontal}`
         );
       }
       if (typeof window !== "undefined" && (window as unknown as { __rollDebug?: boolean }).__rollDebug) {

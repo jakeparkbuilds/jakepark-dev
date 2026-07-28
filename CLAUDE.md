@@ -220,10 +220,23 @@ dimension so the outgoing copy exits as an identical copy arrives.
   twitch.
 - **All box dimensions and travel distances must be integer pixels.** Fractional
   values from the variable font cause the glyph to shiver against its own mask.
-- Measure only after `document.fonts.ready`. Re-measure on resize, debounced.
+- Measure only after `document.fonts.ready`, and **with the roll's own armed
+  markup already in place** — measuring while the characters are still plain
+  inline text reads a different layout than the one the roll runs in, and the
+  clip is not even positioned yet. Re-measure on resize, debounced.
 - `overflow: hidden` on an `inline-block` with explicit width and height. Clip
   height from font ascent + descent + 8% headroom, not from a letter's ink.
   Nothing may ever render outside a character's own box.
+- Clip **width**, unlike height, must come from the glyph's **ink**, not its
+  advance. At display size the h1's -0.03em tracking and pair kerning shrink the
+  laid-out advance while the ink stays put, so a box sized to the advance slices
+  the glyph for the whole roll — measured at 129.6px, the k in "Jake" lost 3.9%
+  of its ink, P 1.6%, r 1.5%. Size the cell so the centred glyph's ink clears
+  both edges (`W ≥ 2·inkEnd − advance` and `W ≥ advance − 2·inkStart`, over a
+  +8% floor), keep `W − advance` even so the centring offset stays a whole
+  pixel, and pull the clip back by that offset so the resting line does not
+  move. The clip box, the grid cell and the travel distance are then one number
+  per axis — assert it.
 - `<h1>` carries `aria-label="Jake Park"`; the glyph copies are `aria-hidden`.
 - Compositor-only. If Layout or Paint appears in a profile during a roll, it is
   broken.
