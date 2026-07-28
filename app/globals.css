@@ -686,6 +686,11 @@
      the gap's edge cannot drift apart. */
   .proj-panel-wrap {
     overflow: hidden;
+    /* The unfold animates this element's height, which is a layout property.
+       Containment stops that from re-laying-out and repainting the panel's
+       contents (the figures are ~50-100 hairline paths) on every frame — the
+       panel's own size never changes, only the window onto it. */
+    contain: layout paint;
   }
 
   .proj-panel {
