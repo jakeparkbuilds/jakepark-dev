@@ -22,7 +22,12 @@ export default function Connect({ id }: { id: string }) {
       // otherwise inherit is zeroed out and it centers on the full
       // viewport. Below 1280px (nav labels sit closer in) every other
       // section's gutter is kept.
-      className="section-pad flex w-full flex-col items-center pt-[clamp(100px,12vh,160px)] pb-[clamp(72px,10vh,140px)] min-[1280px]:[--nav-gutter:0px]"
+      // The section must fit ONE viewport at 1440x900 with nothing scrolled —
+      // it measured 966.5px against 900 once the bands went in. Every vertical
+      // gap below is reduced in proportion rather than any element being cut:
+      // pad 108/90 -> 72/63, the footer rule's lead-in 64 -> 40, the coordinate
+      // line's 40 -> 24.
+      className="section-pad flex w-full flex-col items-center pt-[clamp(64px,8vh,120px)] pb-[clamp(56px,7vh,110px)] min-[1280px]:[--nav-gutter:0px]"
     >
       <div className="flex w-full max-w-[720px] flex-col items-center gap-14 text-center">
         <div className="flex flex-col items-center gap-6">
@@ -87,15 +92,15 @@ export default function Connect({ id }: { id: string }) {
       {/* Set piece 6. Sits in the lower third, between the social row and the
           footer rule, and runs edge to edge. */}
       <div className="mt-[clamp(56px,8vh,96px)] w-full">
-        <TypeBands sectionId={id} />
+        <TypeBands />
       </div>
 
       <div
         aria-hidden="true"
-        className="mt-16 w-full max-w-[720px] border-t-[0.5px] border-muted"
+        className="mt-10 w-full max-w-[720px] border-t-[0.5px] border-muted"
       />
 
-      <p className="mt-10 text-center font-mono text-mono-micro uppercase text-label">
+      <p className="mt-6 text-center font-mono text-mono-micro uppercase text-label">
         washington, d.c. · 38.9076°n 77.0723°w
       </p>
     </section>

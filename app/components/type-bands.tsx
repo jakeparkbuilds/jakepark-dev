@@ -1,20 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getSmoothScroll, registerSection } from "../lib/scroll-controller";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 
 // § 07 — the counter-scrolling type bands. Set piece 6.
 //
-// Two full-bleed rows of outlined display type running against each other,
-// driven by scroll position and by nothing else. THIS IS THE WHOLE ARGUMENT: a
-// band that moves while the page is still is the marquee the spec bans, and one
-// that moves only because the reader moved is a scroll instrument. Never add an
-// idle animation here, however slow.
+// Two full-bleed rows of outlined display type drifting against each other on a
+// continuous loop: band 1 left to right, band 2 right to left, both at 28px/s.
+// Slow and steady — a drifting band, not a ticker.
 //
-// Set in the display face at hairline stroke with no fill, so the type reads as
-// drawn rather than printed — the same plotter vocabulary as the map and the
-// project figures, at the largest scale on the site.
+// This is the site's ONLY autoplaying motion and a deliberate exception to the
+// marquee ban (§ 7). The exemption rests on what the bands are — content, set
+// as hairline drawing — not on what moves them. Nothing else on the site may
+// acquire an idle animation on the strength of this precedent.
+//
+// One rAF for both bands, gated on § 07's intersection and on document.hidden,
+// cancelled the moment either goes false. This is the third and last sanctioned
+// persistent loop.
 
 const BANDS = [
   "software development · machine learning · data science · ",
@@ -24,9 +26,13 @@ const BANDS = [
 /** Copies of each string in the DOM. Three is what makes the wrap seamless: one
     on screen, one entering, one leaving. */
 const COPIES = 3;
-const SHIFT = 400; // the reference's constant offset
+/** px per second, both bands, opposite directions. */
+const SPEED = 28;
 
-export default function TypeBands({ sectionId }: { sectionId: string }) {
+// The gate observes the BANDS, not § 07: the bands sit in the section's lower
+// third, so § 07 can be intersecting with the bands still well below the fold.
+// Observing the thing that actually moves is the tighter of the two.
+export default function TypeBands() {
   const reduced = useReducedMotion();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -46,10 +52,13 @@ export default function TypeBands({ sectionId }: { sectionId: string }) {
     if (reduced) return;
     const root = rootRef.current;
     if (!root) return;
-    const section = document.getElementById(sectionId);
-    if (!section) return;
 
-    let unsubscribe: (() => void) | null = null;
+    let rafId: number | null = null;
+    let last = 0;
+    // Travel accumulates in seconds-of-motion, not in frames, so the drift is
+    // the same speed on a 60Hz and a 120Hz display and does not jump forward
+    // after the loop has been parked.
+    let travel = 0;
     // One repetition's measured width, per band. Measured, never assumed: the
     // wrap modulo has to be the real laid-out width of one copy or the loop
     // shows a seam every cycle.
@@ -59,12 +68,7 @@ export default function TypeBands({ sectionId }: { sectionId: string }) {
       reps = repRefs.current.map((r) => (r ? r.getBoundingClientRect().width : 0));
     };
 
-    const frame = (_p: number, rect: DOMRect) => {
-      const scroll = getSmoothScroll();
-      const sectionTop = rect.top + scroll;
-      const mult = window.innerWidth < 1200 ? 0.18 : 0.22;
-      const offset = (scroll - sectionTop + window.innerHeight) * mult;
-
+    const paint = () => {
       for (let i = 0; i < rowRefs.current.length; i++) {
         const row = rowRefs.current[i];
         const rep = reps[i];
@@ -73,23 +77,33 @@ export default function TypeBands({ sectionId }: { sectionId: string }) {
         // so all three copies stay in play at either end of the travel. Without
         // the modulo the transform grows without bound and the band eventually
         // runs off its own content.
-        const t = (((offset - SHIFT) % rep) + rep) % rep;
+        const t = ((travel % rep) + rep) % rep;
         const x = i === 0 ? t - rep : -t;
         row.style.transform = `translate3d(${x}px, 0, 0)`;
       }
     };
 
-    // The loop is gated on the section: § 07 is the last thing on the page, so
-    // for most of a visit it is nowhere near the viewport and the subscription
-    // should not exist at all.
+    const frame = (now: number) => {
+      // Clamp the first frame after a pause: a tab restored after a minute
+      // hands back an enormous delta, which would teleport the bands.
+      const dt = Math.min((now - last) / 1000, 1 / 20);
+      last = now;
+      travel += SPEED * dt;
+      paint();
+      rafId = requestAnimationFrame(frame);
+    };
+
+    // § 07 is the last thing on the page, so for most of a visit it is nowhere
+    // near the viewport and this loop should not exist at all.
     const attach = () => {
-      if (unsubscribe) return;
+      if (rafId !== null) return;
       measure();
-      unsubscribe = registerSection(section, frame);
+      last = performance.now();
+      rafId = requestAnimationFrame(frame);
     };
     const detach = () => {
-      unsubscribe?.();
-      unsubscribe = null;
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = null;
     };
 
     let onScreen = false;
@@ -110,7 +124,10 @@ export default function TypeBands({ sectionId }: { sectionId: string }) {
     let rt: number | undefined;
     const onResize = () => {
       window.clearTimeout(rt);
-      rt = window.setTimeout(measure, 200);
+      rt = window.setTimeout(() => {
+        measure();
+        paint();
+      }, 200);
     };
     window.addEventListener("resize", onResize);
 
@@ -121,7 +138,7 @@ export default function TypeBands({ sectionId }: { sectionId: string }) {
       window.clearTimeout(rt);
       detach();
     };
-  }, [reduced, sectionId, single]);
+  }, [reduced, single]);
 
   const bands = single ? BANDS.slice(0, 1) : BANDS;
 

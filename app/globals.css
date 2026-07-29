@@ -1099,7 +1099,7 @@
     margin-right: calc(-1 * (theme("spacing.section") + var(--nav-gutter)));
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     overflow: hidden;
     /* Below the ghost map, above the grain. */
     z-index: 0;
@@ -1111,27 +1111,47 @@
     will-change: transform;
     font-family: var(--font-bricolage), sans-serif;
     font-weight: 500;
-    font-size: clamp(64px, 9vw, 132px);
+    font-size: clamp(38px, 4.4vw, 64px);
     line-height: 1.06;
     letter-spacing: -0.02em;
     text-transform: lowercase;
     white-space: pre;
-    color: transparent;
     -webkit-text-stroke: 0.75px theme("colors.ink");
     paint-order: stroke fill;
     user-select: none;
+
+    /* ENGRAVED, NOT HOLLOW. The letterform is filled with a hairline hatch
+       clipped to the glyphs, and the hatch is anchored to the VIEWPORT rather
+       than to the text: `background-attachment: fixed` resolves the background
+       against the viewport, so as a band travels its letters move across a
+       stationary hatch field instead of dragging it along. That stationary
+       field is the whole effect — a glyph carrying its own fill just reads as a
+       texture swatch.
+
+       Straight ink hairlines only. The pattern is an inline SVG data URI, which
+       keeps it a drawing rather than an image and costs no request. */
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    background-attachment: fixed;
+    background-repeat: repeat;
+  }
+  /* 45 degrees, 0.5px ink at 6px spacing, 0.30 alpha. The tile is drawn with
+     both diagonals crossing its corners so the hatch is continuous across the
+     repeat rather than breaking at every tile edge. */
+  .type-band:nth-child(1) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Cpath d='M-1.5 1.5 1.5 -1.5M0 6 6 0M4.5 7.5 7.5 4.5' stroke='%231A1815' stroke-opacity='0.3' stroke-width='0.5'/%3E%3C/svg%3E");
+  }
+  /* Vertical, 0.5px ink at 5px spacing, 0.22 alpha. */
+  .type-band:nth-child(2) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='5' height='5'%3E%3Cpath d='M0.25 0 0.25 5' stroke='%231A1815' stroke-opacity='0.22' stroke-width='0.5'/%3E%3C/svg%3E");
   }
   .type-band-rep {
     display: block;
   }
-  @media (max-width: 1199.98px) {
-    .type-band {
-      font-size: clamp(52px, 9vw, 132px);
-    }
-  }
   @media (max-width: 899.98px) {
     .type-band {
-      font-size: 40px;
+      font-size: 30px;
     }
   }
   /* Static at offset 0 and fully legible: the content exists, only the movement
