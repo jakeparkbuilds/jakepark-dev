@@ -160,7 +160,7 @@ Rules:
 |---|---|---|
 | 01 | hero (no number shown — it's the cover) | done |
 | 02 | about + portrait | done, copy rewrite pending |
-| 03 | experience | done — the inverted plate; motion pass outstanding |
+| 03 | experience | done — the inverted plate, entries arrive on scroll |
 | 04 | projects | done |
 | 05 | skills | done |
 | 06 | education | done |
@@ -177,6 +177,75 @@ disabled link — that asymmetry is honest.
 
 **§05 skills is the quality bar.** Match its level of composition when building
 §03.
+
+### §03 experience — the arrival
+Each of the five entries animates in as it is scrolled to, once: translateX 28
+→ 0 with opacity 0 → 1 over 620ms on `reveal`, staggered 60ms across tile → org
+(the date stamp rides with it) → role title → description. It never reverses and
+never replays.
+
+- **Five independent triggers, never one section-level stagger.** A visitor
+  landing mid-section would otherwise watch entries animate that they had
+  already scrolled past. Measured: arriving at the top of § 03 animates 01–03
+  while 04 and 05 sit untouched below the fold.
+- **The hidden start state is applied by `[data-motion="armed"]`**, set by the
+  client in a layout effect. Entries are hidden ONLY when something is
+  guaranteed to reveal them — with no JS, failed JS, or reduced motion the
+  section renders exactly as it always did. Never make the hidden state the CSS
+  default.
+- An observer reports a **change**, not a state. A reload that restores a scroll
+  position below § 03 delivers the one initial callback with the entry already
+  past, which strands it at opacity 0 — so that case lands instantly, with no
+  animation. Jumping past the section cannot be covered (above → below is
+  false → false, no callback) and needs no cover: those entries are off screen
+  and animate normally on the way back up.
+- **The spine is not part of this.** Its segments belong to the margin trace and
+  keep their own scroll-driven draw; nothing here touches `[data-role]`.
+
+### The nav — the persistent name
+`Jake Park` sits 28px above `ME` in the fixed gutter, hidden while the hero is on
+screen (the hero already says it, at display scale) and fading in over 300ms once
+the hero's bottom crosses the top of the viewport. Opacity only; it never moves.
+Clicking returns to the top.
+
+- It is a **name, not a nav label**: Bricolage 16/500 in sentence case, never
+  uppercased and never mono. Everything around it is mono and uppercase, which
+  is exactly why it reads as a signature rather than a seventh section.
+- Right-aligned to the nav labels' **text** edge, which is also what keeps it
+  clear of the active dash: every nav item is `dash + gap + label` with the dash
+  hanging to the LEFT, so aligning to the flex container's right edge separates
+  them by construction rather than by a number.
+- The 28px is set as a **16px margin** — the nav column has a 12px flex gap that
+  applies here too, and setting 28 directly measures 40.
+- Inverts to paper over § 03 with the rest of the nav. `aria-hidden` and
+  `tabIndex -1` while invisible, so it is never a focus stop that lands on
+  nothing. Not rendered below 900px.
+
+### §07 — pizza rain
+70 hand-drawn slices fall across the viewport when the visitor reaches the bottom
+of the page, once per session, then the layer unmounts. A button appears
+afterwards to replay it. It is a joke and it is meant to read as one.
+
+- **Drawn as inline SVG, never an emoji.** An emoji is a different picture on
+  every platform and sits at the wrong weight beside this type — which is the
+  reason emoji are banned at all. The exception in § 8 is for a drawing that
+  happens to be a joke, not for the joke.
+- One rAF for all 70, writing transform and opacity and reading nothing,
+  cancelled when the last slice lands. Portalled to `<body>` so no transformed
+  ancestor can break `position: fixed` — the same rule the ink canvas follows —
+  at z-index 400: above every section, below the cursor's 9999.
+- **The replay lockout's reference must start at `-Infinity`, never 0.**
+  `performance.now()` is milliseconds since page load, so a 0 means "a rain just
+  happened at load" and swallows every trigger in the first four seconds — which
+  is exactly when a visitor deep-linked to the bottom would hit it. This cost a
+  debugging pass: the trigger fired correctly at progress 1 and the burst
+  returned immediately.
+- The trigger wears the site's own affordance vocabulary — hollow square, gap,
+  mono label — **because** what it does is off-theme. The joke is better for
+  being announced in the same voice as everything else. It is 7px; § 06's photo
+  reference is 12px, so they match in treatment, not in size.
+- Reduced motion never rains: the button is present from load and scatters ~20
+  slices statically for 1.2s. The joke survives, the motion does not.
 
 ### §02 about / §07 connect — the character reveal
 Each character of a paragraph carries its own threshold along that paragraph's
