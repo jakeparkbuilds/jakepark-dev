@@ -78,12 +78,23 @@ export default function Connect({ id }: { id: string }) {
           {"I'm always up for talking about ML systems, civic tech, or where to find a decent slice in D.C."}
         </RevealText>
 
-        <nav aria-label="social links">
-          <ul className="flex flex-wrap items-center justify-center gap-3 font-mono text-small uppercase tracking-[0.2em] text-body">
+        {/* The row never wraps mid-list. It was `flex-wrap` over `display:
+            contents` items, which let the browser break between any link and
+            its own separator and leave a middot alone on a line.
+
+            Now: nowrap while the three fit, and a centered vertical stack
+            below that — with the middots REMOVED, not merely hidden, because a
+            separator between stacked lines separates nothing. The switch is a
+            container query on the row itself rather than a viewport
+            breakpoint, so it happens at the width where the three actually
+            stop fitting instead of at a number that has to be re-guessed
+            whenever the type changes. */}
+        <nav aria-label="social links" className="social-row">
+          <ul className="flex items-center justify-center gap-3 font-mono text-small uppercase tracking-[0.2em] text-body">
             {SOCIAL_LINKS.map((link, i) => (
               <li key={link.label} className="contents">
                 {i > 0 && (
-                  <span aria-hidden="true" className="text-muted">
+                  <span aria-hidden="true" className="social-sep text-muted">
                     ·
                   </span>
                 )}

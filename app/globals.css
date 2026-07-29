@@ -1163,6 +1163,38 @@
     }
   }
 
+  /* § 07 social row. `contents` on the <li> is what puts the links and the
+     separators in the same flex formatting context, and it is also what let a
+     wrap orphan a middot. The row is nowrap, and below the width where the
+     three fit it becomes a centered column with the separators removed from
+     the flow entirely. */
+  .social-row {
+    container-type: inline-size;
+    width: 100%;
+  }
+  .social-row ul {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+  /* 352px: the three links plus their separators lay out at a measured 345px,
+     plus a little slack. Below this they cannot share a line, so they stack.
+     The first value tried was 310px, which was under the real content width —
+     the row then overflowed its container by 3px at 390 and by 18px at 360,
+     pushing a horizontal scrollbar onto the document. Tie the threshold to the
+     measured content, never to a guess. */
+  @container (max-width: 352px) {
+    .social-row ul {
+      flex-direction: column;
+      gap: 12px;
+      white-space: normal;
+    }
+    .social-row .social-sep {
+      display: none;
+    }
+  }
+  /* The container query needs a container; where it is unsupported the row
+     still never orphans a separator, because nowrap keeps the three together. */
+
   .about-plate {
     position: relative;
     display: block;
