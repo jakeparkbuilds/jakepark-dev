@@ -254,10 +254,11 @@ the top.
 of the page, once per session, then the layer unmounts. A button appears
 afterwards to replay it. It is a joke and it is meant to read as one.
 
-- **Drawn as inline SVG, never an emoji.** An emoji is a different picture on
-  every platform and sits at the wrong weight beside this type — which is the
-  reason emoji are banned at all. The exception in § 8 is for a drawing that
-  happens to be a joke, not for the joke.
+- **One supplied illustration, `public/pizza.png`, never an emoji.** An emoji is
+  a different picture on every platform and sits at the wrong weight beside this
+  type — which is the reason emoji are banned at all. The exception in § 8 is for
+  one illustration that happens to be a joke, not for the joke. All 70 slices
+  reference the same file, so the browser decodes it once.
 - One rAF for all 70, writing transform and opacity and reading nothing,
   cancelled when the last slice lands. Portalled to `<body>` so no transformed
   ancestor can break `position: fixed` — the same rule the ink canvas follows —
@@ -999,15 +1000,20 @@ Never produce these, even if asked indirectly:
 - Animated stat counters
 - Emoji, 3D icons, icon fonts, logo packs. Links are text.
 
-**One exception exists: the § 07 pizza rain easter egg** renders a hand-authored
-SVG pizza slice at full colour. It is a deliberate joke, it is user-triggered
-after its first run, and its colours are quarantined to that one element. No
-other illustration or off-palette colour exists anywhere on the site.
+**One exception exists: the § 07 pizza rain easter egg** renders a full-colour
+pizza slice — `public/pizza.png`, a supplied illustration. It is a deliberate
+joke, it is user-triggered after its first run, and its colours are quarantined
+to that one element. No other illustration or off-palette colour exists anywhere
+on the site.
 
-It is **drawn, not an emoji** — an emoji renders as a different picture on every
-platform and at the wrong weight beside this type, which is the whole reason
-emoji are banned in the first place. The exception is for a drawing that happens
-to be a joke, not for the joke.
+It is a **supplied asset, never an emoji.** The emoji ban stands and is the
+reason this is a file at all: an emoji renders as a different picture on every
+platform and at the wrong weight beside this type. The exception is for one
+illustration that happens to be a joke, not for the joke — nothing else may
+introduce an image on this precedent.
+
+This replaced a hand-authored inline SVG slice. The SVG is not coming back; if
+the asset ever needs changing, change the file.
 - Centered hero with headline + subhead + two side-by-side CTA buttons
 - Card grids with hover-lift + shadow
 - Inter / Poppins / Montserrat / Space Grotesk as display
@@ -1106,8 +1112,10 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
   every section on the page and this pass was scoped to § 02 and § 07. Do not
   claim this budget line is met until that gate exists.
 - anime.js imported modularly, never the whole bundle
-- Raster images are limited to three — the about-section portrait and one photo
-  per education row. Everything else is SVG or type.
+- Raster images are limited to **four** — the about-section portrait, one photo
+  per education row, and `pizza.png` for § 07's easter egg. Everything else is
+  SVG or type. The fourth is 31KB, is requested once and on demand by the rain,
+  and is not part of any section's load.
 
 ---
 
