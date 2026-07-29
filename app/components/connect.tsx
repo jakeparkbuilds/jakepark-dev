@@ -1,4 +1,5 @@
 import Magnet from "./magnet";
+import PizzaRain from "./pizza-rain";
 import RevealText from "./reveal-text";
 import TypeBands from "./type-bands";
 
@@ -125,9 +126,19 @@ export default function Connect({ id }: { id: string }) {
         className="mt-12 w-full max-w-[720px] border-t-[0.5px] border-muted"
       />
 
-      <p className="mt-7 text-center font-mono text-mono-micro uppercase text-label">
-        washington, d.c. · 38.9076°n 77.0723°w
-      </p>
+      {/* Three tracks so the coordinate line stays centred on the section while
+          the pizza trigger sits at the left content edge on the same baseline —
+          rather than the trigger being absolutely positioned and having to be
+          kept in agreement with the line by hand. */}
+      <div className="mt-7 flex w-full items-baseline gap-4">
+        <div className="flex flex-1 justify-start">
+          <PizzaRain />
+        </div>
+        <p className="text-center font-mono text-mono-micro uppercase text-label">
+          washington, d.c. · 38.9076°n 77.0723°w
+        </p>
+        <div aria-hidden="true" className="flex-1" />
+      </div>
     </section>
   );
 }

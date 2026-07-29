@@ -1238,6 +1238,76 @@
   /* The container query needs a container; where it is unsupported the row
      still never orphans a separator, because nowrap keeps the three together. */
 
+  /* § 07 pizza rain. Portalled to <body>, so no transformed ancestor can turn
+     `fixed` into something else — the same rule the ink canvas follows. Above
+     every section, below the cursor dot's 9999. */
+  .pizza-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .pizza-slice {
+    position: absolute;
+    display: block;
+    will-change: transform, opacity;
+  }
+  /* The reduced-motion scatter: present, then gone. No fall, no spin. */
+  .pizza-layer[data-static] {
+    transition: opacity 300ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  .pizza-layer[data-static][data-out] {
+    opacity: 0;
+  }
+
+  /* The trigger wears the site's own affordance vocabulary — a hollow square,
+     a gap and a mono label — precisely because what it does is off-theme. The
+     joke is funnier for being announced in the same voice as everything else.
+
+     NOTE: the education photo reference is 12px at 1px stroke since its own
+     pass. This is the 7px the brief specifies, so the two match in TREATMENT
+     (hollow square, fills solid on hover, label to ink) but not in size. */
+  .pizza-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    line-height: 1;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #6b6455;
+    opacity: 0;
+    animation: pizza-btn-in 400ms cubic-bezier(0.33, 1, 0.68, 1) forwards;
+    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .pizza-btn-sq {
+    width: 7px;
+    height: 7px;
+    border: 0.5px solid theme("colors.ink");
+    background: transparent;
+    transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .pizza-btn:hover,
+  .pizza-btn:focus-visible {
+    color: theme("colors.ink");
+  }
+  .pizza-btn:hover .pizza-btn-sq,
+  .pizza-btn:focus-visible .pizza-btn-sq {
+    background-color: theme("colors.ink");
+  }
+  @keyframes pizza-btn-in {
+    to {
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pizza-btn {
+      animation: none;
+      opacity: 1;
+    }
+  }
+
   .about-plate {
     position: relative;
     display: block;
