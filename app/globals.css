@@ -1363,6 +1363,59 @@
     white-space: nowrap;
   }
 
+  /* ── § 07 footer — one row, three parts, one baseline ─────────────────────
+     The outer tracks are flex: 1 1 0, so they take EQUAL width whatever they
+     contain and the middle track is centred on the section rather than on
+     what is left over. The source order is socials, coordinates, trigger —
+     which is the stacking order below 1024 — and `order` arranges them
+     left/centre/right above it, so neither arrangement needs its own markup. */
+  .connect-footer {
+    display: flex;
+    width: 100%;
+    margin-top: 28px;
+    align-items: baseline;
+    gap: 16px;
+  }
+  .cf-left {
+    order: -1;
+    display: flex;
+    flex: 1 1 0;
+    justify-content: flex-start;
+  }
+  .cf-mid {
+    order: 0;
+    flex: 0 0 auto;
+  }
+  .cf-right {
+    order: 1;
+    flex: 1 1 0;
+    text-align: right;
+  }
+  @media (max-width: 1023.98px) {
+    .connect-footer {
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .cf-left,
+    .cf-mid,
+    .cf-right {
+      order: 0;
+      flex: none;
+      justify-content: center;
+      text-align: center;
+    }
+    /* Removed, not hidden between stacked lines — and with them gone the three
+       names fit a 390px screen on one line, which is why the row can stay
+       nowrap all the way down. */
+    .social-row .social-sep {
+      display: none;
+    }
+    .social-row ul {
+      gap: 20px;
+    }
+  }
+
   /* § 07 pizza rain. Portalled to <body>, so no transformed ancestor can turn
      `fixed` into something else — the same rule the ink canvas follows. Above
      every section, below the cursor dot's 9999. */

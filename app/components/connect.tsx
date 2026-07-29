@@ -76,24 +76,19 @@ export default function Connect({ id }: { id: string }) {
 
       <div aria-hidden="true" className="connect-rule" />
 
-      {/* Three tracks so the coordinate line stays centred on the section while
-          the pizza trigger sits at the left content edge on the same baseline —
-          rather than the trigger being absolutely positioned and having to be
-          kept in agreement with the line by hand. */}
-      <div className="mt-7 flex w-full items-baseline gap-4">
-        <div className="flex flex-1 justify-start">
-          <PizzaRain />
-        </div>
-        <p className="text-center font-mono text-mono-micro uppercase text-label">
-          washington, d.c. · 38.9076°n 77.0723°w
-        </p>
-        <div aria-hidden="true" className="flex-1" />
-      </div>
+      {/* One row, three parts, one baseline: the pizza trigger at the left
+          content edge, the socials centred, the coordinates at the right edge.
+          The outer tracks are flex-1 with a zero basis, so they take equal
+          width and the middle track is centred on the section rather than on
+          whatever is left over.
 
-      {/* Out of the centre. Item 5 folds this into the footer row proper; for
-          now it sits on its own centred line beneath it. */}
-      <nav aria-label="social links" className="social-row mt-4">
-        <ul className="flex items-center justify-center gap-3 font-mono text-mono-micro uppercase tracking-[0.16em] text-label">
+          Below 1024 it stacks — socials, coordinates, then the trigger — and
+          the middots go with the row: a separator between stacked lines
+          separates nothing, and once they are gone the three names fit a 390px
+          screen on one line with room to spare. */}
+      <div className="connect-footer">
+        <nav aria-label="social links" className="social-row cf-mid">
+          <ul className="flex items-center justify-center gap-3 font-mono text-mono-micro uppercase tracking-[0.16em] text-label">
             {SOCIAL_LINKS.map((link, i) => (
               <li key={link.label} className="contents">
                 {i > 0 && (
@@ -101,9 +96,9 @@ export default function Connect({ id }: { id: string }) {
                     ·
                   </span>
                 )}
-                {/* The middot between them is outside the Magnet and never
-                    moves — the separator is structure, and structure holding
-                    still is what makes the words read as moving. */}
+                {/* The middot is outside the Magnet and never moves — the
+                    separator is structure, and structure holding still is what
+                    makes the words read as moving. */}
                 <Magnet divisor={5}>
                   <a
                     href={link.href}
@@ -114,10 +109,19 @@ export default function Connect({ id }: { id: string }) {
                     {link.label}
                   </a>
                 </Magnet>
-            </li>
-          ))}
-        </ul>
-      </nav>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <p className="cf-right font-mono text-mono-micro uppercase text-label">
+          washington, d.c. · 38.9076°n 77.0723°w
+        </p>
+
+        <div className="cf-left">
+          <PizzaRain />
+        </div>
+      </div>
     </section>
   );
 }
