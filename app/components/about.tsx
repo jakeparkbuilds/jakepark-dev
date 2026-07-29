@@ -1,4 +1,5 @@
 import Image from "next/image";
+import RevealText from "./reveal-text";
 import SectionShell from "./section-shell";
 
 const BACKGROUND_ENTRIES = [
@@ -90,9 +91,12 @@ export default function About({
                 <p className="w-[130px] shrink-0 whitespace-nowrap font-mono text-mono-micro uppercase text-label">
                   {entry.marker}
                 </p>
-                <p className="max-w-[560px] flex-1 font-display text-body text-body">
+                {/* Each of the four runs its OWN progress window — they are
+                    separate elements with separate rects, so the fourth is not
+                    already inked by the time it arrives. */}
+                <RevealText className="max-w-[560px] flex-1 font-display text-body text-body">
                   {entry.text}
-                </p>
+                </RevealText>
               </div>
             ))}
           </div>

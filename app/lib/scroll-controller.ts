@@ -18,7 +18,12 @@
 import Lenis from "lenis";
 
 type GlobalSubscriber = (progress: number) => void;
-type SectionSubscriber = (progress: number) => void;
+// The rect is handed to the subscriber rather than re-read by it. The loop
+// already reads it to compute `progress`, and a subscriber that wanted a
+// different window (§ 02's per-character reveal, § 07's bands) would otherwise
+// call getBoundingClientRect again — a second forced layout per element per
+// frame, for a rectangle the loop is holding already.
+type SectionSubscriber = (progress: number, rect: DOMRect) => void;
 
 interface SectionEntry {
   el: Element;
@@ -52,7 +57,7 @@ function tick(time: number) {
       const rect = el.getBoundingClientRect();
       const span = viewportHeight + rect.height;
       const progress = span > 0 ? clamp((viewportHeight - rect.top) / span, 0, 1) : 0;
-      onProgress(progress);
+      onProgress(progress, rect);
     });
   }
 
@@ -100,6 +105,19 @@ export function registerSection(el: Element, onProgress: SectionSubscriber): () 
     sections.delete(key);
     stopIfIdle();
   };
+}
+
+/**
+ * The SMOOTHED scroll offset — Lenis's animated value, not window.scrollY.
+ *
+ * Anything positioned against the scroll must read this, or it moves on the raw
+ * offset while the page moves on the eased one and the two visibly disagree
+ * during a wheel gesture. Falls back to the real offset wherever Lenis is not
+ * running, which is exactly the cases where the two are the same number: touch,
+ * and reduced motion.
+ */
+export function getSmoothScroll(): number {
+  return lenis ? lenis.scroll : window.scrollY;
 }
 
 export function scrollToElement(el: Element) {
