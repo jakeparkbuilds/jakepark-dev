@@ -1073,6 +1073,76 @@
      without closing into a rectangle. Deliberately NOT interactive — the
      education plates extend their corners on hover because they are triggers;
      this one is not, and must not imply it is. */
+  /* § 07 — the counter-scrolling type bands.
+
+     Full-bleed: the bands break the plate frame and run edge to edge, so they
+     are pulled out of the centered column with a viewport-width block rather
+     than by negative margins on the section (which would move the section's
+     own padding).
+
+     The type is OUTLINED, not filled — hairline letterforms at display scale,
+     which is what lets the largest type on the site sit under the copy without
+     shouting over it. -webkit-text-stroke is the only way to stroke live text;
+     paint-order keeps the stroke from being painted over by the (transparent)
+     fill on the variable font. */
+  /* Full bleed by cancelling the section's OWN insets, not by the usual
+     `left: 50%; width: 100vw; margin-left: -50vw`. That trick assumes the
+     parent is centred in the viewport, and this one is not: § 07 carries the
+     180px nav gutter as padding-right below 1280px, which puts the content box
+     centre 90px left of the viewport centre. Measured — the bands started at
+     -90px and left 90px of the right edge bare at 1200, 1024 and 900. Undoing
+     the exact padding is true at every width and needs no assumption about
+     where the parent sits. */
+  .type-bands {
+    position: relative;
+    margin-left: calc(-1 * theme("spacing.section"));
+    margin-right: calc(-1 * (theme("spacing.section") + var(--nav-gutter)));
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+    /* Below the ghost map, above the grain. */
+    z-index: 0;
+  }
+  .type-band {
+    display: flex;
+    flex-wrap: nowrap;
+    width: max-content;
+    will-change: transform;
+    font-family: var(--font-bricolage), sans-serif;
+    font-weight: 500;
+    font-size: clamp(64px, 9vw, 132px);
+    line-height: 1.06;
+    letter-spacing: -0.02em;
+    text-transform: lowercase;
+    white-space: pre;
+    color: transparent;
+    -webkit-text-stroke: 0.75px theme("colors.ink");
+    paint-order: stroke fill;
+    user-select: none;
+  }
+  .type-band-rep {
+    display: block;
+  }
+  @media (max-width: 1199.98px) {
+    .type-band {
+      font-size: clamp(52px, 9vw, 132px);
+    }
+  }
+  @media (max-width: 899.98px) {
+    .type-band {
+      font-size: 40px;
+    }
+  }
+  /* Static at offset 0 and fully legible: the content exists, only the movement
+     is removed. No rAF, no scroll linkage — the component never subscribes. */
+  @media (prefers-reduced-motion: reduce) {
+    .type-band {
+      transform: none !important;
+      will-change: auto;
+    }
+  }
+
   .about-plate {
     position: relative;
     display: block;
