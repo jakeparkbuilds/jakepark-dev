@@ -43,12 +43,71 @@ const OPEN_EVENT = "edu-plate-open";
 // Above this width the plate can sit clear of all type, so hover may open it.
 const HOVER_OPENS = "(hover: hover) and (pointer: fine) and (min-width: 1360px)";
 
+// The stage. Hovering a print does not just open a plate — the row clears
+// around it: whichever coursework column is open closes, coursework hover-open
+// is suppressed so a pointer crossing the column cannot reopen it, and the
+// hairline dividing the two rows retracts from its right edge so it does not
+// run through the plate's space.
+//
+// It is scoped to >=1100px — exactly the widths where the coursework is
+// hover-clipped and therefore has something to yield. It is driven by the
+// plate's open state, not by the hover path, so the click-opened band at
+// 1100-1360px stages too and the no-overlap rule holds there as well.
+const STAGE_IN_MS = 180; // intent delay, so a pointer crossing the print does nothing
+const STAGE_OUT_MS = 260; // grace, so the trigger -> plate journey is one region
+const REARM_MS = 200; // extra beat before coursework may hover-open again
+
+let stageCount = 0;
+
+function setDividerScale() {
+  // The divider must stop at least 48px clear of the plate's left crop mark.
+  // Measured from the real DOM once per stage entry — never per frame — and
+  // applied as a scale, so the retraction animates on transform and never on
+  // width.
+  const rows = document.querySelectorAll<HTMLElement>(".edu-row");
+  const plate = document.querySelector<HTMLElement>(".edu-plate[data-open] .edu-plate-img");
+  if (rows.length < 2 || !plate) return;
+  const rule = rows[1].getBoundingClientRect();
+  const img = plate.getBoundingClientRect();
+  const markLeft = img.left - 8; // the crop mark's vertex sits 8px outside
+  const target = markLeft - 48 - rule.left;
+  const scale = Math.max(0, Math.min(1, target / rule.width));
+  document.documentElement.style.setProperty("--edu-divider-scale", String(scale));
+}
+
+function enterStage() {
+  stageCount++;
+  document.documentElement.classList.add("edu-staged");
+  document.documentElement.classList.remove("edu-rearming");
+  // After the plate has been marked open and laid out.
+  requestAnimationFrame(setDividerScale);
+}
+
+function leaveStage() {
+  stageCount = Math.max(0, stageCount - 1);
+  if (stageCount > 0) return;
+  const el = document.documentElement;
+  el.classList.remove("edu-staged");
+  // Hold coursework hover-open shut for a further beat, so a pointer sweeping
+  // off the plate does not instantly trigger the column underneath it.
+  el.classList.add("edu-rearming");
+  window.setTimeout(() => {
+    if (stageCount === 0) el.classList.remove("edu-rearming");
+  }, REARM_MS);
+}
+
 export default function EduPhoto({ photo }: { photo: EduPhoto }) {
   const [open, setOpen] = useState(false);
   const id = useId();
   const plateId = `edu-plate-${id}`;
   const self = useRef(id);
   const hoverRef = useRef(false);
+  // The print and the plate are ONE hover region: a counter rather than a
+  // boolean, so moving the pointer from one to the other never dips to zero.
+  const inRegion = useRef(0);
+  const inTimer = useRef<number | null>(null);
+  const outTimer = useRef<number | null>(null);
+  const staged = useRef(false);
 
   useEffect(() => {
     const mq = window.matchMedia(HOVER_OPENS);
@@ -62,6 +121,59 @@ export default function EduPhoto({ photo }: { photo: EduPhoto }) {
     document.dispatchEvent(new CustomEvent(OPEN_EVENT, { detail: self.current }));
     setOpen(true);
   }, []);
+
+  const clearTimers = useCallback(() => {
+    if (inTimer.current) window.clearTimeout(inTimer.current);
+    if (outTimer.current) window.clearTimeout(outTimer.current);
+    inTimer.current = null;
+    outTimer.current = null;
+  }, []);
+
+  const stageOn = useCallback(() => {
+    if (staged.current) return;
+    staged.current = true;
+    enterStage();
+  }, []);
+
+  const stageOff = useCallback(() => {
+    if (!staged.current) return;
+    staged.current = false;
+    leaveStage();
+  }, []);
+
+  const regionEnter = useCallback(() => {
+    if (!hoverRef.current) return;
+    inRegion.current++;
+    clearTimers();
+    // The intent delay lives here: a pointer merely crossing the print never
+    // reaches show(), so the row never clears for a passer-by.
+    inTimer.current = window.setTimeout(show, STAGE_IN_MS);
+  }, [show, clearTimers]);
+
+  const regionLeave = useCallback(() => {
+    if (!hoverRef.current) return;
+    inRegion.current = Math.max(0, inRegion.current - 1);
+    clearTimers();
+    // The grace period: the print -> plate journey briefly leaves both, and
+    // this is what keeps that one region.
+    outTimer.current = window.setTimeout(() => {
+      if (inRegion.current > 0) return;
+      setOpen(false);
+    }, STAGE_OUT_MS);
+  }, [clearTimers]);
+
+  // The stage follows the plate, whichever way it was opened — hover, focus or
+  // click — so the 1100-1360px click band clears its row too.
+  useEffect(() => {
+    if (open) stageOn();
+    else stageOff();
+  }, [open, stageOn, stageOff]);
+
+  // Never leave the page staged behind an unmount or a blur.
+  useEffect(() => () => {
+    clearTimers();
+    stageOff();
+  }, [clearTimers, stageOff]);
 
   useEffect(() => {
     if (!open) return;
@@ -93,8 +205,8 @@ export default function EduPhoto({ photo }: { photo: EduPhoto }) {
         aria-expanded={open}
         aria-controls={plateId}
         aria-label={`View photograph: ${photo.alt}`}
-        onPointerEnter={() => hoverRef.current && show()}
-        onPointerLeave={() => hoverRef.current && setOpen(false)}
+        onPointerEnter={regionEnter}
+        onPointerLeave={regionLeave}
         onFocus={show}
         onBlur={() => setOpen(false)}
         onClick={(e) => {
@@ -121,6 +233,8 @@ export default function EduPhoto({ photo }: { photo: EduPhoto }) {
         data-open={open ? "" : undefined}
         className="edu-plate"
         aria-hidden={open ? undefined : "true"}
+        onPointerEnter={regionEnter}
+        onPointerLeave={regionLeave}
       >
         <span className="edu-plate-box">
           <Image

@@ -156,7 +156,26 @@
     row-gap: 24px;
     align-items: start;
     align-content: start;
-    border-top: 0.5px solid theme("colors.muted");
+    position: relative;
+  }
+
+  /* The row's top hairline is a pseudo-element, not a border, because the
+     divider between the two rows RETRACTS while a photo is staged and a border
+     cannot be transformed. Right-origin scaleX so it shortens from its right
+     edge; the retraction never animates width. */
+  .edu-row::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 0.5px;
+    background: theme("colors.muted");
+    transform-origin: right center;
+    transform: scaleX(1);
+    transition:
+      transform 320ms cubic-bezier(0.33, 1, 0.68, 1),
+      background-color 180ms;
   }
 
   .edu-logo {
@@ -250,9 +269,9 @@
       grid-template-rows: repeat(var(--entry-count, 1), 1fr);
     }
 
-    .edu-row:hover,
-    .edu-row:focus-visible {
-      border-top-color: theme("colors.ink");
+    .edu-row:hover::before,
+    .edu-row:focus-visible::before {
+      background: theme("colors.ink");
     }
 
     /* Drawn, not faded: uncovers left-to-right, matching the site's
@@ -292,6 +311,111 @@
   @media (prefers-reduced-motion: reduce) {
     .edu-course {
       clip-path: inset(0 0 0 0) !important;
+      transition: none !important;
+    }
+  }
+
+  /* ── the stage (see enterStage/leaveStage in edu-photo.tsx) ────────────────
+     While a photo is staged the row clears around it. Scoped to >=1100px —
+     exactly the widths where the coursework is hover-clipped and so has
+     something to yield. That includes the 1100-1360px band where the plate is
+     click-opened rather than hovered, which is what makes the no-overlap rule
+     hold down to 1200px. Below 1100px the coursework is permanently visible
+     and there is no stage. */
+  @media (min-width: 1100px) {
+    /* (a) coursework yields, and stays shut. The !important is doing real work:
+       it has to beat the .edu-row:hover open rule so that sweeping the pointer
+       across a column cannot reopen it while a plate is up. `edu-rearming`
+       holds that suppression for a further beat after the stage ends, so a
+       pointer leaving the plate does not land on an instantly-opening column. */
+    html.edu-staged .edu-course,
+    html.edu-rearming .edu-course {
+      clip-path: inset(0 100% 0 0) !important;
+    }
+    /* (d) it recedes rather than unmounting. */
+    html.edu-staged .edu-course {
+      opacity: 0.15;
+      transition:
+        clip-path 420ms cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 240ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .edu-course {
+      opacity: 1;
+      transition:
+        clip-path 420ms cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 240ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* (b) the row hairlines retract from their right edge.
+       --edu-divider-scale is measured once per stage entry in edu-photo.tsx so
+       they stop >=48px clear of the plate's left crop mark; every row's rule
+       shares the one value because they all span the same x range. The brief
+       asks only for the divider BETWEEN the rows, but a plate tall enough to
+       be worth looking at is taller than a row — at 1440 it is 400px against a
+       317px row — so it crosses the row above's rule too. Retracting them
+       together is the same gesture, not a second one. */
+    html.edu-staged .edu-row::before {
+      transform: scaleX(var(--edu-divider-scale, 1));
+    }
+
+    /* The section's own heading hairline is a SectionShell border, shared by
+       every section, so it gets a pseudo-element of its own here rather than
+       being converted globally. It retracts on the same measured scale — a
+       staged plate must not cross the section's outer rule either. */
+    #education > .border-t-\[0\.5px\] {
+      position: relative;
+      border-top-color: transparent;
+    }
+    #education > .border-t-\[0\.5px\]::before {
+      content: "";
+      position: absolute;
+      top: -0.5px;
+      left: 0;
+      width: 100%;
+      height: 0.5px;
+      background: theme("colors.ink");
+      transform-origin: right center;
+      transform: scaleX(1);
+      transition: transform 320ms cubic-bezier(0.33, 1, 0.68, 1);
+    }
+    html.edu-staged #education > .border-t-\[0\.5px\]::before {
+      transform: scaleX(var(--edu-divider-scale, 1));
+    }
+  }
+
+  /* 1100-1360px: the plate is a centred, click-opened lightbox, and at those
+     widths the coursework has reflowed to a full-width row beneath the body —
+     so there is nowhere beside the body to put a photograph worth looking at
+     (measured: 144px of clear space at 1200px). The plate therefore crosses the
+     body block, and the body recedes with the coursework rather than sitting
+     legible underneath it. Nothing readable is left behind the photo. */
+  @media (min-width: 1100px) and (max-width: 1359.98px) {
+    html.edu-staged .edu-body {
+      opacity: 0.15;
+      transition: opacity 240ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .edu-body {
+      transition: opacity 240ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  }
+
+  /* (c) the plate elevates above all row content, and becomes part of the hover
+     region so travelling from the print onto the photo does not drop the
+     stage. It is only interactive while open. */
+  .edu-plate[data-open] {
+    z-index: 60;
+    pointer-events: auto;
+  }
+
+  /* Reduced motion: the stage still happens — no information is lost — but
+     every transition in it is instant. */
+  @media (prefers-reduced-motion: reduce) {
+    .edu-row::before,
+    #education > .border-t-\[0\.5px\]::before,
+    html.edu-staged .edu-course,
+    html.edu-staged .edu-body,
+    .edu-body,
+    .edu-course {
       transition: none !important;
     }
   }
