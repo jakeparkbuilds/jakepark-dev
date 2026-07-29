@@ -12,11 +12,13 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 // as a photograph at all. So the photo is shown at two sizes instead of one bad
 // one.
 //
-//   the contact print — the image at 28px, inline, 14px past the school name's
-//     last character. It is the affordance: you can see it is a photograph and
-//     that there is more of it. It lives inside a zero-growth inline anchor
-//     (absolutely positioned, anchor height 0) so it adds NOTHING to the line
-//     box and the row's height is byte-identical with and without it.
+//   the reference mark — a 7px hollow ink square, a 0.5px muted leader across a
+//     10px gap, and the word PHOTO in mono-micro, 14px past the school name's
+//     last character. It lives inside a zero-growth inline anchor (absolutely
+//     positioned, anchor height 0) so it adds NOTHING to the line box and the
+//     row's height is byte-identical with and without it. This was a 28px crop
+//     of the photograph itself; at that size a photograph has no subject, only
+//     noise, and it read as a failed image load rather than as an affordance.
 //
 //   the plate — the full photograph. There is exactly ONE of these for the
 //     whole section, rendered by Education inside the grid wrapper rather than
@@ -203,14 +205,15 @@ export default function EduPhotoTrigger({
           if (!canHover) (open ? closeNow() : openNow(index));
         }}
       >
-        <Image
-          src={photo.src}
-          alt=""
-          width={photo.width}
-          height={photo.height}
-          sizes="28px"
-          className="edu-plate-thumb"
-        />
+        {/* A drawn reference, not a crop of the photograph. A 28px thumbnail
+            carries no subject at that size — it reads as a broken image, which
+            is the opposite of an affordance. The square, the leader and the
+            word are the plate's own vocabulary. */}
+        <span aria-hidden="true" className="edu-plate-ref-square" />
+        <span aria-hidden="true" className="edu-plate-ref-leader" />
+        <span aria-hidden="true" className="edu-plate-ref-label font-mono">
+          photo
+        </span>
       </button>
     </span>
   );

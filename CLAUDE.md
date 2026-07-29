@@ -205,7 +205,37 @@ Clicking a row unfolds it in place.
 
 ### Hero
 Two-column. Left: mono label `CS + MATH @ GEORGETOWN`, "Jake" / "Park" at display
-scale, blurb, four text links with 10px inline brand glyphs. Right: the DC map.
+scale, blurb, four text links with 10px inline brand glyphs, then the discipline
+line. Right: the DC map.
+
+**The discipline line** — `WORKING IN` (mono-label, #6B6455) beside a rolling
+slot carrying `machine learning` → `data science` → `software development`,
+Bricolage 21px/400 ink. It sits at the BASE of the text column, 32px under the
+links (the column's own gap, not a margin anyone has to maintain). It is a
+signature, not a header: the hero's top is already busy.
+
+- **The slot is a fixed-width clip box and must never resize.** Its width is
+  written once, after `document.fonts.ready`, from the widest of the three
+  phrases rounded UP to a whole pixel. A slot sized to its current phrase
+  relayouts the line on every roll and makes the whole hero twitch. This is the
+  single load-bearing detail of the whole component.
+- Mechanism is the name roll's, not a second implementation of it: two cells
+  stacked in the clip, the stack translating by exactly one box height so the
+  outgoing phrase leaves the bottom edge as the incoming one arrives at the top.
+  `ROLL_MS` and `ROLL_EASE` live in `app/lib/roll.ts` and both callers import
+  them, so the two can never drift apart.
+- The resting transform is the **CSS default**, not something JS applies — so
+  the SSR HTML already shows the first phrase and the reduced-motion path needs
+  no script at all.
+- Hold 2800ms, roll 1500ms, forever while the hero is on screen. setTimeout
+  chaining and one WAAPI animation per roll; never a rAF loop. Paused with all
+  timers cleared on viewport exit and on `document.hidden`.
+- **The name roll and the discipline roll may never fire within 400ms of each
+  other.** They are separately scheduled and would otherwise regularly collide,
+  which reads as two unrelated animations rather than one voice. Both go through
+  `app/lib/roll-scheduler.ts`, which defers the colliding event rather than
+  dropping it, so neither cadence loses its shape.
+- A visually-hidden span carries all three phrases; the slot is `aria-hidden`.
 
 The map is real GeoJSON from DC Open Data, converted at build time by a script in
 `scripts/` that projects, simplifies, and emits hardcoded SVG path strings to a
@@ -257,6 +287,16 @@ than decoration, and it is the basis of the § 8 particle exemption — remove a
 node and information is lost. Never soften an evidence line to make it fit;
 change the layout or ask.
 
+- **Drift speed lives in two numbers and the clamps own the rest.** Sine periods
+  are 9–17s and the depth cycle 13–21s (halved from 18–34s / 24–40s); requested
+  amplitude is 28–58px (from 20–45px). Requested is not realized: the
+  relaxation cuts an individual node's travel wherever the extra range would
+  put it into a label or a keep-out zone, so mean realized amplitude rose only
+  22.7/19.7px from 19.1/18.0px. **Almost all of the perceived speed comes from
+  the period, not the amplitude** — the field is space-limited, not
+  parameter-limited, and asking for more travel mostly gets clamped away. Two
+  nodes are clamped to zero travel and always have been. Never raise the speed
+  by touching the hover or select transitions; those are not ambient drift.
 - All content and the whole arrangement live in `app/lib/skills.ts` behind a
   **fixed integer seed** (mulberry32) at module scope. `drift(seed, 0)` is
   rendered inline by the server, so the SSR HTML *is* frame 0 — hydration
@@ -330,7 +370,7 @@ Coursework column: two-column grid, column-first flow, one course per cell, no
 separators of any kind. Items must never wrap; reduce mono size at a breakpoint
 rather than allowing a wrap or truncating.
 
-Photo per row — **the contact print and the plate.** Two sizes, not one.
+Photo per row — **the reference mark and the plate.**
 
 **There is no room in the row for a mounted photograph, and this is measured,
 not opinion.** At 1440px the body column is a locked 620px, the coursework
@@ -340,13 +380,16 @@ those numbers is ~119px wide, which is too small to read as a photograph at all.
 Any attempt to mount a usefully-sized photo in the row grows the row. Do not
 re-derive this — it has been measured twice.
 
-- **the contact print** — the image itself at 28px, inline, 14px past the school
-  name's last character, optically aligned to its cap height. It is the
-  affordance: you can see it is a photograph and that there is more of it. Two
-  micro crop marks (top-left, bottom-right only, 5px arms, 3px outside) tie it
-  to the plate's language — without them a 28px photo beside a heading reads as
-  a sticker. On hover/focus they step 2px further out along their diagonals and
-  go to ink. That is the entire interaction on the print.
+- **the reference mark** — a 7px hollow ink square, a 0.5px muted leader across
+  a 10px gap, and `PHOTO` in mono-micro #6B6455, sitting 14px past the school
+  name's last character and optically aligned to its cap band. On hover/focus
+  the square fills solid ink and the label goes to #1A1815 over 150ms `micro`.
+  That is the entire interaction on the mark.
+  **This was a 28px crop of the photograph itself and that was wrong.** At 28px
+  a photograph has no subject, only noise, and noise beside a heading reads as a
+  failed image load — the exact opposite of an affordance. Do not put the image
+  back. The square, the leader and the word are the plate's own vocabulary, and
+  type says "there is a plate here" where an unreadable thumbnail cannot.
 - **the anchor's height must be `0`, never `1em`.** An inline-block whose content
   is all out of flow takes its baseline from its bottom margin edge, so at `1em`
   it is a 40px box sitting entirely above the text baseline — taller than the

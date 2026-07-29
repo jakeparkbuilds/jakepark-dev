@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ROLL_EASE, ROLL_MS, rollStack } from "../lib/roll";
+import { didRoll, resetSchedule, waitFor } from "../lib/roll-scheduler";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 
 // § 01 hero — the display name roll. At rest "Jake Park" is static and legible.
@@ -19,8 +21,8 @@ const WORDS = ["Jake", "Park"] as const;
 // last sliver. The extreme asymmetry IS the effect — a "smoother" curve reads
 // as a flip again. No overshoot, bounce, spring, or secondary settle: it drags
 // and it stops.
-const ROLL_MS = 1500;
-const ROLL_EASE = "cubic-bezier(0.12, 0.9, 0.08, 1)";
+// ROLL_MS / ROLL_EASE now live in lib/roll.ts — the hero's discipline slot
+// rolls on the same mechanism and must not drift from this one.
 
 // Cadence: clustered, not metronomic. A uniform random interval reads as a
 // metronome with jitter, so the gap after every event is drawn from one of
@@ -414,11 +416,12 @@ export default function HeroName() {
       running.set(el, rec);
       rec.raf = requestAnimationFrame(() => {
         if (running.get(el) !== rec) return; // paused before it started
-        const anim = inner.animate(
-          [{ transform: start }, { transform: end }],
-          { duration: ROLL_MS, easing: ROLL_EASE, fill: "none" }
-        );
-        rec.anim = anim;
+        // Recorded HERE, not at tick time. The .animate() call is deferred one
+        // frame for layer promotion, so a timestamp taken in tick() is ~16ms
+        // early and the discipline slot's 400ms hold-off measured 392ms
+        // against the roll it was supposed to clear. The scheduler must record
+        // the quantity the rule is about: when the roll actually starts.
+        didRoll("name");
         const clear = () => {
           if (running.get(el) !== rec) return; // superseded by pause()
           running.delete(el);
@@ -433,12 +436,26 @@ export default function HeroName() {
             inner.style.willChange = "";
           });
         };
-        anim.onfinish = clear;
-        anim.oncancel = clear;
+        rec.anim = rollStack(inner, start, end, clear);
       });
     }
 
     function tick() {
+      // The discipline slot rolls on the same mechanism a few lines below the
+      // name, and the two must never land inside the same 400ms window or the
+      // hero reads as two unrelated animations. The shared scheduler answers
+      // how long to hold off; a collision defers this event rather than
+      // dropping it, so the cadence keeps its shape.
+      const wait = waitFor("name");
+      if (wait > 0) {
+        const held = window.setTimeout(() => {
+          timers.delete(held);
+          tick();
+        }, wait);
+        timers.add(held);
+        return;
+      }
+
       // Fire on the direction chosen for this event, then roll the gap that
       // separates it from the next one. A CLUSTER gap keeps the direction, so
       // consecutive cluster events share one axis and one sign; a NORMAL or
@@ -477,6 +494,7 @@ export default function HeroName() {
       }
       running.clear();
       for (const el of rolling) restore(el); // synchronous reset, nothing left mid-roll
+      resetSchedule();
     }
 
     let onScreen = false;

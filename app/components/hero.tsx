@@ -1,3 +1,4 @@
+import HeroDiscipline from "./hero-discipline";
 import HeroFigure from "./hero-figure";
 import HeroIntro from "./hero-intro";
 import HeroName from "./hero-name";
@@ -130,6 +131,11 @@ export default function Hero() {
               })}
             </ul>
           </nav>
+
+          {/* The signature line, at the base of the column. The column's own
+              32px gap provides the separation, so this is not a margin anyone
+              has to keep in agreement with the links above it. */}
+          <HeroDiscipline />
         </div>
 
         <div className="flex flex-[1.4] items-center md:justify-start min-[1200px]:flex-1">

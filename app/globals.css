@@ -420,9 +420,10 @@
      wide, which is too small to read as a photograph. So it is shown at two
      sizes rather than one bad one:
 
-       .edu-plate-ref    the contact print — 28px, inline, 14px past the school
-                         name. Absolutely positioned inside a 1em-tall anchor,
-                         so it adds NOTHING to the line box: the row's height is
+       .edu-plate-ref    the reference mark — a 7px hollow square, a 0.5px
+                         leader and the word PHOTO, 14px past the school name.
+                         Absolutely positioned inside a zero-height anchor, so
+                         it adds NOTHING to the line box: the row's height is
                          identical with and without it. Verified, not assumed.
        .edu-plate        the plate — position: fixed, up to 500×667. Reserves no
                          space, contributes 0 to CLS, cannot move the row.
@@ -436,47 +437,75 @@
      ABOVE the text baseline, which is taller than the name's own ascent and
      grew the line box. Measured: the ≥1600px rows went 260px -> 265px. At
      height: 0 the anchor contributes nothing above the baseline and the row
-     heights are byte-identical with and without the print. */
+     heights are byte-identical with and without the trigger. */
   .edu-plate-anchor {
     position: relative;
     display: inline-block;
     vertical-align: baseline;
-    width: 28px;
+    width: 64px;
     height: 0;
     margin-left: 14px;
     white-space: nowrap;
   }
 
-  /* The trigger IS the photograph. No square, no label, no leader, no elbow —
-     the image says "photograph" better than a mono caption does.
-     Optically aligned to the school name's cap height: the name is 40px/500,
-     Bricolage's cap height measures 28.4px, so the cap band's centre sits
-     14.2px above the baseline; a 37px-tall print centred there starts 32.7px
-     above the baseline. */
+  /* The reference mark. A 28px crop of the photograph used to sit here, and it
+     read as a broken image rather than as an affordance — at that size a
+     photograph carries no subject, only noise, and noise beside a heading looks
+     like a failed load. It is a drawn reference instead: a 7px hollow square,
+     a 0.5px leader across the 10px gap, and the word. That is the same
+     vocabulary as the plate's crop marks, and it says "there is a plate" with
+     type rather than with an unreadable thumbnail.
+
+     Optically aligned to the school name's cap band: the name is 40px/500,
+     Bricolage's cap height measures 28.4px, so the band's centre sits 14.2px
+     above the baseline and the 11px label's centre is put at 14.5px. */
   .edu-plate-ref {
     position: absolute;
     left: 0;
-    bottom: -4.3px;
-    display: block;
-    width: 28px;
+    bottom: 9px;
+    display: flex;
+    align-items: center;
     padding: 0;
     border: 0;
     background: none;
-    line-height: 0;
+    line-height: 11px;
+    white-space: nowrap;
     cursor: none;
   }
-  .edu-plate-thumb {
-    display: block;
-    width: 28px;
-    height: auto;
-    /* The one state change on the print itself: it is quiet until addressed. */
-    opacity: 0.72;
-    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  .edu-plate-ref-square {
+    width: 7px;
+    height: 7px;
+    flex: none;
+    border: 0.5px solid theme("colors.ink");
+    /* Hollow at rest, solid when addressed — the only thing that changes. */
+    background: transparent;
+    transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .edu-plate-ref:hover .edu-plate-thumb,
-  .edu-plate-ref:focus-visible .edu-plate-thumb,
-  .edu-plate-ref[aria-expanded="true"] .edu-plate-thumb {
-    opacity: 1;
+  /* The leader occupies the whole 10px gap, so the square and the word are one
+     object rather than two things that happen to be near each other. */
+  .edu-plate-ref-leader {
+    width: 10px;
+    height: 0.5px;
+    flex: none;
+    background: theme("colors.muted");
+  }
+  .edu-plate-ref-label {
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #6b6455;
+    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .edu-plate-ref:hover .edu-plate-ref-square,
+  .edu-plate-ref:focus-visible .edu-plate-ref-square,
+  .edu-plate-ref[aria-expanded="true"] .edu-plate-ref-square {
+    background: theme("colors.ink");
+  }
+  .edu-plate-ref:hover .edu-plate-ref-label,
+  .edu-plate-ref:focus-visible .edu-plate-ref-label,
+  .edu-plate-ref[aria-expanded="true"] .edu-plate-ref-label {
+    color: theme("colors.ink");
   }
   .edu-plate-ref:focus-visible {
     outline: 1px solid theme("colors.accent");
@@ -486,50 +515,9 @@
     outline: none;
   }
 
-  /* Two micro crop marks on the print — top-left and bottom-right only, so they
-     read as registration and never as a frame. Same language as the plate's,
-     scaled to it: 5px arms, 3px outside. Without these a 28px photograph beside
-     a heading reads as a sticker; with them it reads as a plate reference, which
-     is what it is. They overflow the 28px anchor harmlessly — the anchor is out
-     of flow, so nothing reflows around them. */
-  .edu-plate-ref::before,
-  .edu-plate-ref::after {
-    content: "";
-    position: absolute;
-    width: 5px;
-    height: 5px;
-    border-color: theme("colors.muted");
-    border-style: solid;
-    transition:
-      transform 180ms cubic-bezier(0.4, 0, 0.2, 1),
-      border-color 180ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .edu-plate-ref::before {
-    top: -3px;
-    left: -3px;
-    border-width: 0.5px 0 0 0.5px;
-  }
-  .edu-plate-ref::after {
-    bottom: -3px;
-    right: -3px;
-    border-width: 0 0.5px 0.5px 0;
-  }
-  /* The entire interaction on the print: the marks step 2px further out along
-     their own diagonals and go to ink. Nothing zooms, lifts, or rotates. */
-  .edu-plate-ref:hover::before,
-  .edu-plate-ref:focus-visible::before {
-    transform: translate(-2px, -2px);
-    border-color: theme("colors.ink");
-  }
-  .edu-plate-ref:hover::after,
-  .edu-plate-ref:focus-visible::after {
-    transform: translate(2px, 2px);
-    border-color: theme("colors.ink");
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .edu-plate-ref::before,
-    .edu-plate-ref::after {
+    .edu-plate-ref-square,
+    .edu-plate-ref-label {
       transition: none !important;
     }
   }
@@ -718,7 +706,6 @@
     .edu-plate-img,
     .edu-plate-reg,
     .edu-plate-caption,
-    .edu-plate-thumb,
     .edu-plate[data-open] .edu-plate-img,
     .edu-plate[data-open] .edu-plate-reg,
     .edu-plate[data-open] .edu-plate-caption {
@@ -758,6 +745,54 @@
      body #C4BDB0 9.49:1, mono #9B9382 5.81:1. On paper #9B9382 is decorative
      only; inverted it is legible, which is why the rule is about the pairing
      rather than the hex. */
+  /* ── § 01 hero — the discipline line ──────────────────────────────────────
+     `working in [ machine learning ]`, the phrase rolling on a fixed hold.
+     The slot is a clip box of an EXACT integer size whose width is written
+     once by JS from the widest of the three phrases; it never resizes, so the
+     line's ink changes and its geometry does not. --disc-h is the roll's exact
+     travel and must stay a whole number of pixels. */
+  .hero-discipline {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    --disc-h: 32px;
+  }
+  .hero-discipline-label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #6b6455;
+    white-space: nowrap;
+  }
+  .disc-slot {
+    display: inline-block;
+    overflow: hidden;
+    height: var(--disc-h);
+    /* Before the measure lands the slot is sized by its content, which is the
+       first phrase — the widest is written over this and it never changes
+       again. width is the ONLY property JS touches here. */
+    width: max-content;
+    vertical-align: bottom;
+  }
+  .disc-stack {
+    display: block;
+    /* The rest position: pulled up by exactly one box, so the SECOND cell is
+       the one on screen. This is the CSS default rather than something JS
+       applies, which is what makes the server-rendered HTML the resting line
+       and the reduced-motion path scriptless. */
+    transform: translate3d(0, calc(-1 * var(--disc-h)), 0);
+  }
+  .disc-cell {
+    display: block;
+    height: var(--disc-h);
+    line-height: var(--disc-h);
+    font-size: 21px;
+    font-weight: 400;
+    color: theme("colors.ink");
+    white-space: pre;
+  }
+
   .exp {
     /* Full-bleed: breaks out of every other section's measure, edge to edge.
        100vw rather than 100% because the section is a flow child of <main>. */

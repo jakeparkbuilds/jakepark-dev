@@ -177,8 +177,13 @@ function buildSeeds(): NodeSeed[] {
       const ang = (i / members.length) * Math.PI * 2 + rand() * 0.7;
       const rad = 70 + rand() * 78;
       const r = TIER_R[tool.tier];
-      const ax = 20 + rand() * 25;
-      const ay = 20 + rand() * 25;
+      // Travel, drawn HERE so the relaxation below can budget for it. Raised
+      // from 20-45px: at the old figure the field read as static rather than
+      // drifting. The clamps in passes 2c/2d will cut an individual node's
+      // travel back wherever the extra range would put it into a label or a
+      // keep-out zone, so this is a request, not a guarantee.
+      const ax = 28 + rand() * 30;
+      const ay = 28 + rand() * 30;
       pts.push({
         x: c.cx * NOMINAL_W + Math.cos(ang) * rad * 1.15,
         y: c.cy * NOMINAL_H + Math.sin(ang) * rad,
@@ -362,11 +367,15 @@ function buildSeeds(): NodeSeed[] {
         by: Math.min(1, Math.max(0, spanY > 0 ? (p.y - iy) / spanY : 0.5)),
         ax,
         ay,
-        px1: 18000 + rand() * 16000,
-        px2: 18000 + rand() * 16000,
-        py1: 18000 + rand() * 16000,
-        py2: 18000 + rand() * 16000,
-        pz: 24000 + rand() * 16000,
+        // Periods, halved from 18-34s (and the depth cycle from 24-40s): the
+        // field is a standing state, but at the old periods it read as a still
+        // image rather than a slow one. Speed here is period and amplitude
+        // only — the hover and select transitions are deliberately untouched.
+        px1: 9000 + rand() * 8000,
+        px2: 9000 + rand() * 8000,
+        py1: 9000 + rand() * 8000,
+        py2: 9000 + rand() * 8000,
+        pz: 13000 + rand() * 8000,
         ox1: rand() * Math.PI * 2,
         ox2: rand() * Math.PI * 2,
         oy1: rand() * Math.PI * 2,
