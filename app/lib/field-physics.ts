@@ -63,6 +63,11 @@ export type Body = {
   insetY: number;
   /** Constant speed, from the seed. */
   speed: number;
+  /** Where this node was seeded — the centre of its territory. */
+  hx: number;
+  hy: number;
+  /** How far from home it may wander. See LEASH below. */
+  leash: number;
 };
 
 const CLEARANCE = 6;
@@ -80,6 +85,26 @@ const CORRECTION = 0.8; // gain on the positional push
 // closing speed in the field is ~0.3px per frame.
 const MAX_PUSH = 2;
 const MIN_SPEED = 6; // px/s — two nodes seed to zero travel and must still move
+
+// ---- the leash ----
+// Free motion is not the same as unbounded motion. With collisions alone a node
+// random-walks: every deflection is permanent, so over a minute or two java can
+// end up under INTERFACES and the four axis labels stop describing anything.
+// The arrangement is composed cluster by cluster at seed time and that
+// composition is CONTENT — a node's neighbourhood is the claim the section
+// makes.
+//
+// So each node keeps its seeded position as a home and may only roam a disc
+// around it. It reflects off that disc exactly as it reflects off a zone wall,
+// which is why the motion still reads as free travel rather than as a spring:
+// nothing pulls it back to the centre, it simply cannot leave the room. The
+// radius is drawn from the node's own seeded amplitude, so the field keeps its
+// variety — a node the seed gave room to travel still travels further than one
+// wedged between two labels.
+const LEASH_GAIN = 1.7;
+const LEASH_MIN = 52; // px — a node clamped to no travel still gets a room
+const LEASH_MAX = 96; // px — beyond this a node reads as having left its region
+const LEASH_PULL = 0.7; // px/frame — see the ordering note in step()
 const MAX_DT = 1 / 30; // s. Clamps a backgrounded tab's first frame.
 
 /** Half the label's rendered width, in px. */
@@ -109,9 +134,20 @@ export function createBodies(seeds: NodeSeed[], w: number, h: number): Body[] {
     // and it is only ever the FIRST direction — collisions own the rest.
     const ang = s.ox1 + s.oy1;
 
+    // Home is the COMPOSED position — the base the seed relaxation solved for,
+    // not the t = 0 frame, which is already one drift offset away from it.
+    const hx = ix + s.bx * (w - 2 * ix);
+    const hy = iy + s.by * (h - 2 * iy);
+
     return {
-      x: ix + s.bx * (w - 2 * ix) + dx,
-      y: iy + s.by * (h - 2 * iy) + dy,
+      x: hx + dx,
+      y: hy + dy,
+      hx,
+      hy,
+      leash: Math.min(
+        LEASH_MAX,
+        Math.max(LEASH_MIN, Math.hypot(s.ax, s.ay) * LEASH_GAIN)
+      ),
       vx: Math.cos(ang) * speed,
       vy: Math.sin(ang) * speed,
       cr: s.r + CLEARANCE,
@@ -224,6 +260,39 @@ export function step(
   for (let i = 0; i < n; i++) {
     if (i === held) continue;
     const b = bodies[i];
+    // The leash, resolved as a circular wall, and resolved FIRST: reflect the
+    // RADIAL component of the velocity and leave the tangential component
+    // alone, so a node reaching the edge of its territory turns along it rather
+    // than bouncing straight back the way it came.
+    //
+    // Order is load-bearing. The leash is a soft preference and the zones and
+    // the field's edges are hard guarantees, so the hard walls must run after
+    // it and get the last word. With the leash last it dragged nodes back
+    // toward home and straight out of the field — measured 2 nodes outside the
+    // bounds on every frame of a 120s run.
+    //
+    // The positional pull is far weaker than any other push (LEASH_PULL vs
+    // MAX_PUSH) for the same reason: it acts after the collision pass, so a
+    // strong pull would shove a node back into a neighbour it was just
+    // separated from. Measured at full strength that tripled the ring overlaps.
+    // It does not need to be strong — the velocity reflection is what actually
+    // contains the node, and the pull only has to clean up the overshoot.
+    const lx = b.x - b.hx;
+    const ly = b.y - b.hy;
+    const ld = Math.hypot(lx, ly);
+    if (ld > b.leash && ld > 1e-4) {
+      const nx = lx / ld;
+      const ny = ly / ld;
+      const pull = Math.min(LEASH_PULL, ld - b.leash);
+      b.x -= nx * pull;
+      b.y -= ny * pull;
+      const vn = b.vx * nx + b.vy * ny;
+      if (vn > 0) {
+        b.vx -= 2 * vn * nx;
+        b.vy -= 2 * vn * ny;
+      }
+    }
+
     for (const z of zones) resolveRect(b, z, b.wallR);
 
     if (b.x < b.insetX) {

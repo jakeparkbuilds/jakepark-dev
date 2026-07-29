@@ -326,6 +326,32 @@ change the layout or ask.
   sets off. Only the trajectory is emergent. Equal mass: the two nodes in a
   collision swap their normal velocity components, so a primary deflects exactly
   as much as a tertiary.
+- **Every node is leashed to its seeded home, and the leash is CONTENT, not a
+  comfort setting.** Free motion is not unbounded motion: with collisions alone
+  every deflection is permanent, so the field random-walks and — measured over
+  120s — a node travels up to **833px** from where it started, which at a 764px
+  field means java ends up under INTERFACES and the four axis labels stop
+  describing anything. Each node therefore keeps its composed position as a home
+  and roams only a disc around it: radius `hypot(ax, ay) × 1.7`, floored at 52px
+  and capped at 96px, so a node the seed gave room still travels further than one
+  wedged between two labels. Max excursion is now **96px** at every width.
+- The leash is a **wall, not a spring** — nothing pulls a node toward home. It
+  reflects the radial velocity component and leaves the tangential one alone, so
+  a node reaching the edge of its territory turns along it rather than bouncing
+  back the way it came. A spring would read as elastic and the section has no
+  elastic motion anywhere.
+- **The leash resolves FIRST in the wall pass and pushes far more weakly than
+  anything else** (0.7px/frame against MAX_PUSH's 2). Both halves are load-
+  bearing and both were measured as bugs first. Resolved last, its pull dragged
+  nodes back toward home and straight out of the field — 2 nodes outside the
+  bounds on every frame of a 120s run; the zones and the field edges are hard
+  guarantees and the leash is a preference, so the hard walls must get the last
+  word. At full push strength it shoved nodes back into neighbours the collision
+  pass had just separated. The velocity reflection is what actually contains a
+  node; the push only cleans up overshoot.
+- A leash floor below 52px cannot be held: a primary in traffic gets shoved past
+  it and cannot get back, measured at 26.4px of overshoot with a 34px floor
+  against **0.00px** at 52.
 - **Ring clearance does not keep NAMES apart.** A label box is far wider than
   its ring, so the collision pass resolves two things: circles at radius + 6px,
   and label AABBs along their least-penetrated axis. Collision on rings alone
@@ -347,10 +373,12 @@ change the layout or ask.
   on the positional push eases that apart over ~0.33s instead of snapping it in
   three frames. In steady state the cap never binds; the fastest closing speed
   in the field is ~0.3px per frame.
-- Measured, 120s at 1440 after the settle: **zero ring overlaps, zero label
-  overlaps, zero keep-out incursions, zero nodes leaving the field**, max 0.35
-  direction reversals per second (no jitter), longest contact 0.57s (no
-  sticking). Under 6× CPU throttle: median frame 8.3ms, worst 15.9ms, no frame
+- Measured, 120s at 1440/1360/1024/1920 after the settle: **zero ring overlaps,
+  zero label overlaps, zero keep-out incursions, zero nodes leaving the field,
+  zero leash overshoot**, ≤1.28 direction reversals per second per node (no
+  jitter), longest contact 4.17s against HEAD-before-the-leash's 5.77s — the
+  leash raises contact time, because a confined node meets its neighbours more
+  often, but it does not introduce sticking. Under 6× CPU throttle: median frame 8.3ms, worst 15.9ms, no frame
   over 32ms.
 - Naive O(n²) over 17 nodes is 136 checks a frame. Never add a spatial index or
   a physics library.
