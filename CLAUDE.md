@@ -94,8 +94,10 @@ Rules:
 - Hairlines **0.5px**, `vector-effect="non-scaling-stroke"` on all SVG strokes.
   Exception: the DC map's outer District boundary is **0.9px** so it dominates
   the 0.5px / 0.28-opacity neighborhood lines.
-- `border-radius: 0` on everything, with exactly one exception: `.cursor-dot`
-  uses `border-radius: 50%` because it is a literal circle. No other exceptions.
+- `border-radius: 0` on everything, with exactly two exceptions: `.cursor-dot`
+  uses `border-radius: 50%` because it is a literal circle, and § 05's field
+  nodes are hairline `<circle>` elements — SVG geometry, not a rounded box. No
+  other exceptions, and in particular no rounded rectangles anywhere.
 - **No box-shadows anywhere.** Cards are defined by rules and space. Nothing on
   this site is enclosed by its own complete border.
 - Grain: SVG fractalNoise, `opacity: 0.05`, `mix-blend-mode: multiply`,
@@ -344,8 +346,12 @@ touch. **One shared rAF loop** for the whole page exposing normalized scroll
 progress globally and per-section. Components subscribe; nothing runs its own
 loop; everything unsubscribes on unmount.
 
-**Zero persistent rAF loops and zero pending timers once the page settles.**
-Verify with a 5s Performance recording after settle.
+**Zero persistent rAF loops and zero pending timers once the page settles, with
+one exception: § 05's drifting field runs a single rAF loop ONLY while the
+section is intersecting the viewport.** It starts on enter and is fully
+cancelled on exit, on `document.hidden`, and under reduced motion. Everywhere
+else the rule is absolute. Verify with a 5s Performance recording after settle,
+and a second one with § 05 scrolled out of view.
 
 ---
 
@@ -440,7 +446,11 @@ Never produce these, even if asked indirectly:
 - Gradients of any kind, gradient text, mesh backgrounds
 - Glassmorphism, backdrop-blur, frosted panels
 - Glow, neon, bloom, colored shadows
-- Floating particles, blobs, aurora, star fields
+- Floating particles, blobs, aurora, star fields — banned as **decorative
+  background**. § 05's field is exempt: every element is a labeled data object
+  carrying content, nothing is ambient, and there is no background layer. The
+  test is whether removing an element loses information. If it does not, it is a
+  particle and it is banned.
 - Rounded pill badges in a row (the shadcn tag-chip look) — tech stacks are mono
   text separated by `·`
 - Proficiency bars, percentages-as-progress, star ratings, dots-out-of-five
@@ -523,7 +533,10 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
   and the delta on every build, with remaining headroom stated.
 - LCP < 1.8s on 4G, CLS < 0.05, Lighthouse ≥ 95 all four
 - 60fps under 6× CPU throttle through a full page scroll
-- Zero persistent rAF loops and zero pending timers once the page settles
+- Zero persistent rAF loops and zero pending timers once the page settles —
+  except § 05's field loop, which runs only while that section is on screen and
+  is fully cancelled on exit, on `document.hidden`, and under reduced motion
+  (see § 6 Scroll)
 - anime.js imported modularly, never the whole bundle
 - Raster images are limited to three — the about-section portrait and one photo
   per education row. Everything else is SVG or type.
