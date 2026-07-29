@@ -24,8 +24,10 @@ import { useReducedMotion } from "../lib/use-reduced-motion";
 
 const UNREAD = [196, 189, 176]; // #C4BDB0
 const READ = [46, 42, 36]; // #2E2A24 — the body token
-/** How wide, in progress units, a character's own transition is. */
-const RAMP = 0.06;
+/** How wide, in progress units, a character's own transition is. Tightened from
+    0.06: less of the paragraph sits mid-transition and the reveal edge is
+    crisper. */
+const RAMP = 0.04;
 
 function mix(t: number) {
   const r = Math.round(UNREAD[0] + (READ[0] - UNREAD[0]) * t);
@@ -67,10 +69,16 @@ export default function RevealText({
 
     return registerSection(el, (_p, rect) => {
       const vh = window.innerHeight;
-      // The reference's ['start 0.8', 'end 0.2']: 0 when the top reaches 80% of
-      // the viewport, 1 when the bottom reaches 20%.
-      const span = 0.6 * vh + rect.height;
-      const progress = span > 0 ? (0.8 * vh - rect.top) / span : 0;
+      // 0 when the top reaches 90% of the viewport, 1 when the bottom reaches
+      // 75%. The reveal therefore STARTS as the paragraph first appears and
+      // FINISHES while it is still in the upper-middle of the screen — the
+      // earlier ['start 0.8','end 0.2'] window ran until the paragraph had
+      // nearly left the top, so paragraphs sat half-inked while being read.
+      //
+      // A paragraph fully inside the viewport is necessarily complete: its
+      // bottom is above 75% of the viewport before its top leaves.
+      const span = 0.15 * vh + rect.height;
+      const progress = span > 0 ? (0.9 * vh - rect.top) / span : 0;
 
       // Off screen, and already resolved to the end it is off screen past:
       // nothing to write. Note this still runs the two clamped writes as the
