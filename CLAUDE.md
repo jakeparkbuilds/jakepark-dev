@@ -844,6 +844,16 @@ Never produce these, even if asked indirectly:
 - Proficiency bars, percentages-as-progress, star ratings, dots-out-of-five
 - Animated stat counters
 - Emoji, 3D icons, icon fonts, logo packs. Links are text.
+
+**One exception exists: the § 07 pizza rain easter egg** renders a hand-authored
+SVG pizza slice at full colour. It is a deliberate joke, it is user-triggered
+after its first run, and its colours are quarantined to that one element. No
+other illustration or off-palette colour exists anywhere on the site.
+
+It is **drawn, not an emoji** — an emoji renders as a different picture on every
+platform and at the wrong weight beside this type, which is the whole reason
+emoji are banned in the first place. The exception is for a drawing that happens
+to be a joke, not for the joke.
 - Centered hero with headline + subhead + two side-by-side CTA buttons
 - Card grids with hover-lift + shadow
 - Inter / Poppins / Montserrat / Space Grotesk as display
