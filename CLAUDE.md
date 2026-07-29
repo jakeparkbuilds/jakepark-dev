@@ -54,9 +54,34 @@ Rules:
   future section wants ochre, the answer is no — it is the one warm point on a
   cool paper field precisely because it appears once.
 - `#9B9382` is ~2.4:1 on paper and is **decorative only**. Never use it for text
-  a user must read.
+  a user must read. On § 03's ink ground the same value is ~7:1 and *is* legible
+  — the rule is about the pairing, not the hex.
+
+**Role palette — § 03 only.** Harmonized, deliberately NOT brand-accurate; never
+substitute a real brand hex. These five tokens appear nowhere else on the site,
+and only on § 03's spine segments and its role-title mono labels.
+
+```
+role-01  #C87F4A  warm rust       Better Futures Institute
+role-02  #6B8F71  sage            Break Through Tech
+role-03  #C8952E  ochre           Georgetown Ventures
+role-04  #7B6FA8  muted violet    Hoyalytics
+role-05  #4A7C94  slate blue      George Mason
+```
+
+`role-03` is the same value as `mark` #C8952E. That is a collision of hex, not
+of meaning: `mark` remains hero-only and this remains § 03-only. Neither may
+reference the other's token.
+
+**Brand color.** The palette rules otherwise assume no external color at all.
+Amend: **§ 03 displays five third-party logos at their native brand colors,
+contained within paper tiles.** Brand color is quarantined to those tiles and
+appears nowhere else on the site.
 - Never pure white, never pure black, never a gray with blue in it.
-- No dark mode. This site is paper. Do not add a theme toggle.
+- No dark mode. **The site is paper, with one exception: § 03 experience is an
+  inverted plate — ink ground, paper type.** It is the only inverted section and
+  no other may become one. This is not a theme: there is still no toggle, and
+  nothing about it responds to a system preference.
 - **Never double-soften.** `body` #2E2A24 is already the softened ink. Applying
   an opacity utility on top of it is a bug — this caused a site-wide washed-out
   contrast problem that took a full pass to correct.
@@ -91,7 +116,9 @@ Rules:
 
 ## 4. Structure
 
-- Hairlines **0.5px**, `vector-effect="non-scaling-stroke"` on all SVG strokes.
+- Hairlines **0.5px** everywhere except § 03, whose spine is **6px** (4px below
+  900px) — a bar, not a hairline, and the one place a rule carries color.
+  `vector-effect="non-scaling-stroke"` on all SVG strokes.
   Exception: the DC map's outer District boundary is **0.9px** so it dominates
   the 0.5px / 0.28-opacity neighborhood lines.
 - `border-radius: 0` on everything, with exactly two exceptions: `.cursor-dot`
