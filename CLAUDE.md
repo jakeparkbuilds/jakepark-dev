@@ -181,17 +181,45 @@ sits **outside** the boundary in the paper to the left, connected by a 0.5px
 muted leader with at most one 90° elbow. No arrowhead, no dot, no knockout where
 the leader crosses the boundary.
 
-### §05 skills
-Four stations staged on a **stepped hairline** that descends left to right in
-40px drops (32px at 1024–1200, 24px at 900–1024). One continuous SVG `<path>`,
-hard 90° corners, four 16px ticks pointing **down** into the content. Below
-900px the spine rotates vertical with ticks pointing right.
+### §05 skills — the drifting field
+A fixed **readout panel** (cols 1–4) and a **field of 17 hairline circles**
+(cols 5–12, 620px tall at ≥1440px), one per tool. Radius and mono size encode
+tier: primary r62/15px, secondary r44/12px @0.55, tertiary r32/11px @0.35. Four
+loose clusters — `languages` / `ml & data` / `infrastructure` / `interfaces` —
+each with a static mono-label anchor at the field's corner.
 
-Stations: `languages` / `ml & data` / `infrastructure` / `interfaces`. Each is
-index → domain (46px) → one primary tool (24px, Bricolage) → supporting tools
-(mono 12px, inline, middot-separated, max 2 lines). All four stations must bottom
-out at the **same offset** from their own spine run — enforce with a fixed
-min-height computed from the tallest.
+Every node is a **labeled data object**: name, domain, and one concrete evidence
+line from the résumé. The evidence is what makes this section content rather
+than decoration, and it is the basis of the § 8 particle exemption — remove any
+node and information is lost. Never soften an evidence line to make it fit;
+change the layout or ask.
+
+- All content and the whole arrangement live in `app/lib/skills.ts` behind a
+  **fixed integer seed** (mulberry32) at module scope. `drift(seed, 0)` is
+  rendered inline by the server, so the SSR HTML *is* frame 0 — hydration
+  matches and the reduced-motion path needs no JS at all.
+- **Bounds are structural, not tested.** A node's base is expressed in CSS as
+  `inset + fraction × (100% − 2·inset)` where inset = radius + amplitude, and
+  the two sine components are weighted 0.62/0.38 so |offset| ≤ amplitude. There
+  is no boundary test, no bounce, no collision resolution and no physics at
+  runtime.
+- The seed-time **relaxation must include the amplitudes**. Clearance at rest is
+  not enough: measured without the travel term, two nodes seeded 38px apart
+  drifted into an 11px label overlap within 20s. Rings are meant to cross;
+  names are not.
+- The arrangement is composed in a **narrow nominal field (720×600)**, not a
+  wide one. Radii are fixed px while the field's width is not, so a layout
+  composed at the 1920 width collapses into label collisions at the 1024 width.
+- The rAF loop performs **zero DOM reads** and writes only `transform`,
+  `zIndex`, and an inner-wrapper `opacity`. One loop for all 17 nodes, zero
+  React re-renders per frame — only one per hover change. It runs **only while
+  the section intersects the viewport** (see § 6).
+- Depth opacity is applied to the **circle only**. The label keeps its full
+  #6B6455 — dimming type a reader must read would break § 11.
+- Below **1360px** the readout stacks above the field and the field takes all 12
+  columns; beside a cols-1–4 readout the field falls to 573px at 1200 and 400px
+  at 900, where the labels cannot be kept apart. Below **900px** the field does
+  not mount at all — the static four-column list is the section there.
 
 AWS is one entry. Never expand it to Lambda / S3 / SQS / DynamoDB.
 
@@ -394,8 +422,9 @@ same-character roll described above, and only on the hero display type.
 3. **Experience timeline** — a single vertical hairline draws downward,
    scroll-linked, each role revealing as the line passes.
 
-Candidate, not committed: the §05 spine drawing itself along its length. This
-would be a 4th set piece and requires dropping or merging an existing one.
+The §05 field is deliberately NOT a set piece: it has no entrance, draws
+nothing, and asserts nothing by arriving. It is a standing state, not an event,
+which is why it does not count against the max of 3.
 
 ### The loader
 Empty paper → the boundary's two halves draw via `stroke-dashoffset` (1000ms,
@@ -473,8 +502,13 @@ Never produce these, even if asked indirectly:
   real data converted at build time. Never ask the model to draw it from memory.**
 - **The cursor was a crosshair.** Rejected — read as a videogame reticle. It is a
   dot. Do not add a ring, halo, outline, label, blend mode, or magnetic snap.
-- **Skills took the site's one axis break.** §04 projects therefore stays
+- **Skills took the site's one axis break** when it was a stepped spine. It is
+  now the drifting field, which breaks the grid in a different way but is still
+  the site's one non-linear composition. §04 projects therefore stays
   vertically composed. One rule-break reads as intentional; two read as a tic.
+- **The stepped-spine skills section was deleted and rebuilt as the field.**
+  The spine, the four stations, the ticks and the min-height logic are gone. Do
+  not reintroduce them or adapt the field back toward them.
 - **Skills had large metric figures** (2M+, 0.86, 43×, 16K) under each station.
   Removed — they made the section too tall. If the section ever reads thin, the
   cheapest fix is a mono-micro caption line per station, not the big figures.

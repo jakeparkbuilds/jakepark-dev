@@ -947,241 +947,265 @@
     }
   }
 
-  /* 05 skills — a compact stepped plate (see docs/motion-spec.md § 05). Four
-     categories are staged along a shallow staircase: one continuous 0.5px ink
-     spine descending left→right in four short runs, each category hanging below
-     its own run on a downward tick. The spine is composition, not a directional
-     pipeline — there are no end terminals.
-     Geometry trick that keeps the SVG spine touching every CSS-positioned tick
-     at every width WITHOUT any client JS: the spine <svg> uses
-     preserveAspectRatio="none", so X and Y scale independently. X is driven off
-     percentages (station left edges land on clean 0/25/50/75% column lines) and
-     Y is pinned to real pixels by setting the svg's rendered height to
-     3 × --step — so a viewBox drop of 100 renders as exactly --step px, and the
-     station tops (also --step multiples) sit on the runs. Reflow regimes:
-       <900       vertical spine down the left edge, ticks point right, stacked
-       900–1680   two stepped segments, two rows of two (--step: 24px)
-       >=1680     four-across staircase, shallow drop (--step: 40px)
-     Four-across can't start at 1200 (or even 1440): with the locked 46px
-     domains the widest category, "infrastructure" (279px), needs a ~300px inner
-     column, which a 25% track only reaches near 1680px once the 180px nav
-     gutter is removed — below that it collides with the next category. So per
-     the spec's own <190px collision-avoidance rule the two-by-two (50% columns,
-     ample room) holds to 1680 and the four-across is a wide-screen enhancement.
-     --lead-h reserves the primary + two-line-supporting height so all four
-     stations bottom out at the same offset from their own spine run, regardless
-     of how many items a given list carries. The .skills-track collapses to
-     display: contents at >=900 so its children position against the stage. */
-  .skills-stage {
-    --lead-h: 92px;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 44px;
+  /* ── § 05 skills — the drifting field (see Skills / app/lib/skills.ts) ─────
+     A readout panel on cols 1–4 that does not move, and a field of 17 hairline
+     circles on cols 5–12 that does. Every circle is a labeled data object with
+     a domain and an evidence line; nothing here is ambient and there is no
+     background layer, which is the whole basis of this section's exemption from
+     CLAUDE.md § 8. The exemption's own test — does removing an element lose
+     information — is what any future change has to keep passing.
+
+     The rAF loop lives in Skills and runs only while the section is on screen
+     (CLAUDE.md § 6). Nothing in this block animates on its own except the two
+     220ms opacity recessions and the readout's wipe. */
+  .sk-stage {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: 32px;
+    align-items: start;
   }
 
-  .skills-track {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 44px;
+  /* ── the readout. Fixed in the layout: it never moves and never drifts. */
+  .sk-readout {
+    grid-column: 1 / 5;
+    align-self: center;
+    min-height: 190px; /* holds the tallest card, so the field never shifts */
   }
-
-  .skills-spine {
-    display: none;
-    color: theme("colors.ink"); /* drives the SVG stroke (currentColor) */
+  .sk-readout-rest {
+    color: #6b6455;
   }
-
-  /* base (<900): a single continuous vertical run down the track's left edge.
-     Ticks (per station) point 16px to the right into each station. */
-  .skills-spine--v {
+  .sk-readout-count {
+    margin-top: 10px;
+    color: #6b6455;
+  }
+  /* Uncovered, not faded — the section's own vocabulary. Keyed on the tool in
+     Skills, so switching nodes replays the wipe from the start rather than
+     interpolating out of a half-finished one. */
+  .sk-readout-card {
+    animation: sk-wipe 260ms cubic-bezier(0.33, 1, 0.68, 1) both;
+  }
+  @keyframes sk-wipe {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+  .sk-readout-name {
+    font-size: 40px;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    color: theme("colors.ink");
+    text-wrap: balance;
+  }
+  .sk-readout-cat {
+    margin-top: 12px;
+    color: #6b6455;
+  }
+  .sk-readout-rule {
     display: block;
+    width: 56px;
+    height: 0.5px;
+    margin: 18px 0;
+    background: theme("colors.muted");
+  }
+  .sk-readout-ev {
+    max-width: 34ch;
+    font-size: 17px;
+    line-height: 1.5;
+    color: #2e2a24;
+    text-wrap: pretty;
+  }
+
+  /* ── the field. position: relative is the coordinate system every node's
+     `left`/`top` calc resolves against. */
+  .sk-field {
+    position: relative;
+    grid-column: 5 / 13;
+    height: 620px;
+  }
+
+  .sk-cluster-label {
     position: absolute;
+    z-index: 200; /* above every node: these are the field's fixed anchors */
+    color: #6b6455;
+    pointer-events: none;
+  }
+  .sk-cluster-label[data-cluster="languages"] {
     top: 0;
+    left: 0;
+  }
+  .sk-cluster-label[data-cluster="ml"] {
+    top: 0;
+    right: 0;
+  }
+  .sk-cluster-label[data-cluster="infra"] {
     bottom: 0;
     left: 0;
-    width: 0.5px;
-    background: theme("colors.ink");
+  }
+  .sk-cluster-label[data-cluster="interfaces"] {
+    bottom: 0;
+    right: 0;
   }
 
-  .skills-station {
-    position: relative;
-    padding-left: 28px; /* clear the vertical spine + tick */
-  }
-
-  /* tick — base: horizontal, 16px into the station from the left spine */
-  .skills-tick {
+  /* A node carries ONLY transform and z-index from the loop. Its resting place
+     is the left/top calc set inline; the transform is the drift delta and the
+     depth scale, nothing else. */
+  .sk-node {
     position: absolute;
-    top: 4px;
-    left: 0;
-    width: 16px;
-    height: 0.5px;
-    background: theme("colors.ink");
+    will-change: transform;
+    /* The recession when another node is addressed. The loop never writes this
+       property — it writes opacity on .sk-node-ring — so the two cannot fight. */
+    transition: opacity 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sk-field[data-quiet] .sk-node:not([data-active]) {
+    opacity: 0.18;
   }
 
-  .skills-domain {
-    font-size: 34px;
+  .sk-node-btn {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: none;
+  }
+  .sk-node-btn > * {
+    grid-area: 1 / 1;
+  }
+  .sk-node-ring {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .sk-node-ring svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .sk-node-label {
+    color: #6b6455;
     line-height: 1;
-    letter-spacing: -0.02em;
-    margin-top: 6px;
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
   }
 
-  .skills-primary {
-    font-size: 20px;
-    line-height: 1.1;
-    color: theme("colors.body");
-    margin-top: 10px;
+  /* Addressed: the circle goes to full ink and 0.9px. Nothing scales up, and
+     nothing pulls toward the pointer. */
+  .sk-node[data-active] .sk-node-ring {
+    opacity: 1 !important;
+  }
+  .sk-node[data-active] circle {
+    stroke-width: 0.9;
+    transition: stroke-width 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sk-node[data-active] .sk-node-label {
+    color: theme("colors.ink");
+  }
+  .sk-node-btn:focus-visible circle {
+    outline: none;
+  }
+  .sk-node-btn:focus-visible {
+    outline: 1px solid theme("colors.accent");
+    outline-offset: 2px;
+    border-radius: 50%; /* the focus ring follows the circle it belongs to */
+  }
+  .sk-node-btn:focus:not(:focus-visible) {
+    outline: none;
   }
 
-  /* supporting: mono, middot-separated, flows INLINE and wraps to at most two
-     lines — never a vertical stack. Size steps down per breakpoint (below) so
-     the seven-item station stays within two lines; all four use the same size
-     at a given width for typographic consistency. */
-  .skills-support {
-    font-size: 12px;
-    line-height: 1.7;
-    margin-top: 8px;
+  /* ── the static fallback. Below 900px the field does not mount at all; this
+     is the section at those widths, not a degraded copy of it. */
+  .sk-static {
+    display: grid;
+    grid-column: 1 / 13;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
+    row-gap: 40px;
+  }
+  .sk-static-head {
+    padding-bottom: 12px;
+    border-bottom: 0.5px solid theme("colors.muted");
+    color: #6b6455;
+  }
+  .sk-static-list {
+    margin-top: 14px;
+    font-size: 13px;
+    line-height: 1;
+    color: #2e2a24;
+  }
+  .sk-static-list li {
+    margin-bottom: 11px;
+  }
+  .sk-static-list li[data-tier="tertiary"] {
+    color: #6b6455;
   }
 
-  /* ---- 900px+: absolute staircase / segmented layout ---- */
   @media (min-width: 900px) {
-    /* Two stepped segments, two rows of two. --step drives both the SVG drop
-       and the station tops; --st-h is the reserved content height below a run;
-       --rowgap is the space between the two rows. */
-    .skills-stage {
-      --step: 24px;
-      --st-h: 195px;
-      --rowgap: 48px;
-      --lead-h: 88px;
-      display: block;
-      /* row2 base = st-h + step + rowgap; station 04 sits one more step below
-         and extends st-h past that. */
-      height: calc(var(--st-h) * 2 + var(--step) * 2 + var(--rowgap));
-      gap: 0;
-    }
-
-    /* collapse the track so its children resolve against the stage */
-    .skills-track {
-      display: contents;
-    }
-
-    .skills-spine--v {
+    .sk-static {
       display: none;
     }
-
-    .skills-station {
-      position: absolute;
-      width: 50%;
-      padding-left: 0;
-      padding-right: 40px; /* column gutter */
-      padding-top: 28px; /* content begins 28px below its run */
-    }
-
-    /* tick flips to a 16px downward vertical stroke from the run */
-    .skills-tick {
-      top: 0;
-      left: 0;
-      width: 0.5px;
-      height: 16px;
-    }
-
-    /* two segments, one per row */
-    .skills-spine--seg {
-      display: block;
-      position: absolute;
-      left: 0;
-      width: 100%;
-      height: var(--step);
-    }
-
-    .skills-spine--seg-a {
-      top: 0;
-    }
-
-    .skills-spine--seg-b {
-      top: calc(var(--st-h) + var(--step) + var(--rowgap));
-    }
-
-    /* row 1 */
-    .skills-station--1 {
-      left: 0;
-      top: 0;
-    }
-    .skills-station--2 {
-      left: 50%;
-      top: var(--step);
-    }
-    /* row 2 */
-    .skills-station--3 {
-      left: 0;
-      top: calc(var(--st-h) + var(--step) + var(--rowgap));
-    }
-    .skills-station--4 {
-      left: 50%;
-      top: calc(var(--st-h) + var(--step) * 2 + var(--rowgap));
-    }
-
-    .skills-domain {
-      font-size: 46px;
-      margin-top: 0;
-    }
-    .skills-primary {
-      font-size: 24px;
-      font-weight: 400;
-      margin-top: 12px;
-    }
-    /* 11px keeps the seven-item list to two lines in the 50% column down to
-       900px (the narrowest two-by-two). */
-    .skills-support {
-      font-size: 11px;
-    }
-    .skills-lead {
-      min-height: var(--lead-h);
+  }
+  @media (max-width: 899.98px) {
+    .sk-readout,
+    .sk-field {
+      display: none;
     }
   }
 
-  /* ---- 1680px+: four-across staircase (shallow drop) ---- */
-  @media (min-width: 1680px) {
-    .skills-stage {
-      --step: 40px;
-      --st-h: 195px;
-      /* station 04 bottoms at step*3 + st-h — the stage's full height. */
-      height: calc(var(--step) * 3 + var(--st-h));
+  /* Below 1200px the readout stacks ABOVE the field and the field takes the
+     full 12 columns. Node radii are fixed in px while the field's width is not:
+     beside a cols-1–4 readout the field falls to 573px at 1200 and 400px at
+     900, where 17 circles up to 124px across cannot avoid running their labels
+     together — measured, the closest label gap at 900px was 2.7px and would
+     have closed entirely on the drift. Full width gives back 210–340px, which
+     is what keeps the arrangement legible rather than shrinking the type.
+     1360px is the same structural breakpoint § 06 uses. */
+  @media (min-width: 900px) and (max-width: 1359.98px) {
+    .sk-readout,
+    .sk-field {
+      grid-column: 1 / 13;
     }
+    .sk-readout {
+      align-self: start;
+      min-height: 150px;
+      margin-bottom: 8px;
+    }
+    .sk-readout-name {
+      font-size: 32px;
+    }
+    .sk-readout-ev {
+      max-width: 52ch;
+    }
+    .sk-readout-rule {
+      margin: 14px 0;
+    }
+    .sk-field {
+      height: 540px;
+    }
+  }
+  @media (min-width: 1360px) and (max-width: 1439.98px) {
+    .sk-field {
+      height: 580px;
+    }
+  }
 
-    /* one continuous stepped path across the full width */
-    .skills-spine--seg {
-      display: none;
+  /* Reduced motion: no loop is created at all (Skills returns before it builds
+     one), so the field simply holds the seeded t = 0 frame the server rendered.
+     The readout's wipe and the recession are dropped too — content is never
+     lost, only the drawing of it. */
+  @media (prefers-reduced-motion: reduce) {
+    .sk-readout-card {
+      animation: none;
     }
-    .skills-spine--h {
-      display: block;
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: calc(var(--step) * 3);
-    }
-
-    .skills-station {
-      width: 25%;
-      padding-right: 24px;
-    }
-
-    .skills-station--1 {
-      left: 0;
-      top: 0;
-    }
-    .skills-station--2 {
-      left: 25%;
-      top: var(--step);
-    }
-    .skills-station--3 {
-      left: 50%;
-      top: calc(var(--step) * 2);
-    }
-    .skills-station--4 {
-      left: 75%;
-      top: calc(var(--step) * 3);
+    .sk-node,
+    .sk-node[data-active] circle {
+      transition: none;
     }
   }
 
