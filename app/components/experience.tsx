@@ -1,4 +1,5 @@
 import { ROLES } from "../lib/experience";
+import ExperienceMotion from "./experience-motion";
 
 // § 03 experience — the inverted plate.
 //
@@ -14,7 +15,10 @@ import { ROLES } from "../lib/experience";
 // INSIDE each row rather than a row gap, because a gap would show as a break in
 // the spine and the spine must be continuous.
 //
-// data-entry / data-role are motion hooks for a later pass. Nothing is wired.
+// data-entry is wired by ExperienceMotion: each entry arrives on its own
+// IntersectionObserver as it is scrolled to, once. data-role remains the
+// spine's hook and belongs to the margin trace — the motion pass does not
+// touch it.
 
 export default function Experience({
   number,
@@ -29,6 +33,7 @@ export default function Experience({
 
   return (
     <section id={id} aria-labelledby={headingId} className="exp">
+      <ExperienceMotion sectionId={id} />
       <div className="exp-inner">
         <p className="exp-mark font-mono">
           {number} <span aria-hidden="true">/</span> {label}

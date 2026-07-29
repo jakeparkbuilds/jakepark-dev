@@ -903,6 +903,20 @@
     grid-column: 1 / -1;
     grid-template-columns: subgrid;
   }
+  /* The arrival's start state. It is applied by [data-motion="armed"], which
+     ExperienceMotion sets in a layout effect, so the entries are HIDDEN ONLY
+     WHEN SOMETHING IS GUARANTEED TO REVEAL THEM. With no JS, with JS that
+     failed, or under reduced motion the attribute is never set and the section
+     renders exactly as it does now. Content is never hidden by default.
+
+     [data-landed] releases the entry once its timeline reverts, so nothing is
+     left carrying a transform or a will-change afterwards. */
+  .exp[data-motion="armed"] .exp-entry:not([data-landed]) .exp-tile,
+  .exp[data-motion="armed"] .exp-entry:not([data-landed]) .exp-head,
+  .exp[data-motion="armed"] .exp-entry:not([data-landed]) .exp-role,
+  .exp[data-motion="armed"] .exp-entry:not([data-landed]) .exp-desc {
+    opacity: 0;
+  }
   /* The 40px between entries is a MARGIN on the text, not padding on the entry.
      A grid item stretches to its parent's CONTENT box, so padding on the entry
      would sit outside the segment and open a 40px gap in the spine — which it
