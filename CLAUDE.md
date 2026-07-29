@@ -229,11 +229,25 @@ Clicking a row unfolds it in place.
   figures.
 
 ### §07 connect — the magnet and the type bands
-The email at full strength (offset ÷ 3) and the three socials at ÷ 5, each with
-its own 150px field. Position only: no scale, no colour, no glow. The middots
-between the socials never move — the separator is structure, and structure
-holding still is what makes the words read as moving. Pointer-fine only, never
-under reduced motion, and § 07 only.
+Magnetism covers § 07's **text as well as its links**, each element with its own
+independent field, and **strength is set by weight** — heavier type moves less,
+so the section reads as having mass rather than as uniformly springy:
+
+| element | divisor | field |
+|---|---|---|
+| `let's build` / `something` (each line separately) | 8 | 220px |
+| `YOU'VE REACHED THE END` | 4 | 140px |
+| the email | 3 | 150px |
+| each social link | 5 | 150px |
+
+Position only: no scale, no colour, no rotation. Pointer-fine only, never under
+reduced motion, and § 07 only.
+
+- **The blurb is deliberately excluded**, along with the footer coordinate line
+  and the bands. The blurb carries the character reveal, and two systems writing
+  to one element fight.
+- The middots between the socials never move — the separator is structure, and
+  structure holding still is what makes the words read as moving.
 
 - **One pointermove listener for every magnet, not one per element.** Each
   magnet needs its rect on every move; four that each read and then wrote would
@@ -246,9 +260,11 @@ under reduced motion, and § 07 only.
 - The cursor dot is unaffected: measured sitting exactly on the true pointer
   while the link is displaced 70px away from it.
 
-**The type bands** are two full-bleed rows of outlined display type
-counter-scrolling against each other, driven by scroll position and nothing
-else. Set piece 6.
+**The type bands** are two full-bleed rows of outlined display type drifting
+against each other on a **continuous autoplay loop at 28px/s**, band 1 left to
+right and band 2 right to left. Set piece 6, and the site's only autoplaying
+motion. One rAF drives both, gated on § 07's intersection and on
+`document.hidden`.
 
 - **Full bleed by cancelling the section's own padding**, never the usual
   `left: 50%; width: 100vw; margin-left: -50vw`. That idiom assumes the parent
@@ -257,12 +273,17 @@ else. Set piece 6.
   the viewport centre. Measured: the bands started at −90px and left 90px of the
   right edge bare at 1200, 1024 and 900.
 - The translate is wrapped modulo **one measured repetition width**, with three
-  copies in the DOM. Measured across a 2100px scroll sweep, both viewport edges
-  stay covered at every position and |translateX| never exceeds one repetition.
-- Type is outlined at 0.75px ink with a transparent fill and
-  `paint-order: stroke fill`. No fill, no gradient, no shadow, no blur.
-- Two bands down to 900px, **one** below it; multiplier 0.22, dropping to 0.18
-  below 1200.
+  copies in the DOM, so it never exposes a gap at either end.
+- Type is outlined at 0.75px ink, `clamp(38px, 4.4vw, 64px)`, 6px between the
+  bands. The section must fit **one viewport at 1440×900 with no scrolling** —
+  that constraint, not taste, is what sets the size.
+- **The letterforms are filled with a hairline hatch, and the hatch is fixed to
+  the viewport, not to the text.** As a band travels, the letters move across a
+  stationary hatch field rather than carrying it along — that is the whole
+  effect, and it is what makes the type read as engraved rather than hollow.
+  Band 1 is 45° at 6px spacing / 0.30 alpha, band 2 vertical at 5px / 0.22.
+  Straight ink hairlines only: no colour, no gradient, no noise.
+- Two bands down to 900px, **one** below it at 30px.
 
 ### Hero
 Two-column. Left: mono label `CS + MATH @ GEORGETOWN`, "Jake" / "Park" at display
@@ -684,8 +705,9 @@ touch. **One shared rAF loop** for the whole page exposing normalized scroll
 progress globally and per-section. Components subscribe; nothing runs its own
 loop; everything unsubscribes on unmount.
 
-**Persistent rAF is permitted in exactly two places — § 05's drifting field and
-the global margin trace.** Both are gated on viewport intersection, and both are
+**Persistent rAF is permitted in exactly three places — § 05's drifting field,
+the global margin trace, and § 07's type bands.** All three are gated on viewport
+intersection and on `document.hidden`, and all three are
 fully cancelled on exit, on `document.hidden`, and under reduced motion. The
 trace is on screen at essentially every scroll position, so its gate is instead
 `document.hidden` plus a 400ms idle after scrolling stops, at which point the
@@ -718,14 +740,21 @@ travel **max 14px**. Stagger 34ms, capped at 8 items.
 
 **Banned motion:** parallax on images, typewriter on body copy, counting or
 animating numbers, marquee, hover-lift with shadow, scroll-jacking, card flips,
-magnetic buttons anywhere except the outro links.
+magnetic buttons.
+
+**Magnetism is confined to § 07**, where it applies to the section's text
+elements as well as its links. Nowhere else on the site.
 
 **Marquee is banned as decorative background.** § 07 connect's counter-scrolling
-type bands are exempt: they are scroll-driven (never autoplaying), set in
-outlined display type as hairline drawing, and carry real content. No other
-marquee anywhere. The distinction is load-bearing and it is *not* stylistic — a
-band that moves while the page is still is the banned thing, whatever it is set
-in. Nothing may move unless the reader moves it.
+type bands are exempt: **they run a continuous autoplay loop.** This is a
+deliberate exception to the marquee ban — the bands are set in outlined display
+type as hairline drawing and carry real content. **No other autoplaying motion
+exists on the site**, and nothing else may acquire it.
+
+This reverses the exemption's earlier wording, which claimed the bands were
+scroll-driven and never autoplaying and rested the whole exemption on that
+distinction. They were, and then the decision changed. The exemption now rests
+on what the bands *are* — content, drawn — not on what moves them.
 
 **Cursor followers are banned** — an element lagging behind the pointer. The
 custom pointer itself is exempt: it tracks with zero lag and *is* the pointer.
