@@ -746,51 +746,72 @@
      only; inverted it is legible, which is why the rule is about the pairing
      rather than the hex. */
   /* ── § 01 hero — the discipline line ──────────────────────────────────────
-     `working in [ machine learning ]`, the phrase rolling on a fixed hold.
-     The slot is a clip box of an EXACT integer size whose width is written
-     once by JS from the widest of the three phrases; it never resizes, so the
-     line's ink changes and its geometry does not. --disc-h is the roll's exact
-     travel and must stay a whole number of pixels. */
+     A third line of the NAME block, 24px under "Park" and left-aligned to the
+     display type. It reads as a continuation of the name, so it is Bricolage on
+     one baseline — never a mono label.
+
+     The gesture is a WIPE, not a roll. The name owns the roll; giving the hero
+     the same gesture twice made the second read as a copy of the first. A 0.5px
+     ink rule crosses the slot left to right, the old phrase eaten from the left
+     behind it and the new one uncovered from the left in front of it. The text
+     never moves and never fades.
+
+     The slot is sized to the WIDEST phrase, structurally: it is an inline-grid
+     and all three phrases occupy the SAME cell as hidden ghosts, so the browser
+     picks the maximum. That holds in the SSR HTML and through a font swap, with
+     the measured min-width in hero-discipline.tsx as a second guarantee. A slot
+     sized to its current phrase clips the longest one for its whole life on
+     screen — which is exactly what happened before. */
   .hero-discipline {
-    display: flex;
-    align-items: baseline;
-    gap: 14px;
-    --disc-h: 32px;
+    margin-top: 24px;
+    font-size: 21px;
+    line-height: 1.35;
   }
-  .hero-discipline-label {
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
+  .disc-lead {
+    font-weight: 400;
     color: #6b6455;
-    white-space: nowrap;
   }
   .disc-slot {
-    display: inline-block;
+    display: inline-grid;
+    position: relative;
+    /* Every child lands in the one cell, so the cell is as wide as the widest
+       of them and as tall as the tallest. */
+    grid-template-areas: "slot";
+    vertical-align: baseline;
     overflow: hidden;
-    height: var(--disc-h);
-    /* Before the measure lands the slot is sized by its content, which is the
-       first phrase — the widest is written over this and it never changes
-       again. width is the ONLY property JS touches here. */
-    width: max-content;
-    vertical-align: bottom;
   }
-  .disc-stack {
-    display: block;
-    /* The rest position: pulled up by exactly one box, so the SECOND cell is
-       the one on screen. This is the CSS default rather than something JS
-       applies, which is what makes the server-rendered HTML the resting line
-       and the reduced-motion path scriptless. */
-    transform: translate3d(0, calc(-1 * var(--disc-h)), 0);
+  .disc-slot > * {
+    grid-area: slot;
   }
-  .disc-cell {
-    display: block;
-    height: var(--disc-h);
-    line-height: var(--disc-h);
-    font-size: 21px;
-    font-weight: 400;
+  .disc-ghost,
+  .disc-layer {
+    font-weight: 500;
     color: theme("colors.ink");
     white-space: pre;
+  }
+  /* Present for sizing and for the baseline, never painted. The first one is
+     the slot's baseline donor. */
+  .disc-ghost {
+    visibility: hidden;
+  }
+  .disc-layer {
+    /* Opaque so the two layers can never show through one another mid-wipe. */
+    background: theme("colors.paper");
+  }
+  /* The incoming layer rests fully clipped away; JS animates the inset. Setting
+     the rest state HERE rather than in script keeps the server-rendered line
+     correct and leaves the reduced-motion path scriptless. */
+  .disc-layer--in {
+    clip-path: inset(0 100% 0 0);
+  }
+  .disc-rule {
+    width: 0.5px;
+    justify-self: start;
+    align-self: stretch;
+    background: theme("colors.ink");
+    opacity: 0;
+    /* Above both layers: it is the seam between them. */
+    z-index: 1;
   }
 
   .exp {

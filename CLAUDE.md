@@ -208,33 +208,44 @@ Two-column. Left: mono label `CS + MATH @ GEORGETOWN`, "Jake" / "Park" at displa
 scale, blurb, four text links with 10px inline brand glyphs, then the discipline
 line. Right: the DC map.
 
-**The discipline line** — `WORKING IN` (mono-label, #6B6455) beside a rolling
-slot carrying `machine learning` → `data science` → `software development`,
-Bricolage 21px/400 ink. It sits at the BASE of the text column, 32px under the
-links (the column's own gap, not a margin anyone has to maintain). It is a
-signature, not a header: the hero's top is already busy.
+**The discipline line** — `working in machine learning`, a THIRD LINE OF THE
+NAME BLOCK: 24px under "Park", left-aligned to the display type's left edge, on
+one baseline. `working in` is Bricolage 21px/400 #6B6455 and the phrase is
+21px/500 ink. It is a continuation of the name, never a mono label and never a
+separate UI element parked under the social links.
 
-- **The slot is a fixed-width clip box and must never resize.** Its width is
-  written once, after `document.fonts.ready`, from the widest of the three
-  phrases rounded UP to a whole pixel. A slot sized to its current phrase
-  relayouts the line on every roll and makes the whole hero twitch. This is the
-  single load-bearing detail of the whole component.
-- Mechanism is the name roll's, not a second implementation of it: two cells
-  stacked in the clip, the stack translating by exactly one box height so the
-  outgoing phrase leaves the bottom edge as the incoming one arrives at the top.
-  `ROLL_MS` and `ROLL_EASE` live in `app/lib/roll.ts` and both callers import
-  them, so the two can never drift apart.
-- The resting transform is the **CSS default**, not something JS applies — so
-  the SSR HTML already shows the first phrase and the reduced-motion path needs
-  no script at all.
-- Hold 2800ms, roll 1500ms, forever while the hero is on screen. setTimeout
-  chaining and one WAAPI animation per roll; never a rAF loop. Paused with all
-  timers cleared on viewport exit and on `document.hidden`.
-- **The name roll and the discipline roll may never fire within 400ms of each
-  other.** They are separately scheduled and would otherwise regularly collide,
-  which reads as two unrelated animations rather than one voice. Both go through
-  `app/lib/roll-scheduler.ts`, which defers the colliding event rather than
-  dropping it, so neither cadence loses its shape.
+**The gesture is a WIPE, not a roll.** It was built as a roll first and that was
+wrong: the name already owns the roll, so the hero performed one gesture twice
+and the second read as a copy. A 0.5px ink rule crosses the slot left to right —
+behind it the old phrase is gone, in front of it the new one has arrived. A pen
+bar sweeping the line clean and re-inking it. 620ms,
+`cubic-bezier(0.4, 0, 0.2, 1)`: brisk and mechanical, deliberately not the
+name's settle. The rule fades over the last 80ms as it exits. **The text never
+moves and never fades** — no vertical travel, no opacity on the type, no glyph
+substitution. It is uncovered and covered.
+
+- Two absolutely-stacked layers in one grid cell: the outgoing clipped
+  `inset(0 0 0 0%→100%)`, the incoming `inset(0 100%→0% 0 0)`, the rule
+  translating 0→slot width. All four animations are created in the same task so
+  they share a start time; measured over 1072 mid-wipe frames the three edges
+  are at an **identical x, spread 0.00px**. Layers carry an opaque paper
+  background so they can never show through each other.
+- **The slot is sized to the WIDEST phrase, and this is structural.** The slot
+  is an `inline-grid` and all three phrases sit in the SAME cell as hidden
+  ghosts, so the browser picks the maximum — true in the SSR HTML, before any
+  script, and through a font swap. The measured `min-width` (ceil, after
+  `document.fonts.ready`) is a second guarantee that can only prevent a clip.
+  A slot sized to its current phrase clipped `software development` for its
+  whole life on screen; that is the bug this shape exists to make impossible.
+- Hold 3200ms, wipe 620ms, forever while the hero is on screen. setTimeout
+  chaining and WAAPI; never a rAF loop. Paused with all timers cleared and all
+  animations cancelled on viewport exit and on `document.hidden`.
+- **The name roll and the discipline wipe may never fire within 400ms of each
+  other.** Both go through `app/lib/roll-scheduler.ts`, which defers the
+  colliding event rather than dropping it. The name's timestamp must be taken
+  where its animation actually starts, not in `tick()` — `rollOne` defers
+  `.animate()` one frame for layer promotion, and recording at tick time put the
+  measured gap at 392ms against a 400ms rule.
 - A visually-hidden span carries all three phrases; the slot is `aria-hidden`.
 
 The map is real GeoJSON from DC Open Data, converted at build time by a script in
