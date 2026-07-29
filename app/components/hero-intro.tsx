@@ -78,8 +78,15 @@ export default function HeroIntro() {
     // opacity animation), not 46 staggered stroke draws — cheaper on bundle and
     // CPU, and the first thing to trim.
     const hoodGroup = document.querySelector<SVGGElement>("[data-dc-hoods]");
+    // Document order is not the arrival order. <Nav /> precedes <Hero /> in the
+    // document, so the nav's name would lead the stagger; it belongs second,
+    // after the mono label. `data-hero-reveal` therefore carries an optional
+    // rank. Array.prototype.sort is stable, so anything unranked (value "",
+    // which is 0) keeps its document order ahead of the ranked elements.
     const reveals = Array.from(
       document.querySelectorAll<HTMLElement>("[data-hero-reveal]")
+    ).sort(
+      (a, b) => Number(a.dataset.heroReveal || 0) - Number(b.dataset.heroReveal || 0)
     );
 
     let done = false;

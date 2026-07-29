@@ -90,7 +90,7 @@ export default function Hero() {
       <div className="section-pad mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-section md:flex-row md:items-center md:gap-x-12 min-[1200px]:gap-x-[44px] min-[1440px]:max-w-[1720px]">
         <div className="flex max-w-col flex-1 flex-col gap-8 md:justify-center min-[1200px]:w-[clamp(456px,36vw,500px)] min-[1200px]:max-w-[500px] min-[1200px]:flex-none">
           <p
-            data-hero-reveal
+            data-hero-reveal="0"
             className="font-mono text-mono-label-sm uppercase text-label sm:text-mono-label"
           >
             CS + Math @ Georgetown
@@ -106,7 +106,7 @@ export default function Hero() {
 
           <p
             data-hero-blurb
-            data-hero-reveal
+            data-hero-reveal="5"
             className="max-w-col font-display text-body text-body min-[1200px]:max-w-none min-[1200px]:text-[clamp(19px,1.6vw,21px)] min-[1200px]:leading-[1.55]"
           >
             I&apos;m an undergraduate at Georgetown University studying Computer
@@ -114,7 +114,7 @@ export default function Hero() {
             and AI systems drive civic and social impact.
           </p>
 
-          <nav aria-label="social links" data-hero-reveal>
+          <nav aria-label="social links" data-hero-reveal="6">
             <ul className="flex flex-wrap gap-x-6 gap-y-2 font-display text-small">
               {LINKS.map((link) => {
                 const isExternal = link.href.startsWith("http");

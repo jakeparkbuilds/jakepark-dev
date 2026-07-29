@@ -230,7 +230,7 @@ export default function HeroDiscipline() {
   }, [reduced, width]);
 
   return (
-    <p ref={rootRef} data-hero-reveal className="hero-discipline font-display">
+    <p ref={rootRef} data-hero-reveal="4" className="hero-discipline font-display">
       <span className="disc-lead">working in</span>{" "}
       <span ref={slotRef} aria-hidden="true" className="disc-slot">
         {/* The ghosts: all three phrases in the same grid cell, hidden. They

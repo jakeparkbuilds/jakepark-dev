@@ -7,21 +7,11 @@ import { scrollToElement, subscribeGlobal } from "../lib/scroll-controller";
 export default function Nav() {
   const [activeId, setActiveId] = useState<string>(NAV_SECTIONS[0].id);
   // The name is hidden while the hero is on screen — the hero already says it,
-  // at display scale.
-  const [pastHero, setPastHero] = useState(false);
+  // at display scale. It appears once the hero is gone and the visitor could
+  // otherwise have forgotten whose site this is.
   const navRef = useRef<HTMLElement | null>(null);
   const nameRef = useRef<HTMLButtonElement | null>(null);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
-
-  useEffect(() => {
-    const hero = document.getElementById("hero");
-    if (!hero) return;
-    const io = new IntersectionObserver(([e]) => setPastHero(!e.isIntersecting), {
-      threshold: 0,
-    });
-    io.observe(hero);
-    return () => io.disconnect();
-  }, []);
 
   // ---- inversion, per element ----
   //
@@ -103,7 +93,13 @@ export default function Nav() {
       {/* A name, not a nav label: sentence-cased as written, in the display
           face, never uppercased and never mono. It sits 28px above ME on the
           same right edge, and it is a real button because it does something —
-          it returns to the top. Opacity only; it never moves. */}
+          it returns to the top.
+
+          It is visible from first paint and never fades out. On a first visit
+          it arrives with the hero, second in the loader's stagger — the mono
+          label, then the name — via the explicit order below rather than
+          document order, which would otherwise put it first: <Nav /> precedes
+          <Hero /> in the document. */}
       <button
         ref={nameRef}
         type="button"
@@ -111,9 +107,7 @@ export default function Nav() {
           const hero = document.getElementById("hero");
           if (hero) scrollToElement(hero);
         }}
-        aria-hidden={pastHero ? undefined : "true"}
-        tabIndex={pastHero ? undefined : -1}
-        data-shown={pastHero ? "" : undefined}
+        data-hero-reveal="1"
         className="nav-name font-display"
       >
         Jake Park

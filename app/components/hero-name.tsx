@@ -525,8 +525,13 @@ export default function HeroName() {
       aria-label="Jake Park"
       className={`hero-roll font-display text-display text-ink${armed ? " is-armed" : ""}`}
     >
-      {WORDS.map((word) => (
-        <span key={word} aria-hidden="true" data-hero-reveal className="block">
+      {WORDS.map((word, wi) => (
+        <span
+          key={word}
+          aria-hidden="true"
+          data-hero-reveal={String(2 + wi)}
+          className="block"
+        >
           {word.split("").map((ch, ci) => (
             <span key={ci} data-char={ch} className="char">
               {/* The in-flow resting glyph: anchors the baseline and is what

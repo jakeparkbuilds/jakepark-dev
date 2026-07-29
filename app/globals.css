@@ -728,12 +728,9 @@
      through it, so mid-transition the list is part ink and part paper. 200ms so
      no label snaps as the boundary passes its own midpoint. */
   .nav-idle,
-  .nav-active {
-    transition: color 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
+  .nav-active,
   .nav-name {
-    transition: opacity 300ms cubic-bezier(0.33, 1, 0.68, 1),
-      color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: color 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
   .nav-idle {
     color: #6b6455;
@@ -768,12 +765,6 @@
     font-weight: 500;
     line-height: 1;
     color: theme("colors.ink");
-    opacity: 0;
-    pointer-events: none;
-  }
-  .nav-name[data-shown] {
-    opacity: 1;
-    pointer-events: auto;
   }
   /* It inverts on its own midpoint like every other nav element. */
   .nav-name[data-inv] {
