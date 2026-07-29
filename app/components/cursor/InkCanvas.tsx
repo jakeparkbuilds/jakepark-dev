@@ -1,5 +1,6 @@
 "use client";
 
+import { INVERTED_PAPER, isOverInverted } from "../../lib/inverted";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CursorPoint } from "../../lib/cursor/useCursorState";
@@ -12,6 +13,10 @@ export type InkCanvasHandle = {
 };
 
 const INK = "#1A1815";
+// § 03 is an ink plate, so an ink trail over it draws ink on ink. Both the
+// trail and the click dots swap to paper there (CLAUDE.md § 2). Evaluated per
+// segment and per frame rather than once per stroke, because the page scrolls
+// underneath a stroke that is already down.
 const MAX_DPR = 2;
 const TRAIL_ALPHA = 0.85;
 const TRAIL_LINE_WIDTH = 0.75;
@@ -107,7 +112,10 @@ const InkCanvas = forwardRef<InkCanvasHandle>(function InkCanvas(_props, ref) {
     if (n < 2) return;
 
     ctx.globalAlpha = TRAIL_ALPHA;
-    ctx.strokeStyle = INK;
+    // Per segment: a stroke may cross the plate's edge mid-drag.
+    ctx.strokeStyle = isOverInverted(points[points.length - 1].y)
+      ? INVERTED_PAPER
+      : INK;
     ctx.lineWidth = TRAIL_LINE_WIDTH;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -166,8 +174,8 @@ const InkCanvas = forwardRef<InkCanvasHandle>(function InkCanvas(_props, ref) {
     if (ctx && marks) {
       const { width, height } = cssSizeRef.current;
       ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = INK;
       for (const dot of dots) {
+        ctx.fillStyle = isOverInverted(dot.y) ? INVERTED_PAPER : INK;
         const t = (now - dot.createdAt) / CLICK_FADE_MS;
         ctx.globalAlpha = CLICK_ALPHA * (1 - t);
         ctx.beginPath();

@@ -714,6 +714,284 @@
     }
   }
 
+  /* The fixed nav passes over § 03's plate. On paper its labels are #6B6455
+     and #0A0908; on ink those measure 3.02:1 and 1.12:1 — the active label is
+     effectively invisible — so they invert with the ground. */
+  .nav-idle {
+    color: #6b6455;
+  }
+  .nav-idle:hover {
+    color: theme("colors.body");
+  }
+  .nav-active {
+    color: #0a0908;
+  }
+  nav[data-inverted] .nav-idle {
+    color: #9b9382;
+  }
+  nav[data-inverted] .nav-idle:hover {
+    color: theme("colors.paper");
+  }
+  nav[data-inverted] .nav-active {
+    color: theme("colors.paper");
+  }
+
+  /* ── § 03 experience — the inverted plate (see Experience) ────────────────
+     The site's ONE inverted section: ink ground, paper type, full-bleed
+     horizontally. Its four rule breaks are sanctioned in CLAUDE.md § 2 and § 4
+     (the inversion, the role palette, brand color inside the tiles, the 6px
+     spine). Nothing here may be copied into another section.
+
+     Contrast on the #1A1815 ground, measured: paper #F5F1E8 15.71:1,
+     body #C4BDB0 9.49:1, mono #9B9382 5.81:1. On paper #9B9382 is decorative
+     only; inverted it is legible, which is why the rule is about the pairing
+     rather than the hex. */
+  .exp {
+    /* Full-bleed: breaks out of every other section's measure, edge to edge.
+       100vw rather than 100% because the section is a flow child of <main>. */
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    background: theme("colors.ink");
+    padding: 120px 0;
+    /* The one place on the site where selection needs inverting too. */
+  }
+  .exp ::selection {
+    background-color: rgba(245, 241, 232, 0.22);
+    color: theme("colors.ink");
+  }
+
+  /* Inner measure matches every other section: the standard padding plus the
+     reserved nav gutter on the right, so the content column lines up with the
+     sections above and below even though the ground does not. */
+  .exp-inner {
+    padding: 0 theme("spacing.section");
+    padding-right: calc(theme("spacing.section") + var(--nav-gutter));
+  }
+
+  .exp-mark {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #9b9382;
+  }
+  .exp-h2 {
+    margin-top: 16px;
+    font-size: 40px;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    color: theme("colors.paper");
+  }
+  .exp-rule {
+    height: 1px;
+    margin-top: 40px;
+    background: theme("colors.paper");
+    opacity: 0.4;
+  }
+
+  /* The body is ONE grid: column 1 is the spine, column 2 is the entry. Row gap
+     is 0 and the 40px between entries is padding inside each row, because a row
+     gap would break the spine and the spine must be continuous. */
+  .exp-body {
+    display: grid;
+    grid-template-columns: 6px minmax(0, 1fr);
+    column-gap: 32px;
+    margin-top: 56px;
+    list-style: none;
+  }
+
+  /* The entries' own list box is removed so its rows join the body grid. */
+  .exp-list {
+    display: contents;
+  }
+
+  .exp-cap {
+    grid-column: 1 / -1;
+    margin-bottom: 14px;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #9b9382;
+  }
+  .exp-cap--end {
+    margin-top: 14px;
+    margin-bottom: 0;
+  }
+
+  /* An entry occupies column 2 of its row; its segment occupies column 1 of the
+     same row and stretches to it. */
+  .exp-entry {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+  }
+  /* The 40px between entries is a MARGIN on the text, not padding on the entry.
+     A grid item stretches to its parent's CONTENT box, so padding on the entry
+     would sit outside the segment and open a 40px gap in the spine — which it
+     did. As a margin on the text it counts toward the row's height instead, so
+     the segment covers it and consecutive bands meet with a hard edge. */
+  .exp-text {
+    margin-bottom: 40px;
+  }
+  /* :last-child within the <ol>, not :last-of-type within the grid — the
+     closing "2024" cap is the grid's last child, and targeting that left the
+     fifth segment overhanging its entry by 40px. */
+  .exp-entry:last-child .exp-text {
+    margin-bottom: 0;
+  }
+
+  /* The segment. A grid item in column 1 with default stretch alignment, so its
+     height is exactly the row's — no measurement, no JS, no drift. The entry's
+     own bottom padding is inside the row, so consecutive segments meet with a
+     hard edge and no gap. */
+  .exp-seg {
+    grid-column: 1;
+    display: block;
+    width: 6px;
+    /* Reaches the full row including its padding: the bands must touch. */
+    align-self: stretch;
+  }
+
+  /* The paper tile. Opaque, sharp-cornered, no border and no shadow — a printed
+     label applied to a dark plate. The 8px inset is the label's margin. */
+  .exp-tile {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    padding: 8px;
+    background: theme("colors.paper");
+    /* Optical centring: the artwork is centred in the tile's content box on
+       both axes by the flex centring above, and every logo is square, so the
+       mathematical and optical centres coincide here. */
+  }
+  .exp-logo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .exp-text {
+    grid-column: 2;
+    grid-row: 1;
+    /* 48px tile + 24px of air. The tile sits in the same cell and is taken out
+       of the text's way by this indent rather than by a third column, which
+       keeps the dates right-aligned to the full content width. */
+    padding-left: 72px;
+  }
+
+  .exp-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .exp-org {
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    color: theme("colors.paper");
+  }
+  .exp-dates {
+    flex: none;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #9b9382;
+  }
+  /* The role title is one of only two places a role color appears. */
+  .exp-role {
+    margin-top: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  .exp-desc {
+    margin-top: 12px;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #c4bdb0;
+    text-wrap: nowrap;
+  }
+
+  @media (max-width: 1199.98px) {
+    .exp {
+      padding: 96px 0;
+    }
+    .exp-org {
+      font-size: 26px;
+    }
+    .exp-tile {
+      width: 40px;
+      height: 40px;
+      padding: 7px;
+    }
+    .exp-text {
+      padding-left: 60px;
+    }
+    /* Dates move beneath the role title, so the head is just the name. */
+    .exp-head {
+      display: block;
+    }
+    .exp-dates {
+      margin-top: 10px;
+    }
+    .exp-role {
+      margin-top: 10px;
+    }
+    .exp-desc {
+      text-wrap: pretty;
+    }
+  }
+
+  @media (max-width: 899.98px) {
+    .exp {
+      padding: 72px 0;
+    }
+    .exp-body {
+      /* The spine narrows and sits at the far left edge of the content. */
+      grid-template-columns: 4px minmax(0, 1fr);
+      column-gap: 20px;
+      margin-top: 40px;
+    }
+    .exp-seg {
+      width: 4px;
+    }
+    .exp-tile {
+      width: 36px;
+      height: 36px;
+      padding: 6px;
+    }
+    .exp-text {
+      padding-left: 52px;
+    }
+    .exp-org {
+      font-size: 22px;
+    }
+    .exp-h2 {
+      font-size: 32px;
+    }
+    /* Margin on the text, never padding on the entry — padding sits outside
+       the segment's stretch and opens a gap in the spine (measured: 32px). */
+    .exp-text {
+      margin-bottom: 32px;
+    }
+  }
+
   /* ── § 02 about — the Kyoto portrait's crop marks ─────────────────────────
      The same registration language as the two § 06 plates, so the site's three
      raster images read as one family. The photo itself is untouched: no border,
@@ -1566,6 +1844,11 @@
     background-color: #0a0908;
     transform: translate(-50%, -50%) scale(1);
     transition: transform 160ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Inverted over § 03's ink plate, where #0A0908 would be invisible. */
+  .cursor-dot.is-inverted {
+    background-color: theme("colors.paper");
   }
 
   .cursor-dot.is-pen-down {

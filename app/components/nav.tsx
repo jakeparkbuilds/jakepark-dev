@@ -1,11 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NAV_SECTIONS } from "../lib/sections";
 import { scrollToElement } from "../lib/scroll-controller";
 
 export default function Nav() {
   const [activeId, setActiveId] = useState<string>(NAV_SECTIONS[0].id);
+  // The nav is fixed and passes over § 03's ink plate, where its ink labels
+  // collapse to 3.02:1 and the active one to 1.12:1 — invisible. It inverts
+  // with the ground, the same way the cursor and the ink trail do.
+  const [inverted, setInverted] = useState(false);
+  const navRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const plate = document.getElementById("experience");
+    const nav = navRef.current;
+    if (!plate || !nav) return;
+    let io: IntersectionObserver | null = null;
+    // An observer whose root is shrunk to the nav's own band, so it fires
+    // exactly when the plate is behind the nav. IntersectionObserver rather
+    // than a scroll subscriber: this must cost nothing once the page settles.
+    const arm = () => {
+      io?.disconnect();
+      const r = nav.getBoundingClientRect();
+      io = new IntersectionObserver(([e]) => setInverted(e.isIntersecting), {
+        rootMargin: `-${Math.max(0, r.top)}px 0px -${Math.max(
+          0,
+          window.innerHeight - r.bottom
+        )}px 0px`,
+        threshold: 0,
+      });
+      io.observe(plate);
+    };
+    arm();
+    window.addEventListener("resize", arm);
+    return () => {
+      io?.disconnect();
+      window.removeEventListener("resize", arm);
+    };
+  }, []);
 
   useEffect(() => {
     const elements = NAV_SECTIONS.map(({ id }) => document.getElementById(id)).filter(
@@ -37,7 +70,9 @@ export default function Nav() {
 
   return (
     <nav
+      ref={navRef}
       aria-label="section navigation"
+      data-inverted={inverted ? "" : undefined}
       className="fixed right-[theme(spacing.section)] top-[theme(spacing.section)] z-10 hidden flex-col items-end gap-3 md:flex"
     >
       {NAV_SECTIONS.map(({ id, label }) => {
@@ -49,7 +84,7 @@ export default function Nav() {
             onClick={(event) => handleClick(event, id)}
             aria-current={isActive ? "true" : undefined}
             className={`flex items-center gap-2 font-mono text-mono-micro uppercase transition-colors duration-150 ${
-              isActive ? "text-near-black" : "text-label hover:text-body"
+              isActive ? "nav-active" : "nav-idle"
             }`}
           >
             <span

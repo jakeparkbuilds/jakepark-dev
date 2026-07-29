@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { isOverInverted } from "../../lib/inverted";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useCursorActive, useCursorEngine } from "../../lib/cursor/useCursorState";
 import { DC_PROJECTION } from "../dc-paths";
@@ -134,6 +135,11 @@ export default function PlotterCursor() {
         if (pos) {
           pos.style.transform = `translate3d(${point.x}px, ${point.y}px, 0)`;
         }
+
+        // The dot is #0A0908 and would be invisible on § 03's ink ground, so it
+        // inverts to paper there. A class toggle on the scale layer, never a
+        // React state update — the position layer is untouched by this.
+        scaleRef.current?.classList.toggle("is-inverted", isOverInverted(point.y));
 
         if (dragging) {
           inkRef.current?.addPoint(point);
