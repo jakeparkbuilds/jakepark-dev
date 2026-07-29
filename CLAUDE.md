@@ -126,6 +126,9 @@ Rules:
   stays lowercase — section headings, nav labels, link text, captions.
 - Mono labels are uppercased via CSS `text-transform`, not in the source string.
 - No third family. No italic. No weights other than 400 and 500.
+- Mono is for labels and metadata **with one sanctioned exception**: § 07's email
+  monument sets Plex Mono at up to 58px. See § 5 / §07 — the address is data, and
+  that is the point. Nothing else may borrow it.
 - `text-wrap: pretty` on paragraphs, `text-wrap: balance` on headings.
 
 ---
@@ -202,11 +205,37 @@ never replays.
 - **The spine is not part of this.** Its segments belong to the margin trace and
   keep their own scroll-driven draw; nothing here touches `[data-role]`.
 
+### The nav — inversion, per element
+The nav is fixed and passes over § 03's ink plate, where its ink labels collapse
+to 3.02:1 and the active one to 1.12:1. It inverts with the ground — but **each
+element decides for itself, from what is directly behind IT**, comparing its own
+midpoint against § 03's edges on the shared Lenis loop.
+
+- It was one observer for the whole nav, keyed to the plate crossing the nav's
+  band, and that is wrong in a way that is easy to miss: a fixed column is
+  ~200px tall, so a single verdict makes the top of it turn light while it is
+  still sitting on paper. **Mid-transition the list is legitimately part ink and
+  part paper**, the flip running up the column as the edge passes each item.
+  That reads as intentional; a whole-nav flip reads as a bug.
+- 200ms, so nothing snaps as the boundary crosses a midpoint.
+- Rides the shared loop — never a second scroll listener. All reads happen
+  before any write, so a frame costs one layout pass, and an attribute is only
+  touched when its value changes.
+
 ### The nav — the persistent name
-`Jake Park` sits 28px above `ME` in the fixed gutter, hidden while the hero is on
-screen (the hero already says it, at display scale) and fading in over 300ms once
-the hero's bottom crosses the top of the viewport. Opacity only; it never moves.
-Clicking returns to the top.
+`Jake Park` sits 28px above `ME` in the fixed gutter. It is **visible from first
+paint and never fades out**, including on the hero; on a first visit it arrives
+with the loader stagger, immediately after the mono label. Clicking returns to
+the top.
+
+- **Document order is not the arrival order.** `<Nav />` precedes `<Hero />`, so
+  the name would lead the stagger. `data-hero-reveal` carries an optional rank
+  and HeroIntro sorts by it (stable, so anything unranked keeps document order):
+  mono label 0, the name 1, Jake 2, Park 3, the discipline line 4, the blurb 5,
+  the hero's social links 6.
+- **No CSS opacity transition on it.** anime writes inline opacity every frame of
+  the entrance, and a transition on the same property smears every one of those
+  writes.
 
 - It is a **name, not a nav label**: Bricolage 16/500 in sentence case, never
   uppercased and never mono. Everything around it is mono and uppercase, which
@@ -217,9 +246,8 @@ Clicking returns to the top.
   them by construction rather than by a number.
 - The 28px is set as a **16px margin** — the nav column has a 12px flex gap that
   applies here too, and setting 28 directly measures 40.
-- Inverts to paper over § 03 with the rest of the nav. `aria-hidden` and
-  `tabIndex -1` while invisible, so it is never a focus stop that lands on
-  nothing. Not rendered below 900px.
+- Inverts on its own midpoint like every other nav element. Not rendered below
+  900px.
 
 ### §07 — pizza rain
 70 hand-drawn slices fall across the viewport when the visitor reaches the bottom
@@ -297,16 +325,73 @@ Clicking a row unfolds it in place.
   with 4, 51 and 40 paths cost the same). Do not go looking for it in the
   figures.
 
-### §07 connect — the magnet and the type bands
+### §07 connect — the composition
+**Three elements in the centre, and the EMAIL is the monument.** It holds the
+position and the weight the display headline used to, which is why the headline
+demotes to a 13px mono label above it. `you've reached the end` is deleted: the
+bands and the end of the page already say that, and a label announcing it was a
+fourth thing competing for one centre.
+
+```
+LET'S CONNECT                       mono label, 13px / 0.24em / #6B6455
+        ↕ 32px
+jp2282 [at] georgetown [dot] edu    IBM Plex Mono 500, ink, -0.01em, one line
+        ↕ 28px
+always up for a conversation …      Bricolage 19/400, #2E2A24, one line ≥1200px
+```
+
+- The `mailto:` href carries the **real address**; the bracket notation is
+  display only, with `[at]` and `[dot]` in #6B6455 so they read as annotation
+  rather than as part of the address.
+- **This is the one place mono is used at display scale** (§ 3's table assigns it
+  to labels and metadata). It is deliberate: the address is data, and setting the
+  page's largest type in the data face is the joke of the section landing
+  straight.
+- **The email's size is the smaller of the specified size and what fits.**
+  `clamp(28px, 4.2vw, 58px)` is a viewport measure and § 07's content box is not
+  the viewport — below 1280px it also gives up 180px to the nav gutter. At 1200
+  the spec asks for 50.4px, which lays the address out at 967px inside an 876px
+  column; `nowrap` does not wrap that, it pushes a horizontal scrollbar onto the
+  document. So `min(clamp(...), 5.1cqi)`: 32 characters at 0.6em advance less
+  0.01em tracking is 18.88em, so it fits at container/18.88 (5.30cqi), taken with
+  a 4% margin. Where the spec fits it wins unchanged.
+- **§ 07 centres on the full viewport, so above 1280px nothing reserves the nav
+  column** — safe while the centre was a 720px text column, not safe with a 58px
+  monument in it. Measured, the email's right edge landed 48px inside the nav at
+  1280 and 18px at 1440. The centre block insets by the nav's width (a constant
+  104px) plus 24px, **symmetrically**, so it stays viewport-centred instead of
+  being shoved off-centre by a one-sided gutter — and since that block is also
+  the email's sizing container, the monument shrinks to match by itself.
+- The underline **draws** left to right in 380ms and **retracts** right to left
+  in 280ms, never the enter reversed. Switching `transform-origin` with the
+  hover state is what buys the second direction.
+
+**The section fills exactly one viewport and distributes itself.** `min-height:
+100svh` with a stage that takes whatever the bands and the footer do not, so the
+footer sits on the bottom edge. The stage's 5svh top padding is what puts the
+block slightly high rather than dead centre — its content centres inside the
+padding box, so the middle lands at ~38% and stays proportional at other heights
+instead of drifting the way a fixed offset would. Measured 900.0px at 1440×900,
+block midpoint 35.8%. **Do not go back to padding tuned to one viewport height;**
+three passes in a row had to re-tune it.
+
+**The footer is one row, three parts, one baseline**: trigger left, socials
+centred, coordinates right, beneath a full-width rule. The outer tracks are
+`flex: 1 1 0` so they take equal width whatever they contain and the middle is
+centred on the section. Source order is socials → coordinates → trigger, which is
+the stacking order below 1024, and `order` arranges them above it — neither
+arrangement needs its own markup. Stacked, the middots are **removed, not
+hidden**, and with them gone the three names fit 390px on one line, which is why
+the row stays `nowrap` all the way down and can never orphan a separator.
+
 Magnetism covers § 07's **text as well as its links**, each element with its own
 independent field, and **strength is set by weight** — heavier type moves less,
 so the section reads as having mass rather than as uniformly springy:
 
 | element | divisor | field |
 |---|---|---|
-| `let's build` / `something` (each line separately) | 8 | 220px |
-| `YOU'VE REACHED THE END` | 4 | 140px |
-| the email | 3 | 150px |
+| the email — the monument | 6 | 200px |
+| `LET'S CONNECT` | 4 | 140px |
 | each social link | 5 | 150px |
 
 Position only: no scale, no colour, no rotation. Pointer-fine only, never under
