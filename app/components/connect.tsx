@@ -32,87 +32,41 @@ export default function Connect({ id }: { id: string }) {
       // 72 -> 81, the rule's 40 -> 48, the coordinate line's 24 -> 28.
       className="section-pad flex w-full flex-col items-center pt-[clamp(80px,10vh,140px)] pb-[clamp(68px,8.5vh,124px)] min-[1280px]:[--nav-gutter:0px]"
     >
-      <div className="flex w-full max-w-[720px] flex-col items-center gap-16 text-center">
-        <div className="flex flex-col items-center gap-6">
-          {/* Strength is set by weight: the heavier the type, the less it
-              moves. The display lines are divided by 8 against the mono
-              label's 4, so the section reads as having mass rather than as
-              uniformly springy. */}
-          <p className="font-mono text-mono-micro uppercase text-label">
-            <Magnet divisor={4} field={140}>
-              you&apos;ve reached the end
-            </Magnet>
-          </p>
+      {/* Three elements, and the EMAIL is the monument — it takes the place the
+          display headline used to hold, which is why the headline demotes to a
+          mono label above it. `you've reached the end` is gone: the bands and
+          the end of the page already say that, and a label announcing it was
+          the fourth thing competing for the same centre. */}
+      <div className="connect-center">
+        <p className="connect-label font-mono">
+          <Magnet divisor={4} field={140}>
+            let&apos;s connect
+          </Magnet>
+        </p>
 
-          {/* One line now, so one magnetic unit. The two-line collision
-              constraint is retired with the second line: there is nothing left
-              for it to collide with, and the ink-gap measurement that justified
-              divisor 8 no longer applies. Strength stays 8 because it is the
-              weight rule, not the clearance, that sets it. */}
-          <p className="font-display text-[clamp(40px,9vw,64px)] font-medium leading-[1.05] tracking-[-0.02em] text-ink">
-            <Magnet divisor={8} field={220}>
-              let&apos;s connect
-            </Magnet>
-          </p>
+        {/* The href carries the real address, so the mailto works; the bracket
+            notation is display only, and the brackets are #6B6455 so they read
+            as annotation rather than as part of the address.
 
-          {/* Full strength: it sits alone with clear space on every side. */}
-          <Magnet>
-            <a
-              href="mailto:jp2282@georgetown.edu"
-              className="font-display text-[22px] text-ink underline decoration-accent decoration-[1px] underline-offset-8 transition-colors duration-150 ease-in-out hover:text-accent sm:text-[28px]"
-            >
-              jp2282@georgetown.edu
+            Divisor 6, down from the email's old 3: it is far bigger now and
+            full strength on a 58px line reads as sloppy rather than as pull. */}
+        <p className="connect-email-line">
+          <Magnet divisor={6} field={200}>
+            <a href="mailto:jp2282@georgetown.edu" className="connect-email font-mono">
+              jp2282
+              <span className="connect-email-br"> [at] </span>
+              georgetown
+              <span className="connect-email-br"> [dot] </span>
+              edu
             </a>
           </Magnet>
-        </div>
+        </p>
 
-        {/* Real body copy, not a caption — full-strength body color
-            (#2E2A24), same text-body-twice pattern used wherever this
-            token needs to carry both its size and its color (see
-            hero.tsx, about.tsx, education.tsx). */}
-        <RevealText className="max-w-[520px] font-display text-body text-body">
-          {"I'm always up for talking about ML systems, civic tech, or where to find a decent slice in D.C."}
+        {/* No magnetism here: it carries the character reveal, and two systems
+            writing to one element fight. */}
+        <RevealText className="connect-blurb font-display">
+          always up for a conversation about ML, civic tech, or pizza
         </RevealText>
-
-        {/* The row never wraps mid-list. It was `flex-wrap` over `display:
-            contents` items, which let the browser break between any link and
-            its own separator and leave a middot alone on a line.
-
-            Now: nowrap while the three fit, and a centered vertical stack
-            below that — with the middots REMOVED, not merely hidden, because a
-            separator between stacked lines separates nothing. The switch is a
-            container query on the row itself rather than a viewport
-            breakpoint, so it happens at the width where the three actually
-            stop fitting instead of at a number that has to be re-guessed
-            whenever the type changes. */}
-        <nav aria-label="social links" className="social-row">
-          <ul className="flex items-center justify-center gap-3 font-mono text-small uppercase tracking-[0.2em] text-body">
-            {SOCIAL_LINKS.map((link, i) => (
-              <li key={link.label} className="contents">
-                {i > 0 && (
-                  <span aria-hidden="true" className="social-sep text-muted">
-                    ·
-                  </span>
-                )}
-                {/* Divisor 5, not 3: the three sit close together and at full
-                    strength the words reach each other. The middot between them
-                    is outside the Magnet and never moves — the separator is
-                    structure, and structure holding still is what makes the
-                    words read as moving. */}
-                <Magnet divisor={5}>
-                  <a
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline decoration-transparent decoration-[1px] underline-offset-4 transition-colors duration-150 ease-in-out hover:text-accent hover:decoration-accent"
-                  >
-                    {link.label}
-                  </a>
-                </Magnet>
-              </li>
-            ))}
-          </ul>
-        </nav>
       </div>
 
       {/* Set piece 6. Sits in the lower third, between the social row and the
@@ -139,6 +93,35 @@ export default function Connect({ id }: { id: string }) {
         </p>
         <div aria-hidden="true" className="flex-1" />
       </div>
+
+      {/* Out of the centre. Item 5 folds this into the footer row proper; for
+          now it sits on its own centred line beneath it. */}
+      <nav aria-label="social links" className="social-row mt-4">
+        <ul className="flex items-center justify-center gap-3 font-mono text-mono-micro uppercase tracking-[0.16em] text-label">
+            {SOCIAL_LINKS.map((link, i) => (
+              <li key={link.label} className="contents">
+                {i > 0 && (
+                  <span aria-hidden="true" className="social-sep text-muted">
+                    ·
+                  </span>
+                )}
+                {/* The middot between them is outside the Magnet and never
+                    moves — the separator is structure, and structure holding
+                    still is what makes the words read as moving. */}
+                <Magnet divisor={5}>
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline decoration-transparent decoration-[1px] underline-offset-4 transition-colors duration-150 ease-in-out hover:text-ink hover:decoration-ink"
+                  >
+                    {link.label}
+                  </a>
+                </Magnet>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </section>
   );
 }

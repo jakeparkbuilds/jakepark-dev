@@ -1207,37 +1207,105 @@
     }
   }
 
-  /* § 07 social row. `contents` on the <li> is what puts the links and the
-     separators in the same flex formatting context, and it is also what let a
-     wrap orphan a middot. The row is nowrap, and below the width where the
-     three fit it becomes a centered column with the separators removed from
-     the flow entirely. */
-  .social-row {
-    container-type: inline-size;
+  /* ── § 07 connect — the centre ────────────────────────────────────────────
+     Three elements. The EMAIL is the monument: it takes the position and the
+     weight the display headline used to hold, which is why the headline demotes
+     to a mono label sitting above it. */
+  .connect-center {
+    display: flex;
     width: 100%;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    /* The container the email sizes itself against — see .connect-email. */
+    container-type: inline-size;
   }
+  .connect-label {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: #6b6455;
+  }
+  .connect-email-line {
+    margin-top: 32px;
+    line-height: 1;
+  }
+  /* THE SIZE IS THE SMALLER OF THE SPEC AND WHAT FITS. The specified
+     clamp(28px, 4.2vw, 58px) is a viewport measure, and § 07's content box is
+     not the viewport: below 1280px it also gives up 180px to the nav gutter.
+     At 1200 the spec asks for 50.4px, which lays this address out at 967px
+     inside an 876px column — nowrap would not wrap it, it would push a
+     horizontal scrollbar onto the document instead.
+
+     5.1cqi is the fitting size: the address is 32 characters at Plex Mono's
+     0.6em advance less 0.01em of tracking, so it occupies 18.88em and fits when
+     font-size <= container / 18.88 (5.30cqi), taken with a 4% margin. Where the
+     spec fits it wins unchanged; where it does not, the fit does. */
+  .connect-email {
+    position: relative;
+    display: inline-block;
+    font-weight: 500;
+    font-size: min(clamp(28px, 4.2vw, 58px), 5.1cqi);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    color: theme("colors.ink");
+    white-space: nowrap;
+    text-decoration: none;
+  }
+  /* Annotation, not address. */
+  .connect-email-br {
+    color: #6b6455;
+  }
+  /* Drawn left to right on arrival, retracted right to left on leave — never
+     the enter played backwards. Switching transform-origin with the state is
+     what buys the second direction: the origin applies instantly, the scale is
+     what animates. */
+  .connect-email::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.16em;
+    height: 0.5px;
+    background: theme("colors.ink");
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .connect-email:hover::after,
+  .connect-email:focus-visible::after {
+    transform: scaleX(1);
+    transform-origin: left;
+    transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .connect-blurb {
+    margin-top: 28px;
+    font-size: 19px;
+    line-height: 1.58;
+    color: theme("colors.body");
+  }
+  /* One line where there is room for one; allowed to break below 1200px. */
+  @media (min-width: 1200px) {
+    .connect-blurb {
+      white-space: nowrap;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .connect-email::after,
+    .connect-email:hover::after {
+      transition: none;
+    }
+  }
+
+  /* § 07 social row. `contents` on the <li> puts the links and the separators
+     in one flex formatting context; `nowrap` is what stops a wrap from leaving
+     a middot alone on a line. */
   .social-row ul {
     flex-wrap: nowrap;
     white-space: nowrap;
   }
-  /* 352px: the three links plus their separators lay out at a measured 345px,
-     plus a little slack. Below this they cannot share a line, so they stack.
-     The first value tried was 310px, which was under the real content width —
-     the row then overflowed its container by 3px at 390 and by 18px at 360,
-     pushing a horizontal scrollbar onto the document. Tie the threshold to the
-     measured content, never to a guess. */
-  @container (max-width: 352px) {
-    .social-row ul {
-      flex-direction: column;
-      gap: 12px;
-      white-space: normal;
-    }
-    .social-row .social-sep {
-      display: none;
-    }
-  }
-  /* The container query needs a container; where it is unsupported the row
-     still never orphans a separator, because nowrap keeps the three together. */
 
   /* § 07 pizza rain. Portalled to <body>, so no transformed ancestor can turn
      `fixed` into something else — the same rule the ink canvas follows. Above
