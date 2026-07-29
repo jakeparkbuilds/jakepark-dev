@@ -31,13 +31,32 @@ export default function Connect({ id }: { id: string }) {
     >
       <div className="flex w-full max-w-[720px] flex-col items-center gap-14 text-center">
         <div className="flex flex-col items-center gap-6">
+          {/* Strength is set by weight: the heavier the type, the less it
+              moves. The display lines are divided by 8 against the mono
+              label's 4, so the section reads as having mass rather than as
+              uniformly springy. */}
           <p className="font-mono text-mono-micro uppercase text-label">
-            you&apos;ve reached the end
+            <Magnet divisor={4} field={140}>
+              you&apos;ve reached the end
+            </Magnet>
           </p>
 
+          {/* Each LINE is its own magnet, not the block — two lines moving as
+              one unit would just be the block sliding. Measured: with the
+              pointer parked between them, which is the worst a single pointer
+              can do, the ink gap closes from 21px to 12px and never touches, so
+              divisor 8 stands and the fallback to 12 was not needed. */}
           <p className="font-display text-[clamp(40px,9vw,64px)] font-medium leading-[1.05] tracking-[-0.02em] text-ink">
-            <span className="block">let&apos;s build</span>
-            <span className="block">something</span>
+            <span className="block">
+              <Magnet divisor={8} field={220}>
+                let&apos;s build
+              </Magnet>
+            </span>
+            <span className="block">
+              <Magnet divisor={8} field={220}>
+                something
+              </Magnet>
+            </span>
           </p>
 
           {/* Full strength: it sits alone with clear space on every side. */}
