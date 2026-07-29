@@ -1207,6 +1207,47 @@
     }
   }
 
+  /* ── § 07 connect — the section ───────────────────────────────────────────
+     It fills exactly one viewport and DISTRIBUTES itself: the stage takes
+     whatever the bands and the footer do not, so the footer sits on the bottom
+     edge and the centre block floats above it. Nothing here is a padding
+     tuned to one viewport height.
+
+     The 5svh top padding is what puts the block slightly high rather than dead
+     centre. The stage's content centres inside its padding box, so its middle
+     lands at (stage + 5svh) / 2 — about 38% of the section at 1440x900, which
+     is the ask, and it stays proportional at other heights instead of drifting
+     the way a fixed offset would. */
+  .connect {
+    display: flex;
+    width: 100%;
+    min-height: 100svh;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 0;
+    padding-bottom: clamp(20px, 3.5vh, 40px);
+  }
+  .connect-stage {
+    display: flex;
+    width: 100%;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    padding-top: 5svh;
+  }
+  .connect-bands {
+    width: 100%;
+    margin-top: clamp(20px, 3vh, 40px);
+  }
+  /* Full content width now, not a 720px centred hairline: it heads a row whose
+     outer items sit at the content edges, and a rule narrower than the row it
+     heads reads as belonging to something else. */
+  .connect-rule {
+    width: 100%;
+    margin-top: clamp(18px, 2.6vh, 34px);
+    border-top: 0.5px solid theme("colors.muted");
+  }
+
   /* ── § 07 connect — the centre ────────────────────────────────────────────
      Three elements. The EMAIL is the monument: it takes the position and the
      weight the display headline used to hold, which is why the headline demotes
@@ -1219,6 +1260,21 @@
     text-align: center;
     /* The container the email sizes itself against — see .connect-email. */
     container-type: inline-size;
+  }
+  /* § 07 centres on the FULL viewport (§ 4), so above 1280px nothing reserves
+     the nav column — which was safe while the centre was a 720px text column
+     and is not now that a 58px monument sits in it. Measured: the email's right
+     edge landed 48px inside the nav at 1280 and 18px inside it at 1440.
+
+     The block therefore insets by the nav's own width (a constant 104px) plus
+     24px of clearance, SYMMETRICALLY, so it stays centred on the viewport
+     rather than being pushed off-centre by a one-sided gutter. Because
+     .connect-center is also the email's sizing container, the monument shrinks
+     to match automatically. */
+  @media (min-width: 1280px) {
+    .connect-center {
+      max-width: calc(100% - 256px);
+    }
   }
   .connect-label {
     font-size: 13px;

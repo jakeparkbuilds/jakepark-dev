@@ -23,21 +23,20 @@ export default function Connect({ id }: { id: string }) {
       // otherwise inherit is zeroed out and it centers on the full
       // viewport. Below 1280px (nav labels sit closer in) every other
       // section's gutter is kept.
-      // The section must fit ONE viewport at 1440x900 with nothing scrolled.
-      // It measured 966.5px against 900 once the bands went in, so every
-      // vertical gap was cut in proportion rather than any element being
-      // dropped. Losing the headline's second line then freed 67px, which is
-      // given back to the same gaps in the same proportion rather than left as
-      // a hole: pad 72/63 -> 90/76, the column gap 56 -> 64, the bands' lead-in
-      // 72 -> 81, the rule's 40 -> 48, the coordinate line's 24 -> 28.
-      className="section-pad flex w-full flex-col items-center pt-[clamp(80px,10vh,140px)] pb-[clamp(68px,8.5vh,124px)] min-[1280px]:[--nav-gutter:0px]"
+      // The section fills exactly one viewport and distributes itself rather
+      // than being padded into place — see .connect in globals.css.
+      className="connect section-pad min-[1280px]:[--nav-gutter:0px]"
     >
       {/* Three elements, and the EMAIL is the monument — it takes the place the
           display headline used to hold, which is why the headline demotes to a
           mono label above it. `you've reached the end` is gone: the bands and
           the end of the page already say that, and a label announcing it was
           the fourth thing competing for the same centre. */}
-      <div className="connect-center">
+      {/* A 76svh stage centres its content at 38svh — slightly high, so the
+          bands and the footer have room below without the block being pushed
+          off dead centre by a hand-tuned padding. */}
+      <div className="connect-stage">
+        <div className="connect-center">
         <p className="connect-label font-mono">
           <Magnet divisor={4} field={140}>
             let&apos;s connect
@@ -67,18 +66,15 @@ export default function Connect({ id }: { id: string }) {
         <RevealText className="connect-blurb font-display">
           always up for a conversation about ML, civic tech, or pizza
         </RevealText>
+        </div>
       </div>
 
-      {/* Set piece 6. Sits in the lower third, between the social row and the
-          footer rule, and runs edge to edge. */}
-      <div className="mt-[clamp(64px,9vh,104px)] w-full">
+      {/* Set piece 6. Runs edge to edge, unchanged in size and speed. */}
+      <div className="connect-bands">
         <TypeBands />
       </div>
 
-      <div
-        aria-hidden="true"
-        className="mt-12 w-full max-w-[720px] border-t-[0.5px] border-muted"
-      />
+      <div aria-hidden="true" className="connect-rule" />
 
       {/* Three tracks so the coordinate line stays centred on the section while
           the pizza trigger sits at the left content edge on the same baseline —
