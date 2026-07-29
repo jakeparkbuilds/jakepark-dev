@@ -39,7 +39,8 @@ ink      #1A1815   primary type, strong hairlines
 muted    #9B9382   decorative hairlines, frames, quiet rules
 accent   #22384F   ink blue — section marks + link underlines ONLY
 body     #2E2A24   softened ink for body copy (same hue, not a 5th color)
-mark     #C8952E   warm ochre — the Georgetown star, hero map ONLY
+mark     #C8952E   warm ochre — the Georgetown star ONLY (hero map + its
+                   ghost on connect; the same star, twice)
 ```
 
 Legibility variants: `#6B6455` for any mono text a user must read (nav labels,
@@ -49,10 +50,14 @@ cursor dot and active nav label — the two darkest objects on the page.
 Rules:
 - Accent appears on **~3% of any viewport**. Reaching for it a third time in one
   section means the composition is wrong, not that it needs more accent.
-- `mark` #C8952E appears in **exactly one place on the entire site**: the filled
-  Georgetown star on the hero map. No other element, in any section, ever. If a
-  future section wants ochre, the answer is no — it is the one warm point on a
-  cool paper field precisely because it appears once.
+- `mark` #C8952E appears as **exactly one object, in exactly two places**: the
+  filled Georgetown star, on the hero map and again on the connect section's
+  ghost map. It is the same star at the same coordinates on the same geometry,
+  and connect's copy exists only to close the bookend the hero opened — the
+  first and last saturated points on the page are the same mark. Nothing else,
+  in any section, ever. If a future section wants ochre, the answer is no; and
+  if a future element wants to be the star's third appearance, the answer is
+  also no, because two is a bookend and three is a motif.
 - `#9B9382` is ~2.4:1 on paper and is **decorative only**. Never use it for text
   a user must read. On § 03's ink ground the same value is ~7:1 and *is* legible
   — the rule is about the pairing, not the hex.
@@ -70,7 +75,7 @@ role-05  #4A7C94  slate blue      George Mason
 ```
 
 `role-03` is the same value as `mark` #C8952E. That is a collision of hex, not
-of meaning: `mark` remains hero-only and this remains § 03-only. Neither may
+of meaning: `mark` remains the star's alone and this remains § 03-only. Neither may
 reference the other's token.
 
 **Brand color.** The palette rules otherwise assume no external color at all.
@@ -78,10 +83,21 @@ Amend: **§ 03 displays five third-party logos at their native brand colors,
 contained within paper tiles.** Brand color is quarantined to those tiles and
 appears nowhere else on the site.
 - Never pure white, never pure black, never a gray with blue in it.
-- No dark mode. **The site is paper, with one exception: § 03 experience is an
-  inverted plate — ink ground, paper type.** It is the only inverted section and
-  no other may become one. This is not a theme: there is still no toggle, and
-  nothing about it responds to a system preference.
+- No dark mode, and no theme of any kind: there is no toggle and nothing on the
+  site responds to a system preference. **Exactly three grounds exist. There is
+  no fourth.**
+
+```
+paper     #F5F1E8   the default — every section not named below
+ink       #1A1815   § 03 experience ONLY — the inverted plate, paper type
+drafting  #EDEBE4   § 04 projects ONLY — cooler and one step darker than
+                    paper, carrying the blueprint ruling (§ 5 / §04)
+```
+
+  § 03 is the only inverted section and no other may become one. § 04 is the
+  only ruled one. Both are full-bleed horizontally, breaking the plate frame.
+  A third register is the point — three sections, three grounds, no repetition
+  — so do not give a fourth section a ground of its own to match them.
 - **Never double-soften.** `body` #2E2A24 is already the softened ink. Applying
   an opacity utility on top of it is a bug — this caused a site-wide washed-out
   contrast problem that took a full pass to correct.
@@ -481,12 +497,16 @@ touch. **One shared rAF loop** for the whole page exposing normalized scroll
 progress globally and per-section. Components subscribe; nothing runs its own
 loop; everything unsubscribes on unmount.
 
-**Zero persistent rAF loops and zero pending timers once the page settles, with
-one exception: § 05's drifting field runs a single rAF loop ONLY while the
-section is intersecting the viewport.** It starts on enter and is fully
-cancelled on exit, on `document.hidden`, and under reduced motion. Everywhere
-else the rule is absolute. Verify with a 5s Performance recording after settle,
-and a second one with § 05 scrolled out of view.
+**Persistent rAF is permitted in exactly two places — § 05's drifting field and
+the global margin trace.** Both are gated on viewport intersection, and both are
+fully cancelled on exit, on `document.hidden`, and under reduced motion. The
+trace is on screen at essentially every scroll position, so its gate is instead
+`document.hidden` plus a 400ms idle after scrolling stops, at which point the
+loop cancels and the dashoffset is written once to its final value.
+
+**Everywhere else: zero persistent rAF loops and zero pending timers once the
+page settles.** The rule is absolute. Verify with a 5s Performance recording
+after settle, and a second one with § 05 scrolled out of view.
 
 ---
 
@@ -520,18 +540,25 @@ Only deliberate ink residue may lag.
 **Glyph substitution is exempt from "drawn, not faded"** — but only as the
 same-character roll described above, and only on the hero display type.
 
-### Set pieces — max 3
+### Set pieces — max 5
+The cap was 3. It is now **5**, and this is the roster — there is no sixth
+without removing one of these first.
+
 1. **Hero / loader** — the DC map draws itself on a paper field, then travels to
    its hero position as the page arrives. One continuous event; the loader *is*
    this set piece, not a fourth.
 2. **Projects** — each card carries a small SVG figure generated in-browser from
    what the project actually did. Draws once on entry, then stops.
-3. **Experience timeline** — a single vertical hairline draws downward,
-   scroll-linked, each role revealing as the line passes.
+3. **Experience spine** — the segmented 6px bar, which is now a widening of the
+   margin trace rather than its own line (see below).
+4. **The margin trace** — one continuous 0.5px path down the left gutter of the
+   whole page, advanced by scroll. § 6.
+5. **The connect replay** — the visitor's own ink strokes, replayed into the
+   final section. § 5 / § 06 connect.
 
 The §05 field is deliberately NOT a set piece: it has no entrance, draws
 nothing, and asserts nothing by arriving. It is a standing state, not an event,
-which is why it does not count against the max of 3.
+which is why it does not count against the cap.
 
 ### The loader
 Empty paper → the boundary's two halves draw via `stroke-dashoffset` (1000ms,
@@ -675,9 +702,8 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
 - LCP < 1.8s on 4G, CLS < 0.05, Lighthouse ≥ 95 all four
 - 60fps under 6× CPU throttle through a full page scroll
 - Zero persistent rAF loops and zero pending timers once the page settles —
-  except § 05's field loop, which runs only while that section is on screen and
-  is fully cancelled on exit, on `document.hidden`, and under reduced motion
-  (see § 6 Scroll)
+  except the two sanctioned loops, § 05's field and the margin trace, each
+  gated and fully cancelled as described in § 6 Scroll
 - anime.js imported modularly, never the whole bundle
 - Raster images are limited to three — the about-section portrait and one photo
   per education row. Everything else is SVG or type.
