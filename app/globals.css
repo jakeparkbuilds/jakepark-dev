@@ -741,6 +741,35 @@
     color: theme("colors.paper");
   }
 
+  /* The persistent name. 28px above ME, right-aligned to the same edge as the
+     nav labels — which is the label's TEXT edge, not the row's: every nav item
+     is `dash + gap + label`, and the dash hangs to the LEFT of the label, so
+     aligning both to the flex container's right edge lines the name up with the
+     labels and leaves the active dash clear of it by construction. */
+  .nav-name {
+    /* 28px of clear space above ME, which is 16 here: the nav column is a flex
+       stack with a 12px gap, and the gap applies between the name and ME as
+       well. Setting 28 directly measured 40. */
+    margin-bottom: 16px;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1;
+    color: theme("colors.ink");
+    opacity: 0;
+    /* Opacity only — it never moves. Not display:none, so the transition has
+       something to run on and the button keeps its place in the layout. */
+    transition: opacity 300ms cubic-bezier(0.33, 1, 0.68, 1), color 150ms ease-in-out;
+    pointer-events: none;
+  }
+  .nav-name[data-shown] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  /* It inverts with the rest of the nav over § 03's ink ground. */
+  nav[data-inverted] .nav-name {
+    color: theme("colors.paper");
+  }
+
   /* ── § 03 experience — the inverted plate (see Experience) ────────────────
      The site's ONE inverted section: ink ground, paper type, full-bleed
      horizontally. Its four rule breaks are sanctioned in CLAUDE.md § 2 and § 4

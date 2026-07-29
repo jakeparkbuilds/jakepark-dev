@@ -10,7 +10,24 @@ export default function Nav() {
   // collapse to 3.02:1 and the active one to 1.12:1 — invisible. It inverts
   // with the ground, the same way the cursor and the ink trail do.
   const [inverted, setInverted] = useState(false);
+  // The name is hidden while the hero is on screen — the hero already says it,
+  // at display scale. It appears once the hero is gone and the visitor could
+  // otherwise have forgotten whose site this is.
+  const [pastHero, setPastHero] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const hero = document.getElementById("hero");
+    if (!hero) return;
+    // Fires when the hero's BOTTOM edge crosses the top of the viewport, which
+    // is exactly "the hero has scrolled away" — an observer, not a scroll
+    // subscriber, so it costs nothing once the page settles.
+    const io = new IntersectionObserver(([e]) => setPastHero(!e.isIntersecting), {
+      threshold: 0,
+    });
+    io.observe(hero);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => {
     const plate = document.getElementById("experience");
@@ -75,6 +92,24 @@ export default function Nav() {
       data-inverted={inverted ? "" : undefined}
       className="fixed right-[theme(spacing.section)] top-[theme(spacing.section)] z-10 hidden flex-col items-end gap-3 md:flex"
     >
+      {/* A name, not a nav label: sentence-cased as written, in the display
+          face, never uppercased and never mono. It sits 28px above ME on the
+          same right edge, and it is a real button because it does something —
+          it returns to the top. Opacity only; it never moves. */}
+      <button
+        type="button"
+        onClick={() => {
+          const hero = document.getElementById("hero");
+          if (hero) scrollToElement(hero);
+        }}
+        aria-hidden={pastHero ? undefined : "true"}
+        tabIndex={pastHero ? undefined : -1}
+        data-shown={pastHero ? "" : undefined}
+        className="nav-name font-display"
+      >
+        Jake Park
+      </button>
+
       {NAV_SECTIONS.map(({ id, label }) => {
         const isActive = id === activeId;
         return (
