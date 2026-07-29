@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { CSSProperties } from "react";
-import EduPhotoCallout, { EduPhotoInline, type EduPhoto } from "./edu-photo";
+import EduPhoto, { type EduPhoto as EduPhotoData } from "./edu-photo";
 import SectionShell from "./section-shell";
 
 type EducationEntry = {
@@ -11,7 +11,7 @@ type EducationEntry = {
   logoFile: string;
   logoAlt: string;
   coursework: string[];
-  photo: EduPhoto;
+  photo: EduPhotoData;
 };
 
 const ENTRIES: EducationEntry[] = [
@@ -83,19 +83,18 @@ function EntryRow({ entry }: { entry: EducationEntry }) {
       />
 
       <div className="edu-body">
-        {/* The trigger is appended to the school name so it sits on the name's
-            last line, 14px past its last character — nothing else in the left
-            block changes. At ≥900px it opens the pinned callout; below 900px it
-            is not rendered at all and EduPhotoInline below takes over. */}
+        {/* The contact print is appended to the school name so it sits on the
+            name's last line, 14px past its last character. It is out of flow
+            inside a 1em anchor, so nothing else in the left block moves and the
+            row's height is unchanged at every width. */}
         <p className="font-display text-h2 text-ink">
           {entry.institution}
-          <EduPhotoCallout photo={entry.photo} />
+          <EduPhoto photo={entry.photo} />
         </p>
         <p className="mt-[10px] font-display text-body text-body">{entry.degree}</p>
         <p className="mt-[14px] font-mono text-mono-micro uppercase text-label">
           {entry.location}
         </p>
-        <EduPhotoInline photo={entry.photo} />
       </div>
 
       <div className="edu-course">

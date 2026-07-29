@@ -201,27 +201,53 @@ Coursework column: two-column grid, column-first flow, one course per cell, no
 separators of any kind. Items must never wrap; reduce mono size at a breakpoint
 rather than allowing a wrap or truncating.
 
-Photo per row — the pinned callout. Reuses the hero map's callout grammar so it
-reads as native: a 7px hollow square 14px past the school name's last character,
-optically aligned to its cap height; a 0.5px muted tie to a `PHOTO` mono-micro
-label; and, on hover/focus, a 0.5px ink leader with exactly one hard 90° elbow
-running down and across to the photo. The photo sits directly on paper — no
-frame, no fill, no border box, no radius, no shadow. The leader is the tail.
+Photo per row — **the contact print and the plate.** Two sizes, not one.
 
-- The trigger is the **only** hover target. Hovering the row or the coursework
+**There is no room in the row for a mounted photograph, and this is measured,
+not opinion.** At 1440px the body column is a locked 620px, the coursework
+starts 32px after it, and the clear space right of the body's ink is 74px
+(Georgetown) / 52px (TJHSST); the row is 260px tall at ≥1440px. A photo obeying
+those numbers is ~119px wide, which is too small to read as a photograph at all.
+Any attempt to mount a usefully-sized photo in the row grows the row. Do not
+re-derive this — it has been measured twice.
+
+- **the contact print** — the image itself at 28px, inline, 14px past the school
+  name's last character, optically aligned to its cap height. It is the
+  affordance: you can see it is a photograph and that there is more of it. Two
+  micro crop marks (top-left, bottom-right only, 5px arms, 3px outside) tie it
+  to the plate's language — without them a 28px photo beside a heading reads as
+  a sticker. On hover/focus they step 2px further out along their diagonals and
+  go to ink. That is the entire interaction on the print.
+- **the anchor's height must be `0`, never `1em`.** An inline-block whose content
+  is all out of flow takes its baseline from its bottom margin edge, so at `1em`
+  it is a 40px box sitting entirely above the text baseline — taller than the
+  name's own ascent. Measured: that grew the ≥1600px rows from 260px to 265px.
+  At `height: 0` the row heights are byte-identical with and without the print.
+- **the plate** — the full photograph, `position: fixed`, up to 500×667. Fixed,
+  not absolute: it is detached from the row's box entirely, so it reserves no
+  space, contributes **0** to CLS, and *cannot* move a row height whatever it
+  does. Four crop marks, 0.5px ink, 14px arms, vertices 8px diagonally outside
+  the corners, arms running back along the edges — never touching the photo,
+  never closing into a rectangle. Real crop marks stay small whatever the sheet
+  size, so they do **not** scale with the plate. Caption on one line beneath the
+  bottom-left mark. No frame, no fill, no border box, no radius, no shadow, no
+  filter, no grayscale.
+- Opening: the crop marks extend from their own vertices (transform-origin at
+  the vertex, so the arms draw along their length), the photo uncovers behind
+  them at 90ms, the caption last. Drawn, not faded. Compositor-only.
+- **At ≥1360px the plate is anchored to the content's right edge and sized so
+  its left edge never reaches the body column** — measured clearance 41px
+  (1360) to 308px (1920). It covers the coursework, never type being read, and
+  *that* is what makes hover-to-open safe there. Below 1360px the coursework is
+  already a full-width row under the body, leaving no clear space at any width,
+  so the plate centres as a lightbox and opens on **click**, not hover. Tie the
+  breakpoint to that layout change, not to a number.
+- The print is the **only** pointer target. The plate is `pointer-events: none`,
+  so it can never steal or trap a hover. Hovering the row or the coursework
   still does only what it already did.
-- The panel is an absolutely-positioned overlay: it reserves no space, never
-  reflows the coursework, and contributes **0** to CLS.
-- **The callout exists exactly where the coursework is a right-hand column,
-  i.e. ≥1360px.** Below that the coursework reflows to a full-width row beneath
-  the body and occupies the entire band the panel would open into — measured, it
-  runs to 366px below the trigger, and clearing it would need a ~398px vertical
-  leader, which is a rule down the page, not a callout. So below 1360px the
-  photo is simply inline and permanently visible, beneath the location line and
-  above the coursework. Tie the breakpoint to that layout change, not to a
-  number.
-- The two photos are **3:4**, not the 9:19.5 they were assumed to be. They are
-  never cropped; the panel is sized from the real ratio (150×200).
+- The two photos are **3:4** (4284×5712 and 2870×3826), not the 9:19.5 they are
+  repeatedly assumed to be. They are **never** cropped — 9:19.5 would mean
+  cutting ~57% of each image's width away.
 
 ---
 

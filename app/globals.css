@@ -296,164 +296,225 @@
     }
   }
 
-  /* ── § 06 education — the pinned photo callout (see EduPhotoCallout) ───────
-     Same callout grammar as the hero map: a small mark, a 0.5px leader with one
-     hard 90° elbow, a mono-micro label. No panel, no fill, no border box, no
-     radius, no shadow — the photo sits directly on paper and the leader is the
-     tail. The whole callout is an absolutely-positioned overlay, so it reserves
-     no space and cannot reflow the coursework column (CLS contribution: none).
+  /* ── § 06 education — the contact print and the plate (see EduPhoto) ───────
+     The row has no room for a mounted photograph. Measured at 1440px: the body
+     column is a locked 620px, the coursework starts 32px after it, and the
+     clear space right of the body's ink is 74px (Georgetown) / 52px (TJHSST);
+     the row is 260px tall at ≥1440px. A photo obeying those numbers is ~119px
+     wide, which is too small to read as a photograph. So it is shown at two
+     sizes rather than one bad one:
 
-     Geometry, in the trigger's own coordinate space (origin = trigger top-left):
-       mark            7x7 at (0, 2), centre (3.5, 5.5)
-       tie             0.5px rule across the 10px gap, at the mark's centre line
-       label           starts at 17px (mark 7 + gap 10)
-       leader          M3.5,9 down to y=62, hard corner, right to x=40
-       panel top-left  (40, 62) — right and DOWN, never leftward
-     The leader drops before it turns so it never crosses its own label. */
+       .edu-plate-ref    the contact print — 28px, inline, 14px past the school
+                         name. Absolutely positioned inside a 1em-tall anchor,
+                         so it adds NOTHING to the line box: the row's height is
+                         identical with and without it. Verified, not assumed.
+       .edu-plate        the plate — position: fixed, up to 500×667. Reserves no
+                         space, contributes 0 to CLS, cannot move the row.
 
-  /* The anchor owns BOTH the positioning context and the cap-height lift, so
-     the trigger's mark and the panel share one coordinate system — otherwise
-     the leader starts where the mark is not. It is inline-block because a
-     transform does not apply to a non-replaced inline box; the strut is safe
-     because the trigger is 11px/1 and sits entirely inside the name's 44px line
-     box, so the line's height is unchanged.
+     No frame, no border box, no radius, no shadow, no filter. The plate sits
+     directly on paper and the four crop marks are the only structure. */
 
-     Optically align the mark to the school name's cap height: the name is the
-     h2 token, a fixed 40px/500, where Bricolage's cap height measures 28.4px,
-     so the cap band's centre sits 14.2px above the baseline. The anchor's
-     baseline is the label's, which puts the mark's centre 3.1px above it —
-     hence the remaining ~11px of lift. Measured, not guessed. */
-  .edu-photo-anchor {
+  /* Zero-growth anchor. height MUST be 0, not 1em: an inline-block whose
+     content is all out of flow has no in-flow line box, so its baseline is its
+     bottom margin edge — at height: 1em that is a 40px box sitting entirely
+     ABOVE the text baseline, which is taller than the name's own ascent and
+     grew the line box. Measured: the ≥1600px rows went 260px -> 265px. At
+     height: 0 the anchor contributes nothing above the baseline and the row
+     heights are byte-identical with and without the print. */
+  .edu-plate-anchor {
     position: relative;
     display: inline-block;
     vertical-align: baseline;
-    white-space: nowrap;
-    /* The 14px from the school name's last character lives HERE, not on the
-       trigger: the panel and the leader are positioned against the anchor, so
-       an offset applied further in would start the leader 14px left of the mark
-       it is supposed to leave from. */
+    width: 28px;
+    height: 0;
     margin-left: 14px;
-    transform: translateY(-11px);
+    white-space: nowrap;
   }
 
-  /* Trigger. A real <button>, stripped to nothing but its type. The label text
-     is the trigger's own content, so the element's baseline IS the label's
-     baseline; the mark is positioned against that. */
-  .edu-photo-trigger {
-    position: relative;
-    display: inline-block;
-    padding-left: 17px;
-    border: 0;
-    background: none;
-    font-family: var(--font-plex-mono), ui-monospace, monospace;
-    font-size: 11px;
-    font-weight: 400;
-    line-height: 1;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: #6b6455;
-    cursor: none;
-    vertical-align: baseline;
-  }
-  .edu-photo-square {
+  /* The trigger IS the photograph. No square, no label, no leader, no elbow —
+     the image says "photograph" better than a mono caption does.
+     Optically aligned to the school name's cap height: the name is 40px/500,
+     Bricolage's cap height measures 28.4px, so the cap band's centre sits
+     14.2px above the baseline; a 37px-tall print centred there starts 32.7px
+     above the baseline. */
+  .edu-plate-ref {
     position: absolute;
     left: 0;
-    top: 2px;
-    width: 7px;
-    height: 7px;
-    border: 0.5px solid theme("colors.ink");
+    bottom: -4.3px;
+    display: block;
+    width: 28px;
+    padding: 0;
+    border: 0;
     background: none;
-    transition:
-      background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
-      border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    line-height: 0;
+    cursor: none;
   }
-  .edu-photo-tie {
-    position: absolute;
-    left: 7px;
-    top: 5.5px;
-    width: 10px;
-    height: 0.5px;
-    background: theme("colors.muted");
+  .edu-plate-thumb {
+    display: block;
+    width: 28px;
+    height: auto;
+    /* The one state change on the print itself: it is quiet until addressed. */
+    opacity: 0.72;
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  /* The entire idle-state feedback: the mark fills, the label goes to ink. */
-  .edu-photo-trigger:hover,
-  .edu-photo-trigger:focus-visible {
-    color: theme("colors.ink");
+  .edu-plate-ref:hover .edu-plate-thumb,
+  .edu-plate-ref:focus-visible .edu-plate-thumb,
+  .edu-plate-ref[aria-expanded="true"] .edu-plate-thumb {
+    opacity: 1;
   }
-  .edu-photo-trigger:hover .edu-photo-square,
-  .edu-photo-trigger:focus-visible .edu-photo-square {
-    background: theme("colors.ink");
-  }
-  .edu-photo-trigger:focus-visible {
+  .edu-plate-ref:focus-visible {
     outline: 1px solid theme("colors.accent");
     outline-offset: 2px;
   }
-  .edu-photo-trigger:focus:not(:focus-visible) {
+  .edu-plate-ref:focus:not(:focus-visible) {
     outline: none;
   }
 
-  /* The panel. Absolutely positioned against the trigger, opening right and
-     down into the dead space. Never interactive — the trigger is the only hover
-     target, so the panel cannot steal or hold the pointer. */
-  .edu-photo-panel {
+  /* Two micro crop marks on the print — top-left and bottom-right only, so they
+     read as registration and never as a frame. Same language as the plate's,
+     scaled to it: 5px arms, 3px outside. Without these a 28px photograph beside
+     a heading reads as a sticker; with them it reads as a plate reference, which
+     is what it is. They overflow the 28px anchor harmlessly — the anchor is out
+     of flow, so nothing reflows around them. */
+  .edu-plate-ref::before,
+  .edu-plate-ref::after {
+    content: "";
     position: absolute;
-    left: 0;
-    top: 0;
-    /* The anchor is nowrap so "photo" can never break off the school name's
-       last line; the panel must opt back out or the caption runs on one long
-       line past the photo and into the coursework column. */
-    white-space: normal;
+    width: 5px;
+    height: 5px;
+    border-color: theme("colors.muted");
+    border-style: solid;
+    transition:
+      transform 180ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .edu-plate-ref::before {
+    top: -3px;
+    left: -3px;
+    border-width: 0.5px 0 0 0.5px;
+  }
+  .edu-plate-ref::after {
+    bottom: -3px;
+    right: -3px;
+    border-width: 0 0.5px 0.5px 0;
+  }
+  /* The entire interaction on the print: the marks step 2px further out along
+     their own diagonals and go to ink. Nothing zooms, lifts, or rotates. */
+  .edu-plate-ref:hover::before,
+  .edu-plate-ref:focus-visible::before {
+    transform: translate(-2px, -2px);
+    border-color: theme("colors.ink");
+  }
+  .edu-plate-ref:hover::after,
+  .edu-plate-ref:focus-visible::after {
+    transform: translate(2px, 2px);
+    border-color: theme("colors.ink");
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .edu-plate-ref::before,
+    .edu-plate-ref::after {
+      transition: none !important;
+    }
+  }
+
+  /* The plate. Fixed to the viewport, so it is completely detached from the
+     row's box — nothing it does can change a row height. Never interactive: the
+     print is the only pointer target, so the plate cannot steal or hold the
+     pointer and cannot trap a hover.
+
+     --plate-w is the widest the photo may be at this breakpoint. Below 1360px
+     it centres as a lightbox (see the breakpoints at the end of this block);
+     at and above 1360px it is anchored to the content's right edge and sized so
+     its left edge never reaches the body column, which is what makes hover safe
+     there — the plate covers the coursework, never type being read. */
+  .edu-plate {
+    position: fixed;
     z-index: 30; /* above the education content, far below the cursor (9999) */
+    top: 50%;
+    left: 50%;
+    --plate-w: min(72vw, 300px);
+    --plate-h: min(64vh, 560px);
+    transform: translate(-50%, -50%);
     display: block;
-    width: 0;
-    height: 0;
+    white-space: normal;
     pointer-events: none;
   }
-  .edu-photo-leader {
-    position: absolute;
-    left: 0;
-    top: 0;
-    overflow: visible;
-    /* Path length: 81px down + 16.5px across = 97.5. Drawn along its length, so
-       the line arrives before the photo unrolls from it. */
-    stroke-dasharray: 97.5;
-    stroke-dashoffset: 97.5;
-    transition: stroke-dashoffset 260ms cubic-bezier(0.33, 1, 0.68, 1) 300ms;
-  }
-  /* 20px, not more: the panel must clear the coursework column by ≥32px in the
-     TJHSST row too, whose longer name pushes the trigger ~22px further right
-     than Georgetown's. A larger rightward offset fits the first row and
-     collides in the second. */
-  /* 90px of drop, not 62: the TJHSST name runs to two lines, so its panel hangs
-     below a name block whose descenders end only a few pixels above the photo.
-     90px is what buys that row the same 32px clearance the single-line
-     Georgetown row gets horizontally. */
-  .edu-photo-frame {
-    position: absolute;
-    left: 20px;
-    top: 90px;
+
+  /* The box is the photo's own footprint; the crop marks and the caption hang
+     off it, so every offset is measured from the image's real edges rather than
+     from a guessed container size. */
+  .edu-plate-box {
+    position: relative;
     display: block;
-    width: 150px;
-    /* Uncovered, not faded, not scaled, not moved. */
-    clip-path: inset(0 0 100% 0);
-    transition: clip-path 420ms cubic-bezier(0.33, 1, 0.68, 1);
   }
-  .edu-photo-img {
+  .edu-plate-img {
     display: block;
-    width: 100%;
+    width: auto;
     height: auto;
+    max-width: var(--plate-w);
+    max-height: var(--plate-h);
+    /* Never cropped. The files are 3:4 (4284×5712 and 2870×3826) — the 9:19.5
+       they were once assumed to be would need cutting ~57% of each image's
+       width away. Both maxes with auto sizes give exact contain behaviour on a
+       replaced element, so the ratio holds without object-fit. */
+    aspect-ratio: 3 / 4;
+    /* Uncovered top to bottom, not faded and not scaled. */
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  /* Caption is held to the photo's own width and wraps rather than running out
-     to the right: at 11px/0.16em the full string measures ~192px, which would
-     overhang a 150px photo and eat the coursework clearance. */
-  .edu-photo-caption {
+
+  /* Four L-shaped crop marks: 0.5px ink, each arm 14px, vertex 8px diagonally
+     outside its corner, arms running back along the photo's edges. They never
+     touch the photo and never close into a rectangle. Real crop marks stay the
+     same size whatever the sheet is, so these do NOT scale with the plate.
+     Each scales out from its own vertex, which extends the arms along their
+     own length — drawn, not faded, and compositor-only. */
+  .edu-plate-reg {
     position: absolute;
-    left: 20px;
-    /* directly beneath the photo: 150px wide at 3:4 is 200px tall, + 10px */
-    top: 300px;
+    width: 14px;
+    height: 14px;
+    transform: scale(0);
+    transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .edu-plate-reg[data-c="tl"] {
+    top: -8px;
+    left: -8px;
+    border-top: 0.5px solid theme("colors.ink");
+    border-left: 0.5px solid theme("colors.ink");
+    transform-origin: top left;
+  }
+  .edu-plate-reg[data-c="tr"] {
+    top: -8px;
+    right: -8px;
+    border-top: 0.5px solid theme("colors.ink");
+    border-right: 0.5px solid theme("colors.ink");
+    transform-origin: top right;
+  }
+  .edu-plate-reg[data-c="bl"] {
+    bottom: -8px;
+    left: -8px;
+    border-bottom: 0.5px solid theme("colors.ink");
+    border-left: 0.5px solid theme("colors.ink");
+    transform-origin: bottom left;
+  }
+  .edu-plate-reg[data-c="br"] {
+    bottom: -8px;
+    right: -8px;
+    border-bottom: 0.5px solid theme("colors.ink");
+    border-right: 0.5px solid theme("colors.ink");
+    transform-origin: bottom right;
+  }
+
+  /* Directly beneath the bottom-left crop mark: 8px of offset + its 14px arm +
+     10px of air. One line, never wrapped — the plate is at least 235px wide at
+     every width where it appears and the longest caption measures ~196px. */
+  .edu-plate-caption {
+    position: absolute;
+    left: -8px;
+    top: calc(100% + 32px);
     display: block;
-    width: 150px;
-    line-height: 1.45;
+    white-space: nowrap;
     font-family: var(--font-plex-mono), ui-monospace, monospace;
     font-size: 11px;
     font-weight: 400;
@@ -462,81 +523,69 @@
     text-transform: uppercase;
     color: #6b6455;
     opacity: 0;
-    transition: opacity 200ms linear;
-  }
-
-  /* Open. Leader first (no delay), photo wipes 60ms later, caption at 300ms. */
-  .edu-photo-panel[data-open] .edu-photo-leader {
-    stroke-dashoffset: 0;
-    transition: stroke-dashoffset 260ms cubic-bezier(0.33, 1, 0.68, 1);
-  }
-  .edu-photo-panel[data-open] .edu-photo-frame {
-    clip-path: inset(0 0 0 0);
-    transition: clip-path 420ms cubic-bezier(0.33, 1, 0.68, 1) 60ms;
-  }
-  .edu-photo-panel[data-open] .edu-photo-caption {
-    opacity: 1;
-    transition: opacity 200ms linear 300ms;
-  }
-  /* Exit: 300ms total, and the leader retracts LAST — so the caption goes
-     first, the photo rolls back up, and the line is the last thing to leave. */
-  .edu-photo-panel .edu-photo-caption {
     transition: opacity 120ms linear;
   }
-  .edu-photo-panel .edu-photo-frame {
-    transition: clip-path 220ms cubic-bezier(0.33, 1, 0.68, 1) 40ms;
-  }
 
-  /* The callout exists exactly where the coursework is a right-hand COLUMN,
-     which is ≥1360px. Below that the coursework reflows to a full-width row
-     beneath the body (see the 1100–1359.98px rule above), so it occupies the
-     whole band the panel would open into — measured, the coursework runs to
-     366px below the trigger at its worst, and clearing it would need a 398px
-     vertical leader, which is a rule down the page rather than a callout. So
-     below 1360px the photo is simply inline and permanently visible, the same
-     treatment mobile gets. The rule tracks the layout's own structure rather
-     than an arbitrary breakpoint. */
-
-  /* Below 1360px there is no callout at all — the photo is permanently inline
-     instead (.edu-photo-inline, inside .edu-body beneath the location line).
-     Neither variant is ever hidden from a reader; they are two presentations of
-     the same content. */
-  .edu-photo-inline {
-    display: block;
-    margin-top: 24px;
-    max-width: 150px;
+  /* Open — the plate is registered, then printed: crop marks extend from their
+     vertices (0ms), the photo uncovers behind them (90ms), the caption last. */
+  .edu-plate[data-open] .edu-plate-reg {
+    transform: scale(1);
+    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
   }
-  .edu-photo-inline .edu-photo-caption {
-    position: static;
-    width: auto;
-    margin-top: 10px;
+  .edu-plate[data-open] .edu-plate-img {
+    clip-path: inset(0 0 0 0);
+    transition: clip-path 460ms cubic-bezier(0.33, 1, 0.68, 1) 90ms;
+  }
+  .edu-plate[data-open] .edu-plate-caption {
     opacity: 1;
-    transition: none;
+    transition: opacity 200ms linear 320ms;
   }
+
+  /* ≥1360px is exactly where the coursework is a right-hand COLUMN. There the
+     plate anchors to the content's right edge, clear of all type, and hover may
+     open it. --plate-w per band is the measured clear space between the body
+     column's right edge and the content's right edge, less a margin for the
+     crop marks. Below 1360px the coursework is already a full-width row under
+     the body, leaving no clear space at any width, so the plate stays centred
+     and opens on click instead (see HOVER_OPENS in edu-photo.tsx). */
   @media (min-width: 1360px) {
-    .edu-photo-inline {
-      display: none;
+    .edu-plate {
+      left: auto;
+      /* section padding clamp(24px,6vw,96px) + the 180px nav gutter */
+      right: calc(clamp(24px, 6vw, 96px) + 180px);
+      transform: translateY(-50%);
+      --plate-w: 235px; /* clear space: 253px */
+      --plate-h: min(70vh, 620px);
     }
   }
-  @media (max-width: 1359.98px) {
-    .edu-photo-anchor {
-      display: none;
+  @media (min-width: 1440px) {
+    .edu-plate {
+      --plate-w: 300px; /* clear space: 323px */
+    }
+  }
+  @media (min-width: 1600px) {
+    .edu-plate {
+      --plate-w: 430px; /* clear space: 464px */
+    }
+  }
+  @media (min-width: 1800px) {
+    .edu-plate {
+      --plate-w: 500px; /* clear space: 784px */
+      --plate-h: min(74vh, 668px);
     }
   }
 
-  /* Reduced motion: the panel appears and disappears instantly. No wipe, no
-     leader draw — but never permanently hidden from anyone. */
+  /* Reduced motion: the plate arrives and leaves instantly. Nothing is ever
+     permanently hidden from anyone — only the drawing of it is dropped. */
   @media (prefers-reduced-motion: reduce) {
-    .edu-photo-leader,
-    .edu-photo-frame,
-    .edu-photo-caption,
-    .edu-photo-panel[data-open] .edu-photo-leader,
-    .edu-photo-panel[data-open] .edu-photo-frame,
-    .edu-photo-panel[data-open] .edu-photo-caption {
+    .edu-plate-img,
+    .edu-plate-reg,
+    .edu-plate-caption,
+    .edu-plate-thumb,
+    .edu-plate[data-open] .edu-plate-img,
+    .edu-plate[data-open] .edu-plate-reg,
+    .edu-plate[data-open] .edu-plate-caption {
       transition: none !important;
-    }
-    .edu-photo-panel[data-open] .edu-photo-leader {
-      stroke-dashoffset: 0;
     }
   }
 
