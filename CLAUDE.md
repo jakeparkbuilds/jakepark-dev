@@ -292,6 +292,24 @@ AWS is one entry. Never expand it to Lambda / S3 / SQS / DynamoDB.
 The left side of both rows — crests, school names, degree lines, location lines,
 row heights, hairline rules — is **final**. Do not touch it.
 
+**The two crests are sized individually and must never be normalised to one
+height.** They are opposite kinds of mark: Georgetown's G is a solid navy glyph,
+TJHSST's is a fine-line seal. Measured at an identical 200px set height the G
+carries 2.7× the contrast-weighted ink (19,339 units at 0.578 density against
+7,190 at 0.180), so at equal height the seal reads as the smaller of the two.
+TJHSST is therefore set 1.20× Georgetown — 48/62px against 40/52px, per entry
+via `logoHeight` in `education.tsx`. Size by perceived weight, never by bounding
+box.
+
+Neither crest sits in a tile. On a paper section a paper tile is invisible by
+definition, so the correct result is no visible box at all — the marks sit
+directly on the ground, at native brand colors, with no filter, tint, or
+desaturation. `georgetown.svg` originally carried a second, slightly larger copy
+of the G filled #c6bcb6 behind the navy one: an offset keyline for placement on
+photographs, which on paper was the only thing reading as an edge. It is
+removed. `tjhsst.svg` is already transparent — its white is interior artwork,
+not a ground.
+
 Coursework column: two-column grid, column-first flow, one course per cell, no
 separators of any kind. Items must never wrap; reduce mono size at a breakpoint
 rather than allowing a wrap or truncating.

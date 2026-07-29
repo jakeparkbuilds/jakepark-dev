@@ -10,6 +10,9 @@ type EducationEntry = {
   location: string;
   logoFile: string;
   logoAlt: string;
+  /** Rendered crest height in px, [base, >=640px]. Set by perceived weight,
+      not by bounding box — see .edu-logo in globals.css. */
+  logoHeight: [number, number];
   coursework: string[];
   photo: EduPhotoData;
 };
@@ -21,6 +24,7 @@ const ENTRIES: EducationEntry[] = [
     location: "Washington, D.C.",
     logoFile: "georgetown.svg",
     logoAlt: "Georgetown University shield",
+    logoHeight: [40, 52],
     coursework: [
       "computer science i & ii",
       "data structures",
@@ -43,6 +47,10 @@ const ENTRIES: EducationEntry[] = [
     location: "Alexandria, Virginia",
     logoFile: "tjhsst.svg",
     logoAlt: "Thomas Jefferson High School for Science and Technology crest",
+    // 1.20x Georgetown: ~1.10 because a circular mark reads smaller than a
+    // squarish one at equal height, and ~1.09 more because this one is drawn
+    // in hairlines rather than filled.
+    logoHeight: [48, 62],
     coursework: [
       "computer science principles",
       "data structures",
@@ -76,7 +84,13 @@ function EntryRow({ entry, index }: { entry: EducationEntry; index: number }) {
   return (
     <div tabIndex={0} className="edu-row py-[clamp(40px,5vh,64px)]">
       <div
-        className="edu-logo h-10 w-auto shrink-0 sm:h-[52px]"
+        className="edu-logo shrink-0"
+        style={
+          {
+            "--edu-logo-h": `${entry.logoHeight[0]}px`,
+            "--edu-logo-h-sm": `${entry.logoHeight[1]}px`,
+          } as CSSProperties
+        }
         role="img"
         aria-label={entry.logoAlt}
         dangerouslySetInnerHTML={{ __html: readLogo(entry.logoFile) }}

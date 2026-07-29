@@ -185,8 +185,17 @@
       background-color 180ms;
   }
 
+  /* Crest height is per-entry, not shared. The two marks are opposite kinds:
+     Georgetown's G is a solid navy glyph, TJHSST's is a fine-line seal, and
+     matching them by bounding box makes the seal read as the smaller of the
+     two. Measured at an identical 200px set height, the G carries 19,339 units
+     of contrast-weighted ink at 0.578 density against the seal's 7,190 at
+     0.180 — 2.7x the optical mass. So the seal is set larger, by the entry's
+     own --edu-logo-h. See education.tsx for the chosen values. */
   .edu-logo {
     grid-area: logo;
+    height: var(--edu-logo-h);
+    width: auto;
   }
 
   .edu-body {
@@ -243,6 +252,9 @@
   }
 
   @media (min-width: 640px) {
+    .edu-logo {
+      height: var(--edu-logo-h-sm);
+    }
     .edu-row {
       grid-template-columns: 80px minmax(0, 1fr);
       grid-template-areas:
