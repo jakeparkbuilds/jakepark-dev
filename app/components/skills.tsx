@@ -1,10 +1,12 @@
 "use client";
 
+import { createBodies, step, type Body } from "../lib/field-physics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ARC_INSET,
   CLUSTERS,
   keepOutZones,
+  type Rect,
   NODE_INDEX,
   NODE_SEEDS,
   TICK_COUNT,
@@ -161,13 +163,30 @@ export default function Skills({
     };
   }, [active]);
 
+  // The field's geometry, read ONCE per resize and never inside the loop, so
+  // "the loop performs zero DOM reads" still holds.
+  const sizeRef = useRef<{ w: number; h: number } | null>(null);
+  const bodiesRef = useRef<Body[] | null>(null);
+  const zonesRef = useRef<Rect[]>([]);
+  // A node's CSS base, in px. The transform carries only the delta from it, so
+  // the resting layout in the server-rendered HTML is untouched.
+  const baseRef = useRef<{ x: number; y: number }[]>([]);
+
   const layout = useCallback((t: number, seeds: NodeSeed[]) => {
+    const bodies = bodiesRef.current;
+    const base = baseRef.current;
     for (let i = 0; i < seeds.length; i++) {
       const s = seeds[i];
       const el = nodeRefs.current[i];
       const ring = ringRefs.current[i];
       if (!el || !ring) continue;
-      const { dx, dy, z } = drift(s, t - offsets.current[i]);
+      // Position comes from the physics body; only the depth cycle is still a
+      // function of time, because depth has nothing to collide with.
+      const b = bodies?.[i];
+      const p = base[i];
+      const dx = b && p ? b.x - p.x : 0;
+      const dy = b && p ? b.y - p.y : 0;
+      const { z } = drift(s, t - offsets.current[i]);
       el.style.transform = `translate3d(${dx.toFixed(2)}px, ${dy.toFixed(
         2
       )}px, 0) scale(${(0.88 + z * 0.24).toFixed(4)})`;
@@ -179,6 +198,42 @@ export default function Skills({
       ).toFixed(3);
     }
   }, []);
+
+  // Measure the field and seed the bodies. Once on mount and again on resize —
+  // never in the loop. On resize the bodies are rebuilt from the seeds rather
+  // than rescaled: a node's position after a collision is not a fraction of
+  // anything, so there is nothing meaningful to rescale.
+  useEffect(() => {
+    if (reduced) return;
+    const field = fieldRef.current;
+    if (!field) return;
+
+    const build = () => {
+      const w = field.clientWidth;
+      const h = field.clientHeight;
+      if (!(w > 0 && h > 0)) return;
+      sizeRef.current = { w, h };
+      zonesRef.current = keepOutZones(w, h);
+      baseRef.current = NODE_SEEDS.map((s) => {
+        const ix = s.r + TICK_REACH + s.ax;
+        const iy = s.r + TICK_REACH + s.ay;
+        return { x: ix + s.bx * (w - 2 * ix), y: iy + s.by * (h - 2 * iy) };
+      });
+      bodiesRef.current = createBodies(NODE_SEEDS, w, h);
+    };
+    build();
+
+    let rt: number | undefined;
+    const ro = new ResizeObserver(() => {
+      window.clearTimeout(rt);
+      rt = window.setTimeout(build, 200);
+    });
+    ro.observe(field);
+    return () => {
+      window.clearTimeout(rt);
+      ro.disconnect();
+    };
+  }, [reduced]);
 
   useEffect(() => {
     const field = fieldRef.current;
@@ -204,6 +259,10 @@ export default function Skills({
       // snapping to wherever the shared clock has since travelled.
       const a = activeRef.current;
       if (a !== null) offsets.current[a] += dt;
+      const size = sizeRef.current;
+      if (bodiesRef.current && size) {
+        step(bodiesRef.current, zonesRef.current, size.w, size.h, dt, a);
+      }
       layout(elapsed, NODE_SEEDS);
       raf = requestAnimationFrame(frame);
     };

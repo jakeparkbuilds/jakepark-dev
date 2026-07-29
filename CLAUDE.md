@@ -312,11 +312,48 @@ change the layout or ask.
   **fixed integer seed** (mulberry32) at module scope. `drift(seed, 0)` is
   rendered inline by the server, so the SSR HTML *is* frame 0 — hydration
   matches and the reduced-motion path needs no JS at all.
-- **Bounds are structural, not tested.** A node's base is expressed in CSS as
-  `inset + fraction × (100% − 2·inset)` where inset = radius + amplitude, and
-  the two sine components are weighted 0.62/0.38 so |offset| ≤ amplitude. There
-  is no boundary test, no bounce, no collision resolution and no physics at
-  runtime.
+- **The field is kinematic at runtime, and this REVERSES how it used to work.**
+  It was a pure function of time — `base + sin(t)`, bounded structurally, no
+  state, no bounce, no collision. That guaranteed bounds and label separation
+  but let two nodes pass straight through each other, which became obvious once
+  the drift was sped up. Each node now carries a position and a velocity,
+  travels in a straight line, and reflects elastically off other nodes, off the
+  four keep-out zones and off the field's edges. `app/lib/field-physics.ts`.
+  **Do not restore the sine drift to "simplify" this** — passing through is the
+  bug it was reverted for.
+- The seed still decides where every node starts (the same t = 0 frame the
+  server renders, so hydration is unchanged), how fast it goes, and which way it
+  sets off. Only the trajectory is emergent. Equal mass: the two nodes in a
+  collision swap their normal velocity components, so a primary deflects exactly
+  as much as a tertiary.
+- **Ring clearance does not keep NAMES apart.** A label box is far wider than
+  its ring, so the collision pass resolves two things: circles at radius + 6px,
+  and label AABBs along their least-penetrated axis. Collision on rings alone
+  leaves exactly the overlaps that were visible (xgboost/python, c++/sql,
+  fastapi/next.js).
+- **Three rules keep it stable and all three are load-bearing.** (1) Resolve a
+  pair only while it is APPROACHING — resolving a separating pair makes two
+  touching nodes buzz forever. (2) Positional correction has a slop and a gain
+  below 1; correcting the whole overlap each frame oscillates. (3) Renormalise
+  every node's speed to its seeded value after the pass — elastic collisions
+  conserve energy in theory but not in floating point, and the field otherwise
+  heats up until nodes streak or cools until it stops.
+- **Static walls must budget for the depth scale**, not the collision radius:
+  the rendered ring reaches 1.12× and using `r + 6` left a measured 0.85px
+  incursion into the keep-out zones.
+- **The mount settle is intentional.** The seeded arrangement guaranteed that
+  labels stay apart, never that rings do — rings were explicitly meant to cross
+  — so on arrival some pairs interpenetrate by as much as 69px. A per-frame cap
+  on the positional push eases that apart over ~0.33s instead of snapping it in
+  three frames. In steady state the cap never binds; the fastest closing speed
+  in the field is ~0.3px per frame.
+- Measured, 120s at 1440 after the settle: **zero ring overlaps, zero label
+  overlaps, zero keep-out incursions, zero nodes leaving the field**, max 0.35
+  direction reversals per second (no jitter), longest contact 0.57s (no
+  sticking). Under 6× CPU throttle: median frame 8.3ms, worst 15.9ms, no frame
+  over 32ms.
+- Naive O(n²) over 17 nodes is 136 checks a frame. Never add a spatial index or
+  a physics library.
 - The seed-time **relaxation must include the amplitudes**. Clearance at rest is
   not enough: measured without the travel term, two nodes seeded 38px apart
   drifted into an 11px label overlap within 20s. Rings are meant to cross;
