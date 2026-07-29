@@ -22,14 +22,16 @@ export default function Connect({ id }: { id: string }) {
       // otherwise inherit is zeroed out and it centers on the full
       // viewport. Below 1280px (nav labels sit closer in) every other
       // section's gutter is kept.
-      // The section must fit ONE viewport at 1440x900 with nothing scrolled —
-      // it measured 966.5px against 900 once the bands went in. Every vertical
-      // gap below is reduced in proportion rather than any element being cut:
-      // pad 108/90 -> 72/63, the footer rule's lead-in 64 -> 40, the coordinate
-      // line's 40 -> 24.
-      className="section-pad flex w-full flex-col items-center pt-[clamp(64px,8vh,120px)] pb-[clamp(56px,7vh,110px)] min-[1280px]:[--nav-gutter:0px]"
+      // The section must fit ONE viewport at 1440x900 with nothing scrolled.
+      // It measured 966.5px against 900 once the bands went in, so every
+      // vertical gap was cut in proportion rather than any element being
+      // dropped. Losing the headline's second line then freed 67px, which is
+      // given back to the same gaps in the same proportion rather than left as
+      // a hole: pad 72/63 -> 90/76, the column gap 56 -> 64, the bands' lead-in
+      // 72 -> 81, the rule's 40 -> 48, the coordinate line's 24 -> 28.
+      className="section-pad flex w-full flex-col items-center pt-[clamp(80px,10vh,140px)] pb-[clamp(68px,8.5vh,124px)] min-[1280px]:[--nav-gutter:0px]"
     >
-      <div className="flex w-full max-w-[720px] flex-col items-center gap-14 text-center">
+      <div className="flex w-full max-w-[720px] flex-col items-center gap-16 text-center">
         <div className="flex flex-col items-center gap-6">
           {/* Strength is set by weight: the heavier the type, the less it
               moves. The display lines are divided by 8 against the mono
@@ -41,22 +43,15 @@ export default function Connect({ id }: { id: string }) {
             </Magnet>
           </p>
 
-          {/* Each LINE is its own magnet, not the block — two lines moving as
-              one unit would just be the block sliding. Measured: with the
-              pointer parked between them, which is the worst a single pointer
-              can do, the ink gap closes from 21px to 12px and never touches, so
-              divisor 8 stands and the fallback to 12 was not needed. */}
+          {/* One line now, so one magnetic unit. The two-line collision
+              constraint is retired with the second line: there is nothing left
+              for it to collide with, and the ink-gap measurement that justified
+              divisor 8 no longer applies. Strength stays 8 because it is the
+              weight rule, not the clearance, that sets it. */}
           <p className="font-display text-[clamp(40px,9vw,64px)] font-medium leading-[1.05] tracking-[-0.02em] text-ink">
-            <span className="block">
-              <Magnet divisor={8} field={220}>
-                let&apos;s build
-              </Magnet>
-            </span>
-            <span className="block">
-              <Magnet divisor={8} field={220}>
-                something
-              </Magnet>
-            </span>
+            <Magnet divisor={8} field={220}>
+              let&apos;s connect
+            </Magnet>
           </p>
 
           {/* Full strength: it sits alone with clear space on every side. */}
@@ -121,16 +116,16 @@ export default function Connect({ id }: { id: string }) {
 
       {/* Set piece 6. Sits in the lower third, between the social row and the
           footer rule, and runs edge to edge. */}
-      <div className="mt-[clamp(56px,8vh,96px)] w-full">
+      <div className="mt-[clamp(64px,9vh,104px)] w-full">
         <TypeBands />
       </div>
 
       <div
         aria-hidden="true"
-        className="mt-10 w-full max-w-[720px] border-t-[0.5px] border-muted"
+        className="mt-12 w-full max-w-[720px] border-t-[0.5px] border-muted"
       />
 
-      <p className="mt-6 text-center font-mono text-mono-micro uppercase text-label">
+      <p className="mt-7 text-center font-mono text-mono-micro uppercase text-label">
         washington, d.c. · 38.9076°n 77.0723°w
       </p>
     </section>
