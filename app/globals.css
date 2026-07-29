@@ -522,10 +522,9 @@
     }
   }
 
-  /* The plate. Fixed to the viewport, so it is completely detached from the
-     row's box — nothing it does can change a row height. Never interactive: the
-     print is the only pointer target, so the plate cannot steal or hold the
-     pointer and cannot trap a hover.
+  /* The plate. Absolutely positioned against .edu-grid and out of flow, so
+     nothing it does can change a row height. Only interactive while open, so it
+     cannot steal or hold the pointer when it is not there.
 
      --plate-w is the widest the photo may be at this breakpoint. Below 1360px
      it centres as a lightbox (see the breakpoints at the end of this block);
@@ -583,9 +582,12 @@
        width away. Both maxes with auto sizes give exact contain behaviour on a
        replaced element, so the ratio holds without object-fit. */
     aspect-ratio: 3 / 4;
-    /* Uncovered top to bottom, not faded and not scaled. */
+    /* Uncovered top to bottom, not faded and not scaled. The EXIT lives here
+       and the enter lives on [data-open] — the exit is NOT the enter reversed,
+       it has its own curve and its own 320ms, and it waits 160ms for the
+       caption to clear first. */
     clip-path: inset(0 0 100% 0);
-    transition: clip-path 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: clip-path 320ms cubic-bezier(0.4, 0, 0.2, 1) 160ms;
   }
 
   /* Four L-shaped crop marks: 0.5px ink, each arm 14px, vertex 8px diagonally
@@ -598,8 +600,8 @@
     position: absolute;
     width: 14px;
     height: 14px;
-    transform: scale(0);
-    transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+    transition: opacity 240ms cubic-bezier(0.4, 0, 0.2, 1) 160ms;
   }
   .edu-plate-reg[data-c="tl"] {
     top: -8px;
@@ -647,22 +649,24 @@
     text-transform: uppercase;
     color: #6b6455;
     opacity: 0;
-    transition: opacity 120ms linear;
+    /* First out on the way back, so the plate is never captioned while it is
+       already half wiped away. */
+    transition: opacity 160ms linear;
   }
 
-  /* Open — the plate is registered, then printed: crop marks extend from their
-     vertices (0ms), the photo uncovers behind them (90ms), the caption last. */
-  .edu-plate[data-open] .edu-plate-reg {
-    transform: scale(1);
-    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
+  /* Open — the photo wipes down first, the crop marks arrive behind it, the
+     caption last. 480ms end to end, the same length as the exit. */
   .edu-plate[data-open] .edu-plate-img {
     clip-path: inset(0 0 0 0);
-    transition: clip-path 460ms cubic-bezier(0.33, 1, 0.68, 1) 90ms;
+    transition: clip-path 420ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  .edu-plate[data-open] .edu-plate-reg {
+    opacity: 1;
+    transition: opacity 260ms cubic-bezier(0.33, 1, 0.68, 1) 120ms;
   }
   .edu-plate[data-open] .edu-plate-caption {
     opacity: 1;
-    transition: opacity 200ms linear 320ms;
+    transition: opacity 200ms linear 280ms;
   }
 
   /* ≥1360px is exactly where the coursework is a right-hand COLUMN. There the

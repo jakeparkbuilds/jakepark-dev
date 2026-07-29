@@ -315,9 +315,18 @@ re-derive this — it has been measured twice.
 - A pointer press focuses the trigger **before** it clicks it, so focus must not
   open the plate when the focus came from a pointer — otherwise one tap toggles
   twice and nothing appears.
-- Opening: the crop marks extend from their own vertices (transform-origin at
-  the vertex, so the arms draw along their length), the photo uncovers behind
-  them at 90ms, the caption last. Drawn, not faded. Compositor-only.
+- Opening: the photo uncovers top to bottom (420ms `reveal`), the crop marks
+  arrive behind it at 120ms, the caption at 280ms. Leaving: the caption goes
+  first (160ms), then the photo wipes back up (320ms, its OWN
+  `cubic-bezier(0.4, 0, 0.2, 1)` — never the enter reversed) with the corners
+  alongside it. Both runs are 480ms. clip-path and opacity only.
+- **The photo must outlive the stage.** A conditionally rendered image unmounts
+  the instant the stage ends and there is nothing left for the exit to animate,
+  and it mounts with `data-open` already set so the enter has no state to travel
+  from. `shown` (in the DOM) and `open` (revealed) are therefore separate: mount
+  closed, open on the next frame, and hold the photo for the full exit before
+  dropping it. Switching rows waits out the exit before mounting the incoming
+  photo, so two are never visible at once.
 - **At ≥1360px the plate is anchored to the content's right edge and sized so
   its left edge never reaches the body column** — measured clearance 41px
   (1360) to 308px (1920). It covers the coursework, never type being read, and

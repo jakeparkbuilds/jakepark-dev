@@ -46,6 +46,11 @@ const STAGE_IN_MS = 180; // intent delay, so a pointer crossing the print does n
 const STAGE_OUT_MS = 260; // grace, so the trigger -> plate journey is one region
 const REARM_MS = 200; // extra beat before coursework may hover-open again
 const PLATE_ID = "edu-plate";
+// The exit's full length: caption 160ms, then the wipe and the corners. The
+// photo has to stay mounted for all of it — a conditionally rendered image
+// unmounts instantly and there is nothing left for a transition to run on.
+// Enter runs to the same 480ms, so the two are symmetrical.
+const EXIT_MS = 480;
 
 // ── the shared stage, in module scope ───────────────────────────────────────
 // The print and the plate are one hover region and they now live in different
@@ -214,7 +219,66 @@ export default function EduPhotoTrigger({
 // ── the plate — exactly one, for the whole section ──────────────────────────
 export function EduPlate({ photos }: { photos: EduPhoto[] }) {
   const current = useSyncExternalStore(subscribe, getActive, getServerActive);
-  const photo = current === null ? null : photos[current];
+
+  // `shown` is the photo in the DOM, `open` is whether it is revealed. They are
+  // deliberately separate: the photo must outlive the stage so its exit has
+  // something to animate, and it must mount CLOSED so the enter has a state to
+  // travel from — mounting with data-open already set gives both values in one
+  // frame and the browser transitions nothing.
+  const [shown, setShown] = useState<EduPhoto | null>(null);
+  const [open, setOpen] = useState(false);
+  const swap = useRef<number | null>(null);
+
+  useEffect(() => {
+    const want = current === null ? null : photos[current];
+    if (swap.current) {
+      window.clearTimeout(swap.current);
+      swap.current = null;
+    }
+
+    if (!want) {
+      // Leaving: run the exit, then drop the photo.
+      if (shown) {
+        setOpen(false);
+        swap.current = window.setTimeout(() => setShown(null), EXIT_MS);
+      }
+      return;
+    }
+    if (!shown) return; // mount happens below, closed, then opens next frame
+    if (shown.src === want.src) {
+      // Re-entered — possibly mid-exit. Simply re-opening lets the transition
+      // pick up from wherever the clip-path currently is: no snap, no restart.
+      setOpen(true);
+      return;
+    }
+    // Switching rows: the outgoing photo finishes its exit BEFORE the incoming
+    // one is mounted, so the two are never on screen together.
+    setOpen(false);
+    swap.current = window.setTimeout(() => setShown(want), EXIT_MS);
+  }, [current, shown, photos]);
+
+  // Mount closed, then open on the next frame so the wipe has somewhere to
+  // start from.
+  useEffect(() => {
+    const want = current === null ? null : photos[current];
+    if (!want) return;
+    if (!shown) {
+      setShown(want);
+      return;
+    }
+    if (shown.src !== want.src || open) return;
+    const id = requestAnimationFrame(() => setOpen(true));
+    return () => cancelAnimationFrame(id);
+  }, [current, shown, open, photos]);
+
+  useEffect(
+    () => () => {
+      if (swap.current) window.clearTimeout(swap.current);
+    },
+    []
+  );
+
+  const photo = shown;
 
   // Escape, and a tap anywhere else, dismiss it.
   useEffect(() => {
@@ -244,10 +308,10 @@ export function EduPlate({ photos }: { photos: EduPhoto[] }) {
     <span
       id={PLATE_ID}
       role="group"
-      aria-label={photo ? photo.alt : undefined}
-      data-open={photo ? "" : undefined}
+      aria-label={open && photo ? photo.alt : undefined}
+      data-open={open ? "" : undefined}
       className="edu-plate"
-      aria-hidden={photo ? undefined : "true"}
+      aria-hidden={open ? undefined : "true"}
       onPointerEnter={onEnter}
       onPointerLeave={onLeave}
     >
