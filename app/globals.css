@@ -589,6 +589,72 @@
     }
   }
 
+  /* ── § 02 about — the Kyoto portrait's crop marks ─────────────────────────
+     The same registration language as the two § 06 plates, so the site's three
+     raster images read as one family. The photo itself is untouched: no border,
+     no shadow, no radius, no filter, and the marks sit outside its corners
+     without closing into a rectangle. Deliberately NOT interactive — the
+     education plates extend their corners on hover because they are triggers;
+     this one is not, and must not imply it is. */
+  .about-plate {
+    position: relative;
+    display: block;
+  }
+  .about-plate-reg {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+  }
+  .about-plate-reg[data-c="tl"] {
+    top: -8px;
+    left: -8px;
+    border-top: 0.5px solid theme("colors.ink");
+    border-left: 0.5px solid theme("colors.ink");
+  }
+  .about-plate-reg[data-c="tr"] {
+    top: -8px;
+    right: -8px;
+    border-top: 0.5px solid theme("colors.ink");
+    border-right: 0.5px solid theme("colors.ink");
+  }
+  .about-plate-reg[data-c="bl"] {
+    bottom: -8px;
+    left: -8px;
+    border-bottom: 0.5px solid theme("colors.ink");
+    border-left: 0.5px solid theme("colors.ink");
+  }
+  .about-plate-reg[data-c="br"] {
+    bottom: -8px;
+    right: -8px;
+    border-bottom: 0.5px solid theme("colors.ink");
+    border-right: 0.5px solid theme("colors.ink");
+  }
+  /* Below 900px the section padding drops toward 24px, so the marks pull in to
+     stay clear of the viewport edge and the text column. */
+  @media (max-width: 899.98px) {
+    .about-plate-reg {
+      width: 10px;
+      height: 10px;
+    }
+    .about-plate-reg[data-c="tl"],
+    .about-plate-reg[data-c="tr"] {
+      top: -6px;
+    }
+    .about-plate-reg[data-c="bl"],
+    .about-plate-reg[data-c="br"] {
+      bottom: -6px;
+    }
+    .about-plate-reg[data-c="tl"],
+    .about-plate-reg[data-c="bl"] {
+      left: -6px;
+    }
+    .about-plate-reg[data-c="tr"],
+    .about-plate-reg[data-c="br"] {
+      right: -6px;
+    }
+  }
+
   /* ── § 04 projects — the drawing register (see Projects) ──────────────────
      One ruled line per project on a 12-column grid, a column header that
      appears exactly once, and an in-place unfold. Vertically composed: § 05

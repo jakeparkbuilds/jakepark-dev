@@ -52,15 +52,27 @@ export default function About({
             400px floor left the text column under 160px wide (unreadable) at
             1024-1280px viewports. This still reaches ~460-480px at 1440px+. */}
         <div className="flex w-full flex-col gap-4 md:order-2 md:mt-[9px] md:w-[clamp(280px,32vw,480px)] md:flex-none">
-          <Image
-            src="/portrait.jpg"
-            alt="Jake Park"
-            width={5712}
-            height={4284}
-            quality={90}
-            sizes="(min-width: 900px) 32vw, 400px"
-            className="h-auto w-full max-w-[400px] saturate-[.85] md:max-w-none"
-          />
+          {/* The same crop-mark language as the two education plates, so all
+              three raster images on the site read as one family. Additive
+              only: the photo's size, position and ratio are untouched, the
+              marks sit outside it, and unlike the education plates this one is
+              NOT interactive — no hover response, because the portrait is not
+              a trigger and must not suggest it is. */}
+          <span className="about-plate">
+            <Image
+              src="/portrait.jpg"
+              alt="Jake Park"
+              width={5712}
+              height={4284}
+              quality={90}
+              sizes="(min-width: 900px) 32vw, 400px"
+              className="h-auto w-full max-w-[400px] saturate-[.85] md:max-w-none"
+            />
+            <span aria-hidden="true" className="about-plate-reg" data-c="tl" />
+            <span aria-hidden="true" className="about-plate-reg" data-c="tr" />
+            <span aria-hidden="true" className="about-plate-reg" data-c="bl" />
+            <span aria-hidden="true" className="about-plate-reg" data-c="br" />
+          </span>
           <p className="font-mono text-mono-micro uppercase text-muted">
             kyoto, japan · 2025
           </p>
