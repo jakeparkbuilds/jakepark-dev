@@ -2,26 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 import { NAV_SECTIONS } from "../lib/sections";
-import { scrollToElement } from "../lib/scroll-controller";
+import { scrollToElement, subscribeGlobal } from "../lib/scroll-controller";
 
 export default function Nav() {
   const [activeId, setActiveId] = useState<string>(NAV_SECTIONS[0].id);
-  // The nav is fixed and passes over § 03's ink plate, where its ink labels
-  // collapse to 3.02:1 and the active one to 1.12:1 — invisible. It inverts
-  // with the ground, the same way the cursor and the ink trail do.
-  const [inverted, setInverted] = useState(false);
   // The name is hidden while the hero is on screen — the hero already says it,
-  // at display scale. It appears once the hero is gone and the visitor could
-  // otherwise have forgotten whose site this is.
+  // at display scale.
   const [pastHero, setPastHero] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
+  const nameRef = useRef<HTMLButtonElement | null>(null);
+  const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
   useEffect(() => {
     const hero = document.getElementById("hero");
     if (!hero) return;
-    // Fires when the hero's BOTTOM edge crosses the top of the viewport, which
-    // is exactly "the hero has scrolled away" — an observer, not a scroll
-    // subscriber, so it costs nothing once the page settles.
     const io = new IntersectionObserver(([e]) => setPastHero(!e.isIntersecting), {
       threshold: 0,
     });
@@ -29,32 +23,47 @@ export default function Nav() {
     return () => io.disconnect();
   }, []);
 
+  // ---- inversion, per element ----
+  //
+  // The nav is fixed and passes over § 03's ink plate, where its ink labels
+  // collapse to 3.02:1 and the active one to 1.12:1 — invisible. It inverts
+  // with the ground.
+  //
+  // EACH ELEMENT DECIDES FOR ITSELF, from what is directly behind IT. The
+  // previous version flipped the whole nav on one observer keyed to the plate
+  // crossing the nav's band, so every label — and the name at the top of the
+  // column — turned light together, while the name was still sitting on paper
+  // above the plate's edge. A fixed column is ~200px tall and the boundary
+  // sweeps through it, so during the transition the list is legitimately part
+  // ink and part paper. That is correct, and it is the only thing that is.
+  //
+  // Rides the shared Lenis loop; no second scroll listener. Every read happens
+  // before any write, so a frame costs one layout pass, and an attribute is
+  // only touched when its value actually changes.
   useEffect(() => {
     const plate = document.getElementById("experience");
-    const nav = navRef.current;
-    if (!plate || !nav) return;
-    let io: IntersectionObserver | null = null;
-    // An observer whose root is shrunk to the nav's own band, so it fires
-    // exactly when the plate is behind the nav. IntersectionObserver rather
-    // than a scroll subscriber: this must cost nothing once the page settles.
-    const arm = () => {
-      io?.disconnect();
-      const r = nav.getBoundingClientRect();
-      io = new IntersectionObserver(([e]) => setInverted(e.isIntersecting), {
-        rootMargin: `-${Math.max(0, r.top)}px 0px -${Math.max(
-          0,
-          window.innerHeight - r.bottom
-        )}px 0px`,
-        threshold: 0,
-      });
-      io.observe(plate);
-    };
-    arm();
-    window.addEventListener("resize", arm);
-    return () => {
-      io?.disconnect();
-      window.removeEventListener("resize", arm);
-    };
+    if (!plate) return;
+    const els: HTMLElement[] = [nameRef.current, ...itemRefs.current].filter(
+      (el): el is NonNullable<typeof el> => el !== null
+    );
+    if (els.length === 0) return;
+    const state = els.map(() => false);
+    const mids = els.map(() => 0);
+
+    return subscribeGlobal(() => {
+      const plateRect = plate.getBoundingClientRect();
+      for (let i = 0; i < els.length; i++) {
+        const r = els[i].getBoundingClientRect();
+        mids[i] = r.top + r.height / 2;
+      }
+      for (let i = 0; i < els.length; i++) {
+        const inv = mids[i] >= plateRect.top && mids[i] <= plateRect.bottom;
+        if (inv === state[i]) continue;
+        state[i] = inv;
+        if (inv) els[i].setAttribute("data-inv", "");
+        else els[i].removeAttribute("data-inv");
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -89,7 +98,6 @@ export default function Nav() {
     <nav
       ref={navRef}
       aria-label="section navigation"
-      data-inverted={inverted ? "" : undefined}
       className="fixed right-[theme(spacing.section)] top-[theme(spacing.section)] z-10 hidden flex-col items-end gap-3 md:flex"
     >
       {/* A name, not a nav label: sentence-cased as written, in the display
@@ -97,6 +105,7 @@ export default function Nav() {
           same right edge, and it is a real button because it does something —
           it returns to the top. Opacity only; it never moves. */}
       <button
+        ref={nameRef}
         type="button"
         onClick={() => {
           const hero = document.getElementById("hero");
@@ -110,15 +119,18 @@ export default function Nav() {
         Jake Park
       </button>
 
-      {NAV_SECTIONS.map(({ id, label }) => {
+      {NAV_SECTIONS.map(({ id, label }, i) => {
         const isActive = id === activeId;
         return (
           <a
             key={id}
+            ref={(node) => {
+              itemRefs.current[i] = node;
+            }}
             href={`#${id}`}
             onClick={(event) => handleClick(event, id)}
             aria-current={isActive ? "true" : undefined}
-            className={`flex items-center gap-2 font-mono text-mono-micro uppercase transition-colors duration-150 ${
+            className={`flex items-center gap-2 font-mono text-mono-micro uppercase ${
               isActive ? "nav-active" : "nav-idle"
             }`}
           >

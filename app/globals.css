@@ -721,7 +721,20 @@
 
   /* The fixed nav passes over § 03's plate. On paper its labels are #6B6455
      and #0A0908; on ink those measure 3.02:1 and 1.12:1 — the active label is
-     effectively invisible — so they invert with the ground. */
+     effectively invisible — so they invert with the ground.
+
+     [data-inv] is written per ELEMENT by Nav, from what is directly behind that
+     element — not per nav. A fixed column is ~200px tall and § 03's edge sweeps
+     through it, so mid-transition the list is part ink and part paper. 200ms so
+     no label snaps as the boundary passes its own midpoint. */
+  .nav-idle,
+  .nav-active {
+    transition: color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .nav-name {
+    transition: opacity 300ms cubic-bezier(0.33, 1, 0.68, 1),
+      color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
   .nav-idle {
     color: #6b6455;
   }
@@ -731,13 +744,13 @@
   .nav-active {
     color: #0a0908;
   }
-  nav[data-inverted] .nav-idle {
+  .nav-idle[data-inv] {
     color: #9b9382;
   }
-  nav[data-inverted] .nav-idle:hover {
+  .nav-idle[data-inv]:hover {
     color: theme("colors.paper");
   }
-  nav[data-inverted] .nav-active {
+  .nav-active[data-inv] {
     color: theme("colors.paper");
   }
 
@@ -756,17 +769,14 @@
     line-height: 1;
     color: theme("colors.ink");
     opacity: 0;
-    /* Opacity only — it never moves. Not display:none, so the transition has
-       something to run on and the button keeps its place in the layout. */
-    transition: opacity 300ms cubic-bezier(0.33, 1, 0.68, 1), color 150ms ease-in-out;
     pointer-events: none;
   }
   .nav-name[data-shown] {
     opacity: 1;
     pointer-events: auto;
   }
-  /* It inverts with the rest of the nav over § 03's ink ground. */
-  nav[data-inverted] .nav-name {
+  /* It inverts on its own midpoint like every other nav element. */
+  .nav-name[data-inv] {
     color: theme("colors.paper");
   }
 
