@@ -144,7 +144,7 @@ Rules:
 |---|---|---|
 | 01 | hero (no number shown — it's the cover) | done |
 | 02 | about + portrait | done, copy rewrite pending |
-| 03 | experience | **not built** |
+| 03 | experience | done — the inverted plate; motion pass outstanding |
 | 04 | projects | done |
 | 05 | skills | done |
 | 06 | education | done |
