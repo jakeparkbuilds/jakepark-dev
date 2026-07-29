@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { CSSProperties } from "react";
-import EduPhoto, { type EduPhoto as EduPhotoData } from "./edu-photo";
+import EduPhotoTrigger, { EduPlate, type EduPhoto as EduPhotoData } from "./edu-photo";
 import SectionShell from "./section-shell";
 
 type EducationEntry = {
@@ -72,7 +72,7 @@ function readLogo(file: string) {
   return fs.readFileSync(path.join(process.cwd(), "public/logos", file), "utf8");
 }
 
-function EntryRow({ entry }: { entry: EducationEntry }) {
+function EntryRow({ entry, index }: { entry: EducationEntry; index: number }) {
   return (
     <div tabIndex={0} className="edu-row py-[clamp(40px,5vh,64px)]">
       <div
@@ -89,7 +89,7 @@ function EntryRow({ entry }: { entry: EducationEntry }) {
             row's height is unchanged at every width. */}
         <p className="font-display text-h2 text-ink">
           {entry.institution}
-          <EduPhoto photo={entry.photo} />
+          <EduPhotoTrigger photo={entry.photo} index={index} />
         </p>
         <p className="mt-[10px] font-display text-body text-body">{entry.degree}</p>
         <p className="mt-[14px] font-mono text-mono-micro uppercase text-label">
@@ -132,9 +132,15 @@ export default function Education({
           className="edu-grid"
           style={{ "--entry-count": ENTRIES.length } as CSSProperties}
         >
-          {ENTRIES.map((entry) => (
-            <EntryRow key={entry.institution} entry={entry} />
+          {ENTRIES.map((entry, i) => (
+            <EntryRow key={entry.institution} entry={entry} index={i} />
           ))}
+
+          {/* ONE plate for the section, positioned against this grid — not
+              inside either trigger. Both rows therefore stage the photo to the
+              same coordinates by construction; only the image and caption
+              change. */}
+          <EduPlate photos={ENTRIES.map((e) => e.photo)} />
         </div>
         <div aria-hidden="true" className="h-[0.5px] w-full bg-muted" />
       </div>

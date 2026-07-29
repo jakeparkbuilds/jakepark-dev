@@ -291,15 +291,30 @@ re-derive this — it has been measured twice.
   it is a 40px box sitting entirely above the text baseline — taller than the
   name's own ascent. Measured: that grew the ≥1600px rows from 260px to 265px.
   At `height: 0` the row heights are byte-identical with and without the print.
-- **the plate** — the full photograph, `position: fixed`, up to 500×667. Fixed,
-  not absolute: it is detached from the row's box entirely, so it reserves no
-  space, contributes **0** to CLS, and *cannot* move a row height whatever it
-  does. Four crop marks, 0.5px ink, 14px arms, vertices 8px diagonally outside
+- **the plate** — the full photograph. There is exactly **one** for the whole
+  section, rendered by Education inside `.edu-grid` rather than inside either
+  trigger, which is what makes "both rows stage it to the same coordinates"
+  structural rather than two numbers kept in agreement. `position: absolute`
+  against the grid — never fixed, never computed from scroll — with `top: 50%`
+  (the equal-height grid puts the divider there) and `right: 0` (the content
+  edge). Absolutely positioned children are out of flow, so it never becomes a
+  grid item, reserves no space, contributes **0** to CLS, and cannot move a row
+  height. Four crop marks, 0.5px ink, 14px arms, vertices 8px diagonally outside
   the corners, arms running back along the edges — never touching the photo,
   never closing into a rectangle. Real crop marks stay small whatever the sheet
   size, so they do **not** scale with the plate. Caption on one line beneath the
   bottom-left mark. No frame, no fill, no border box, no radius, no shadow, no
   filter, no grayscale.
+- **Only the divider between the two rows retracts**, from its RIGHT end
+  (`transform-origin: left`), stopping ≥48px clear of the plate's left crop
+  mark. The rules above the Georgetown row never change length in any state.
+  The scale is derived from the plate's measured width — reading `--plate-w`
+  via `getPropertyValue` returns the unresolved `min(72vw, 300px)` token below
+  1360px and `parseFloat` makes it NaN, which left the retraction silently
+  holding its previous value.
+- A pointer press focuses the trigger **before** it clicks it, so focus must not
+  open the plate when the focus came from a pointer — otherwise one tap toggles
+  twice and nothing appears.
 - Opening: the crop marks extend from their own vertices (transform-origin at
   the vertex, so the arms draw along their length), the photo uncovers behind
   them at 90ms, the caption last. Drawn, not faded. Compositor-only.

@@ -145,6 +145,12 @@
      duplicating markup. At >=1100px each .edu-row is itself a grid item of
      the shared .edu-grid row-track grid below, so its rendered height
      matches whichever entry's content is tallest — see .edu-grid. */
+  /* The plate's containing block. Absolutely positioned children are out of
+     flow, so the plate never becomes a grid item and never adds a row track. */
+  .edu-grid {
+    position: relative;
+  }
+
   .edu-row {
     display: grid;
     grid-template-columns: 1fr;
@@ -171,7 +177,8 @@
     width: 100%;
     height: 0.5px;
     background: theme("colors.muted");
-    transform-origin: right center;
+    /* Anchored at the LEFT so the RIGHT end is what travels. */
+    transform-origin: left center;
     transform: scaleX(1);
     transition:
       transform 320ms cubic-bezier(0.33, 1, 0.68, 1),
@@ -346,39 +353,13 @@
         opacity 240ms cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* (b) the row hairlines retract from their right edge.
-       --edu-divider-scale is measured once per stage entry in edu-photo.tsx so
-       they stop >=48px clear of the plate's left crop mark; every row's rule
-       shares the one value because they all span the same x range. The brief
-       asks only for the divider BETWEEN the rows, but a plate tall enough to
-       be worth looking at is taller than a row — at 1440 it is 400px against a
-       317px row — so it crosses the row above's rule too. Retracting them
-       together is the same gesture, not a second one. */
-    html.edu-staged .edu-row::before {
-      transform: scaleX(var(--edu-divider-scale, 1));
-    }
-
-    /* The section's own heading hairline is a SectionShell border, shared by
-       every section, so it gets a pseudo-element of its own here rather than
-       being converted globally. It retracts on the same measured scale — a
-       staged plate must not cross the section's outer rule either. */
-    #education > .border-t-\[0\.5px\] {
-      position: relative;
-      border-top-color: transparent;
-    }
-    #education > .border-t-\[0\.5px\]::before {
-      content: "";
-      position: absolute;
-      top: -0.5px;
-      left: 0;
-      width: 100%;
-      height: 0.5px;
-      background: theme("colors.ink");
-      transform-origin: right center;
-      transform: scaleX(1);
-      transition: transform 320ms cubic-bezier(0.33, 1, 0.68, 1);
-    }
-    html.edu-staged #education > .border-t-\[0\.5px\]::before {
+    /* (b) ONLY the divider between the two rows retracts — the rules above the
+       Georgetown row never change length in any state. It shortens from its
+       RIGHT end, moving leftward, and stops >=48px clear of the plate's left
+       crop mark. --edu-divider-scale is measured once per stage entry in
+       edu-photo.tsx and applied as a scale, so the retraction animates on
+       transform and never on width. */
+    html.edu-staged .edu-row + .edu-row::before {
       transform: scaleX(var(--edu-divider-scale, 1));
     }
   }
@@ -411,7 +392,6 @@
      every transition in it is instant. */
   @media (prefers-reduced-motion: reduce) {
     .edu-row::before,
-    #education > .border-t-\[0\.5px\]::before,
     html.edu-staged .edu-course,
     html.edu-staged .edu-body,
     .edu-body,
@@ -552,14 +532,27 @@
      at and above 1360px it is anchored to the content's right edge and sized so
      its left edge never reaches the body column, which is what makes hover safe
      there — the plate covers the coursework, never type being read. */
+  /* Anchored to the SECTION, not the viewport. There is exactly one plate for
+     the whole section (see EduPlate), positioned against .edu-grid: `top: 50%`
+     is the divider between the two rows, because the equal-height grid makes
+     both tracks 1fr, and `right: 0` is the content's right edge — the same edge
+     the coursework column ends on. So the plate lands in an identical spot for
+     both rows and at every scroll position, with no fixed positioning, no
+     scroll arithmetic and no viewport units in its placement. */
   .edu-plate {
-    position: fixed;
+    position: absolute;
     z-index: 30; /* above the education content, far below the cursor (9999) */
     top: 50%;
-    left: 50%;
+    right: 0;
     --plate-w: min(72vw, 300px);
-    --plate-h: min(64vh, 560px);
-    transform: translate(-50%, -50%);
+    --plate-h: 480px;
+    /* The plate carries the width itself, rather than only handing it to the
+       image as a max-width. That gives the divider measurement a real resolved
+       px value to read: getPropertyValue('--plate-w') returns the unresolved
+       `min(72vw, 300px)` token below 1360px, which parseFloat turns into NaN —
+       and the retraction then silently kept whatever scale it had last. */
+    width: var(--plate-w);
+    transform: translateY(-50%);
     display: block;
     white-space: normal;
     pointer-events: none;
@@ -568,14 +561,21 @@
   /* The box is the photo's own footprint; the crop marks and the caption hang
      off it, so every offset is measured from the image's real edges rather than
      from a guessed container size. */
+  /* Hugs the image so the crop marks sit on the photo's real edges, and stays
+     pinned to the plate's right edge when the height cap makes it narrower. */
   .edu-plate-box {
     position: relative;
     display: block;
+    width: max-content;
+    margin-left: auto;
   }
   .edu-plate-img {
     display: block;
     width: auto;
     height: auto;
+    /* Against --plate-w, not 100%: the box is width: max-content, so a
+       percentage max-width resolves circularly and the image escaped its own
+       plate (measured 360px inside a 300px plate at 1200). */
     max-width: var(--plate-w);
     max-height: var(--plate-h);
     /* Never cropped. The files are 3:4 (4284×5712 and 2870×3826) — the 9:19.5
@@ -674,12 +674,8 @@
      and opens on click instead (see HOVER_OPENS in edu-photo.tsx). */
   @media (min-width: 1360px) {
     .edu-plate {
-      left: auto;
-      /* section padding clamp(24px,6vw,96px) + the 180px nav gutter */
-      right: calc(clamp(24px, 6vw, 96px) + 180px);
-      transform: translateY(-50%);
       --plate-w: 235px; /* clear space: 253px */
-      --plate-h: min(70vh, 620px);
+      --plate-h: 520px;
     }
   }
   @media (min-width: 1440px) {
@@ -690,12 +686,13 @@
   @media (min-width: 1600px) {
     .edu-plate {
       --plate-w: 430px; /* clear space: 464px */
+      --plate-h: 600px;
     }
   }
   @media (min-width: 1800px) {
     .edu-plate {
       --plate-w: 500px; /* clear space: 784px */
-      --plate-h: min(74vh, 668px);
+      --plate-h: 668px;
     }
   }
 
