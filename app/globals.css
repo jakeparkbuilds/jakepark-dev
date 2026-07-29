@@ -1216,27 +1216,110 @@
     height: 620px;
   }
 
+  /* The four axis labels. Not boxed, not filled, not enclosed — an axis label
+     on a technical plate is type, a corner registration mark and a leader, and
+     that is all three of these are. They are structure rather than decoration,
+     which is why every node's drift is clamped out of their keep-out zones at
+     generation time (see keepOutZones in app/lib/skills.ts). */
   .sk-cluster-label {
     position: absolute;
     z-index: 200; /* above every node: these are the field's fixed anchors */
-    color: #6b6455;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0.24em;
+    color: #4a4438;
     pointer-events: none;
+    transition:
+      color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .sk-cluster-label[data-cluster="languages"] {
-    top: 0;
-    left: 0;
+  /* The corner mark: an L whose corner points OUTWARD, away from the field,
+     sitting at the outer corner of that label's quadrant. */
+  .sk-cluster-mark {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    transition:
+      width 200ms cubic-bezier(0.4, 0, 0.2, 1),
+      height 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
+  /* The leader: a 0.5px muted hairline running from the label's inner edge
+     toward the field centre, terminating in open space. It ties the label to
+     its region without drawing anything to a node. */
+  .sk-cluster-leader {
+    position: absolute;
+    top: 50%;
+    width: 64px;
+    height: 0.5px;
+    background: theme("colors.muted");
+  }
+
+  .sk-cluster-label[data-cluster="languages"],
   .sk-cluster-label[data-cluster="ml"] {
     top: 0;
-    right: 0;
   }
-  .sk-cluster-label[data-cluster="infra"] {
-    bottom: 0;
-    left: 0;
-  }
+  .sk-cluster-label[data-cluster="infra"],
   .sk-cluster-label[data-cluster="interfaces"] {
     bottom: 0;
-    right: 0;
+  }
+  .sk-cluster-label[data-cluster="languages"],
+  .sk-cluster-label[data-cluster="infra"] {
+    left: 26px;
+  }
+  .sk-cluster-label[data-cluster="ml"],
+  .sk-cluster-label[data-cluster="interfaces"] {
+    right: 26px;
+  }
+
+  .sk-cluster-label[data-cluster="languages"] .sk-cluster-mark,
+  .sk-cluster-label[data-cluster="ml"] .sk-cluster-mark {
+    top: -6px;
+    border-top: 0.5px solid theme("colors.ink");
+  }
+  .sk-cluster-label[data-cluster="infra"] .sk-cluster-mark,
+  .sk-cluster-label[data-cluster="interfaces"] .sk-cluster-mark {
+    bottom: -6px;
+    border-bottom: 0.5px solid theme("colors.ink");
+  }
+  .sk-cluster-label[data-cluster="languages"] .sk-cluster-mark,
+  .sk-cluster-label[data-cluster="infra"] .sk-cluster-mark {
+    left: -26px;
+    border-left: 0.5px solid theme("colors.ink");
+  }
+  .sk-cluster-label[data-cluster="ml"] .sk-cluster-mark,
+  .sk-cluster-label[data-cluster="interfaces"] .sk-cluster-mark {
+    right: -26px;
+    border-right: 0.5px solid theme("colors.ink");
+  }
+
+  .sk-cluster-label[data-cluster="languages"] .sk-cluster-leader,
+  .sk-cluster-label[data-cluster="infra"] .sk-cluster-leader {
+    left: calc(100% + 10px);
+  }
+  .sk-cluster-label[data-cluster="ml"] .sk-cluster-leader,
+  .sk-cluster-label[data-cluster="interfaces"] .sk-cluster-leader {
+    right: calc(100% + 10px);
+  }
+
+  /* Addressing a node lifts its own region and recedes the other three. No line
+     is drawn between the node and its label — the tie is the emphasis. */
+  .sk-field[data-domain] .sk-cluster-label {
+    opacity: 0.3;
+  }
+  .sk-field[data-domain="languages"] .sk-cluster-label[data-cluster="languages"],
+  .sk-field[data-domain="ml"] .sk-cluster-label[data-cluster="ml"],
+  .sk-field[data-domain="infra"] .sk-cluster-label[data-cluster="infra"],
+  .sk-field[data-domain="interfaces"] .sk-cluster-label[data-cluster="interfaces"] {
+    opacity: 1;
+    color: theme("colors.ink");
+  }
+  .sk-field[data-domain="languages"] .sk-cluster-label[data-cluster="languages"] .sk-cluster-mark,
+  .sk-field[data-domain="ml"] .sk-cluster-label[data-cluster="ml"] .sk-cluster-mark,
+  .sk-field[data-domain="infra"] .sk-cluster-label[data-cluster="infra"] .sk-cluster-mark,
+  .sk-field[data-domain="interfaces"] .sk-cluster-label[data-cluster="interfaces"] .sk-cluster-mark {
+    width: 22px;
+    height: 22px;
   }
 
   /* A node carries ONLY transform and z-index from the loop. Its resting place
@@ -1254,6 +1337,7 @@
   }
 
   .sk-node-btn {
+    position: relative;
     display: grid;
     place-items: center;
     width: 100%;
@@ -1276,6 +1360,33 @@
     width: 100%;
     height: 100%;
     overflow: visible;
+  }
+  /* The circumference ticks. Drawn full length and trimmed at the FAR end by a
+     dash offset, so a tick is always attached to its ring and only its outer
+     end moves. Staggered clockwise from 12 o'clock in the markup. */
+  .sk-tick {
+    stroke-dashoffset: 3; /* 8px drawn - 3 = the 5px resting tick */
+    transition: stroke-dashoffset 148ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sk-node[data-active] .sk-tick {
+    stroke-dashoffset: 0;
+  }
+  /* The arc sweeps once and stays swept — the field's only accumulated state. */
+  .sk-arc {
+    transition: stroke-dashoffset 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  /* The box's bottom edge sits exactly TICK_REACH (9px) below the ring at 6
+     o'clock, whatever the tier's radius — so one offset places the index just
+     inside the ring on all three sizes. */
+  .sk-node-idx {
+    position: absolute;
+    bottom: 13px;
+    left: 50%;
+    font-size: 9px;
+    line-height: 1;
+    color: #6b6455;
+    transform: translateX(-50%);
+    pointer-events: none;
   }
   .sk-node-label {
     color: #6b6455;
@@ -1394,8 +1505,24 @@
       animation: none;
     }
     .sk-node,
-    .sk-node[data-active] circle {
-      transition: none;
+    .sk-node[data-active] circle,
+    .sk-tick,
+    .sk-arc,
+    .sk-cluster-label,
+    .sk-cluster-mark {
+      transition: none !important;
+    }
+    /* Every dial shows the value it carries immediately. The arc is the one
+       piece of state the field accumulates, and withholding it from someone who
+       cannot see it sweep would be withholding information, not motion. A CSS
+       declaration beats the stroke-dashoffset presentation attribute, so this
+       needs no client-side branch — and must not have one, because a
+       client-only value in render is a hydration mismatch React will not fix. */
+    .sk-arc {
+      stroke-dashoffset: 0;
+    }
+    .sk-tick {
+      stroke-dashoffset: 3;
     }
   }
 

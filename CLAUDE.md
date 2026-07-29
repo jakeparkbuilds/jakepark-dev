@@ -182,11 +182,31 @@ muted leader with at most one 90° elbow. No arrowhead, no dot, no knockout wher
 the leader crosses the boundary.
 
 ### §05 skills — the drifting field
-A fixed **readout panel** (cols 1–4) and a **field of 17 hairline circles**
-(cols 5–12, 620px tall at ≥1440px), one per tool. Radius and mono size encode
-tier: primary r62/15px, secondary r44/12px @0.55, tertiary r32/11px @0.35. Four
-loose clusters — `languages` / `ml & data` / `infrastructure` / `interfaces` —
-each with a static mono-label anchor at the field's corner.
+A fixed **readout panel** (cols 1–4) and a **field of 17 dials** (cols 5–12,
+620px tall at ≥1440px), one per tool. Radius and mono size encode tier: primary
+r62/15px, secondary r44/12px @0.55, tertiary r32/11px @0.35.
+
+**A node is a dial, not a bubble** — a word in a circle reads as a bubble, so
+each carries: the hairline ring; 12 circumference ticks at 30° (5px at rest,
+8px on hover, staggered 12ms clockwise, with a primary's 12 o'clock tick fixed
+at 9px as an index mark); an inner arc at r−7 whose sweep is the value it
+carries (270/180/90° by tier); the name; and a 9px plate index `01`–`17`
+assigned by tier then alphabetically. Ticks are trimmed at the FAR end by a dash
+offset so a tick never detaches from its ring.
+
+**The arc is the one piece of state the field accumulates.** It renders at 0
+sweep, sweeps on first visit, and stays swept — so a visitor who has explored
+can see which dials they opened. Under reduced motion every arc renders at full
+sweep, and that override lives in **CSS, not in render**: `reduced` is a
+client-only value, and branching on it during render is a hydration mismatch
+React does not patch up, which would leave the arcs hidden from exactly the
+people the rule serves.
+
+Four axis labels — `LANGUAGES` / `ML & DATA` / `INFRASTRUCTURE` / `INTERFACES` —
+13px/500/0.24em at #4A4438, each with an L-shaped corner mark (16px arms, 22px
+when its region is addressed) whose corner points outward, and a 64px muted
+leader running toward the field centre. **Never box them**: no border, no fill,
+no background. They are type, a registration mark and a leader.
 
 Every node is a **labeled data object**: name, domain, and one concrete evidence
 line from the résumé. The evidence is what makes this section content rather
@@ -207,6 +227,24 @@ change the layout or ask.
   not enough: measured without the travel term, two nodes seeded 38px apart
   drifted into an 11px label overlap within 20s. Rings are meant to cross;
   names are not.
+- **Every constraint must budget for the depth scale.** A node renders at up to
+  1.12× its own box, and keep-out is about rendered ink, not layout boxes.
+  Omitting it left a 4px zone incursion and an 11px label overlap.
+- **The keep-out zones are solved in the SAME relaxation loop as the label
+  separation, never as a later pass.** Pushing nodes out of the labels
+  afterwards moved them back into each other — at 900px it closed the tightest
+  label gap to 2.4px, which the drift then shut completely.
+- **The fraction conversion must be lossless.** `bx`/`by` are fractions of a
+  span inset by radius + tick reach + amplitude; clamping an out-of-span node
+  back into [0,1] silently undoes every separation just computed. Shrink the
+  node's travel until the span reaches it instead of moving the node. This bug
+  has now appeared twice — once via a fraction-space stretch, once via the
+  clamp itself. **Any new pass that runs after the fractions are computed is
+  almost certainly wrong.**
+- Order is load-bearing: fit (px) → relaxation with zones → amplitude clamp vs
+  zones → amplitude clamp vs label pairs → lossless conversion. Verified with a
+  dev-only keep-out overlay (`?keepout=1`, gated on NODE_ENV): 90s at 1440px,
+  zero incursions, closest approach 10.1px.
 - The arrangement is composed in a **narrow nominal field (720×600)**, not a
   wide one. Radii are fixed px while the field's width is not, so a layout
   composed at the 1920 width collapses into label collisions at the 1024 width.

@@ -58,6 +58,18 @@ export const TOOLS: Tool[] = [
 ];
 
 export const TIER_R: Record<Tier, number> = { primary: 62, secondary: 44, tertiary: 32 };
+// The dial's furthest ink past the ring: the 12 circumference ticks reach 8px
+// on hover, and a primary's index mark at 12 o'clock reaches 9px. Bounds and
+// keep-out are computed against r + this, never against r alone.
+export const TICK_REACH = 9;
+export const TICK_REST = 5;
+export const TICK_HOVER = 8;
+export const TICK_COUNT = 12;
+/** The inner arc's sweep in degrees — the value the dial carries. */
+export const TIER_SWEEP: Record<Tier, number> = { primary: 270, secondary: 180, tertiary: 90 };
+export const ARC_INSET = 7;
+/** Max depth scale (z maps to 0.88-1.12). Keep-out must budget for the largest. */
+export const SCALE_MAX = 1.12;
 export const TIER_SIZE: Record<Tier, number> = { primary: 15, secondary: 12, tertiary: 11 };
 export const TIER_OPACITY: Record<Tier, number> = { primary: 1, secondary: 0.55, tertiary: 0.35 };
 
@@ -107,8 +119,43 @@ function fitSize(name: string, r: number, tierSize: number) {
 // is not, so a layout composed at 1021px (the 1920 field) compresses into label
 // collisions at 473px (the 1024 field). Composing at the tight end and letting
 // it spread is the direction that stays legible.
-const NOMINAL_W = 720;
-const NOMINAL_H = 600;
+// Reference at the TIGHTEST real field (612x540, the 900px case). Keep-out
+// zones are fixed-size boxes anchored to the field's corners, so a node that
+// clears them here clears them at every larger field: the zones stay the same
+// absolute size while a node's fractional position carries it further from the
+// corner. Enforcing once, at the worst case, is what lets the clamp be a
+// generation-time step rather than a runtime collision test.
+const NOMINAL_W = 612;
+const NOMINAL_H = 540;
+
+// The four axis labels. 13px mono at 0.24em tracking: advance 0.6em + tracking.
+const LABEL_PX = 13;
+const LABEL_TRACK = 0.24;
+const LABEL_LEADER = 64;
+const LABEL_MARK = 16;
+const KEEPOUT_PAD = 24;
+const labelWidth = (text: string) =>
+  text.length * (ADVANCE + LABEL_TRACK) * LABEL_PX;
+
+export type Rect = { x0: number; y0: number; x1: number; y1: number };
+
+/** Each label, its corner mark and its leader, padded. Nothing may enter these. */
+export function keepOutZones(w: number, h: number): Rect[] {
+  return CLUSTERS.map((c) => {
+    const tw = labelWidth(c.label) + LABEL_LEADER + LABEL_MARK;
+    const th = LABEL_PX + LABEL_MARK;
+    const left = c.cx < 0.5;
+    const top = c.cy < 0.5;
+    const x0 = left ? 0 : w - tw;
+    const y0 = top ? 0 : h - th;
+    return {
+      x0: x0 - KEEPOUT_PAD,
+      y0: y0 - KEEPOUT_PAD,
+      x1: x0 + tw + KEEPOUT_PAD,
+      y1: y0 + th + KEEPOUT_PAD,
+    };
+  });
+}
 
 function buildSeeds(): NodeSeed[] {
   const rand = seeded(20260728);
@@ -148,6 +195,27 @@ function buildSeeds(): NodeSeed[] {
     });
   }
 
+  // Pass 2a: spread the cloud to fill the nominal field, in PIXELS and BEFORE
+  // the zone work. This used to run last, in fraction space, which quietly
+  // undid the clamp — it pulled the extreme nodes back toward the corners and
+  // straight into the labels. Order matters here: fit, then clear the zones.
+  const fit = (
+    get: (p: (typeof pts)[number]) => number,
+    set: (p: (typeof pts)[number], v: number) => void,
+    extent: number
+  ) => {
+    const reach = (q: (typeof pts)[number]) => (q.r + TICK_REACH) * SCALE_MAX;
+    const lo = Math.min(...pts.map((q) => get(q) - reach(q)));
+    const hi = Math.max(...pts.map((q) => get(q) + reach(q)));
+    if (hi - lo < 1) return;
+    const k = (extent - 16) / (hi - lo);
+    for (const q of pts) set(q, 8 + (get(q) - lo) * k);
+  };
+  fit((q) => q.x, (q, v) => (q.x = v), NOMINAL_W);
+  fit((q) => q.y, (q, v) => (q.y = v), NOMINAL_H);
+
+  const ZONES = keepOutZones(NOMINAL_W, NOMINAL_H);
+
   // Pass 2: a relaxation, run ONCE HERE at seed time — not at runtime. There is
   // no physics, no repulsion, no gravity and no collision test while the field
   // is running; this only decides where the fixed base positions are. Centres
@@ -183,8 +251,97 @@ function buildSeeds(): NodeSeed[] {
         b.y += dy * push;
       }
     }
+    // Zones are solved in the SAME loop, not after it. Pushing nodes out of the
+    // labels as a separate later pass moved them back into each other — at
+    // 900px it closed the tightest label gap to 2.4px, which the drift would
+    // then have shut completely. Both constraints have to converge together.
+    for (const p of pts) {
+      const reach = (p.r + TICK_REACH) * SCALE_MAX;
+      for (const z of ZONES) {
+        const zx = (z.x0 + z.x1) / 2;
+        const zy = (z.y0 + z.y1) / 2;
+        const ox = (z.x1 - z.x0) / 2 + reach - Math.abs(p.x - zx);
+        const oy = (z.y1 - z.y0) / 2 + reach - Math.abs(p.y - zy);
+        if (ox <= 0 || oy <= 0) continue;
+        // Escape along the shallower axis — the shorter way out.
+        if (ox < oy) p.x += (p.x < zx ? -ox : ox) * 0.5;
+        else p.y += (p.y < zy ? -oy : oy) * 0.5;
+      }
+    }
   }
 
+
+
+  // Pass 2c: clamp the seeded amplitudes so no node's DRIFT can enter a zone
+  // either. Reducing travel, not adding a runtime test — the field never checks
+  // a boundary while it is running.
+  for (const p of pts) {
+    const reach = (p.r + TICK_REACH) * SCALE_MAX;
+    for (const z of ZONES) {
+      const gapX = Math.max(z.x0 - p.x, p.x - z.x1);
+      const gapY = Math.max(z.y0 - p.y, p.y - z.y1);
+      if (gapX >= gapY) p.ax = Math.min(p.ax, Math.max(0, gapX - reach));
+      else p.ay = Math.min(p.ay, Math.max(0, gapY - reach));
+    }
+    p.amp = Math.max(p.ax, p.ay);
+  }
+
+  // Pass 2d: a final amplitude clamp against LABEL pairs. The relaxation's
+  // centre-distance constraint is a margin, not a guarantee — two names can
+  // still meet if both nodes drift toward each other, measured at up to 11px.
+  // This makes it a guarantee: for every pair, separate on whichever axis is
+  // cheaper and shrink only the travel needed to hold it. Boxes overlap only
+  // when they overlap on BOTH axes, so securing one axis is enough.
+  // Scaled: a label is rendered inside its node, so at high z it is 1.12x wider
+  // and taller than its laid-out size. Budgeting for the unscaled box left a
+  // measured 11px overlap at 900px — the same omission the keep-out clamp had.
+  const LABEL_H = 18 * SCALE_MAX; // a mono label's line box, with headroom
+  for (let i = 0; i < pts.length; i++) {
+    for (let j = i + 1; j < pts.length; j++) {
+      const a = pts[i];
+      const b = pts[j];
+      const dx = Math.abs(a.x - b.x);
+      const dy = Math.abs(a.y - b.y);
+      const needX = (a.half + b.half) * SCALE_MAX;
+      // Slack once both have travelled toward each other.
+      const slackX = dx - needX - (a.ax + b.ax);
+      const slackY = dy - LABEL_H - (a.ay + b.ay);
+      if (slackX >= 0 || slackY >= 0) continue;
+      // Cheaper axis = the one needing less travel taken away.
+      if (dx - needX >= dy - LABEL_H) {
+        const budget = Math.max(0, dx - needX);
+        const k = budget / (a.ax + b.ax || 1);
+        a.ax *= k;
+        b.ax *= k;
+      } else {
+        const budget = Math.max(0, dy - LABEL_H);
+        const k = budget / (a.ay + b.ay || 1);
+        a.ay *= k;
+        b.ay *= k;
+      }
+    }
+  }
+
+  // Pass 2e: make the fraction conversion LOSSLESS. bx/by are fractions of the
+  // usable span, which is inset by radius + tick reach + amplitude; a node the
+  // earlier passes pushed outside that span used to be clamped back into range
+  // at conversion time, silently undoing the very separation that had just been
+  // computed. (Measured: terraform landed at exactly its own inset, bx = 0, with
+  // its amplitude untouched — and its label then met typescript's.) Instead of
+  // moving the node, shrink its travel until the span reaches it. Amplitudes
+  // only ever get smaller here, so every guarantee above still holds.
+  for (const p of pts) {
+    const base = p.r + TICK_REACH;
+    p.x = Math.min(NOMINAL_W - base, Math.max(base, p.x));
+    p.y = Math.min(NOMINAL_H - base, Math.max(base, p.y));
+    p.ax = Math.max(0, Math.min(p.ax, p.x - base, NOMINAL_W - p.x - base));
+    p.ay = Math.max(0, Math.min(p.ay, p.y - base, NOMINAL_H - p.y - base));
+  }
+
+  // NOTE: there is deliberately no fraction-space stretch after this point.
+  // The spread happens in pass 2a, in pixels, before the zones are cleared —
+  // rescaling fractions afterwards would drag the extreme nodes back into the
+  // labels, which is exactly the bug the keep-out overlay caught.
 
   const out: NodeSeed[] = [];
   for (const p of pts) {
@@ -193,8 +350,8 @@ function buildSeeds(): NodeSeed[] {
       // Store as a fraction of the usable area — inset by radius AND amplitude,
       // exactly the span the runtime calc resolves against — so base + drift
       // stays inside the field at any size.
-      const ix = r + ax;
-      const iy = r + ay;
+      const ix = r + TICK_REACH + ax;
+      const iy = r + TICK_REACH + ay;
       const spanX = NOMINAL_W - 2 * ix;
       const spanY = NOMINAL_H - 2 * iy;
       out.push({
@@ -218,21 +375,6 @@ function buildSeeds(): NodeSeed[] {
       });
     }
   }
-  // Pass 3: stretch the arrangement to fill the field. Each node's fraction is
-  // already relative to its own usable span — inset by its own radius and
-  // amplitude — so rescaling the fractions to [0,1] puts the extreme nodes
-  // exactly at the edges they are allowed to reach, whatever their size.
-  // Without this the cloud floats wherever the seeding left it and the field
-  // carries a dead margin. Cluster structure is preserved: this is one linear
-  // map applied to every node.
-  const stretch = (key: "bx" | "by") => {
-    const lo = Math.min(...out.map((s) => s[key]));
-    const hi = Math.max(...out.map((s) => s[key]));
-    if (hi - lo < 0.001) return;
-    for (const s of out) s[key] = (s[key] - lo) / (hi - lo);
-  };
-  stretch("bx");
-  stretch("by");
 
   // Back into tier-then-cluster order for the DOM.
   const order = new Map(TOOLS.map((t, i) => [t.name, i]));
@@ -240,6 +382,19 @@ function buildSeeds(): NodeSeed[] {
 }
 
 export const NODE_SEEDS = buildSeeds();
+
+// Plate annotations: 01..17, assigned by tier then alphabetically — a stable
+// index into the field, not the visual or the tab order.
+const TIER_ORDER: Tier[] = ["primary", "secondary", "tertiary"];
+export const NODE_INDEX = new Map<string, string>(
+  [...TOOLS]
+    .sort(
+      (a, b) =>
+        TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier) ||
+        a.name.localeCompare(b.name)
+    )
+    .map((t, i) => [t.name, String(i + 1).padStart(2, "0")])
+);
 
 // The two sine components, weighted so |offset| <= amplitude for all t. Shared
 // by the rAF loop and by the static (reduced-motion / SSR) first frame, so the
