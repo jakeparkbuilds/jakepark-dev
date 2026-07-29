@@ -178,6 +178,31 @@ disabled link — that asymmetry is honest.
 **§05 skills is the quality bar.** Match its level of composition when building
 §03.
 
+### §02 about / §07 connect — the character reveal
+Each character of a paragraph carries its own threshold along that paragraph's
+progress through the viewport, so reading the page is what inks it in. § 02's
+four gutter-annotated paragraphs (each its own window) and § 07's blurb. Nowhere
+else — never a heading, a mono label, or the hero blurb.
+
+- **Colour, never opacity.** Unread is #C4BDB0 and read is body #2E2A24. Fading
+  from a low opacity, as the usual version of this effect does, would put unread
+  type near 1.2:1 on paper — § 11 does not allow type a reader must read to go
+  that quiet, and the paragraph would read as missing rather than as un-inked.
+- **Thresholds pack into [0, 1 − RAMP], not [0, 1].** A last character whose
+  threshold is (total−1)/total needs progress 1.048 to finish its own ramp, and
+  progress stops at 1. Measured: five characters were left part-inked at the end
+  of every window.
+- Colours are written to the spans through refs. The component holds no
+  per-frame state and there are **zero DOM structure or text mutations** across
+  a 120-frame scroll — only style writes. Whitespace gets no span.
+- The characters are `aria-hidden` and the real string follows once in an
+  `.sr-only` span. `aria-label` on a `<p>` is not a reliable naming target, so
+  the string is real text, not an attribute.
+- Reduced motion: the spans **render** at the read colour and nothing ever
+  subscribes, so the paragraph is fully legible with no JS and no scroll
+  linkage. The branch is in the effect, never in render — branching on a
+  client-only value during render is the § 05 hydration trap.
+
 ### §04 projects
 A drawing register, vertically composed — §05 holds the site's one axis break.
 A column header that appears once (never repeats, never sticks), then one 68px
@@ -202,6 +227,42 @@ Clicking a row unfolds it in place.
   inherent, and its cost is independent of figure complexity (measured: rows
   with 4, 51 and 40 paths cost the same). Do not go looking for it in the
   figures.
+
+### §07 connect — the magnet and the type bands
+The email at full strength (offset ÷ 3) and the three socials at ÷ 5, each with
+its own 150px field. Position only: no scale, no colour, no glow. The middots
+between the socials never move — the separator is structure, and structure
+holding still is what makes the words read as moving. Pointer-fine only, never
+under reduced motion, and § 07 only.
+
+- **One pointermove listener for every magnet, not one per element.** Each
+  magnet needs its rect on every move; four that each read and then wrote would
+  force four layouts per event. The registry reads every rect first and writes
+  every transform after. Rects are cached and invalidated by scroll and resize.
+- **A magnet that only hears `pointermove` gets stranded.** Move the pointer out
+  of the window in one gesture and no further move event arrives, so the link
+  holds its offset until the pointer returns — measured, the email sat at 40px
+  indefinitely. Release on `pointerleave` (document) and `blur` (window).
+- The cursor dot is unaffected: measured sitting exactly on the true pointer
+  while the link is displaced 70px away from it.
+
+**The type bands** are two full-bleed rows of outlined display type
+counter-scrolling against each other, driven by scroll position and nothing
+else. Set piece 6.
+
+- **Full bleed by cancelling the section's own padding**, never the usual
+  `left: 50%; width: 100vw; margin-left: -50vw`. That idiom assumes the parent
+  is centred in the viewport and § 07's is not — it carries the 180px nav gutter
+  as padding-right below 1280px, which puts the content box centre 90px left of
+  the viewport centre. Measured: the bands started at −90px and left 90px of the
+  right edge bare at 1200, 1024 and 900.
+- The translate is wrapped modulo **one measured repetition width**, with three
+  copies in the DOM. Measured across a 2100px scroll sweep, both viewport edges
+  stay covered at every position and |translateX| never exceeds one repetition.
+- Type is outlined at 0.75px ink with a transparent fill and
+  `paint-order: stroke fill`. No fill, no gradient, no shadow, no blur.
+- Two bands down to 900px, **one** below it; multiplier 0.22, dropping to 0.18
+  below 1200.
 
 ### Hero
 Two-column. Left: mono label `CS + MATH @ GEORGETOWN`, "Jake" / "Park" at display
@@ -839,6 +900,18 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
 - Zero persistent rAF loops and zero pending timers once the page settles —
   except the two sanctioned loops, § 05's field and the margin trace, each
   gated and fully cancelled as described in § 6 Scroll
+- **THIS RULE IS CURRENTLY VIOLATED, and the violation predates the connect
+  motion pass.** Measured at rest with § 05 and § 07 both off screen: **606 rAF
+  callbacks in 5 seconds**, byte-identical before and after the magnet, the
+  character reveal and the type bands were added — those three add subscribers
+  to the shared loop and no loop of their own. The cause is structural: the
+  shared scroll controller starts its loop on the first subscriber and stops
+  only when the last one leaves, and `section-mark` registers **every** section
+  permanently, so the loop is alive from mount to unload. The fix is to gate
+  each section-mark subscription on viewport intersection the way § 05 and the
+  bands already are; it was not done here because section-mark is shared by
+  every section on the page and this pass was scoped to § 02 and § 07. Do not
+  claim this budget line is met until that gate exists.
 - anime.js imported modularly, never the whole bundle
 - Raster images are limited to three — the about-section portrait and one photo
   per education row. Everything else is SVG or type.
