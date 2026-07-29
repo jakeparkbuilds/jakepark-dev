@@ -19,6 +19,24 @@ const CLOSE_MS = 340;
 const CONTENT_OUT_MS = 160;
 const FIGURE_MS = 900;
 const FIGURE_DELAY = 200;
+// Content starts wiping in 28% into the gap's open, while the gap is still
+// moving, and each block follows 34ms behind the last. The whole run is legible
+// before the gap finishes.
+const REVEAL_AT = 120;
+const REVEAL_STEP = 34;
+const REVEAL_MS = 380;
+const REVEAL_TRAVEL = 10; // px, under the 14px ceiling in CLAUDE.md § 7
+
+// anime.js cannot interpolate a multi-argument `inset()` string: it holds the
+// start value for the tween's whole duration and writes the end value on the
+// final tick, so a clip-path reveal reads as an instant pop rather than a wipe.
+// (Measured: translateY on the same tween interpolated normally while clip-path
+// sat at `inset(0 0 100% 0)` for all 380ms.) So the wipe is driven from a plain
+// number and the string is composed here, one write per frame per block.
+function wipe(el: HTMLElement, v: number) {
+  el.style.clipPath = `inset(0 0 ${v}% 0)`;
+  el.style.transform = `translateY(${((v / 100) * REVEAL_TRAVEL).toFixed(2)}px)`;
+}
 
 // A figure draws once per session, the first time its row opens. Re-opening
 // shows it already complete — no redraw, no flicker. Module scope, so it
@@ -167,6 +185,7 @@ function ProjectRow({
     // SINGLE progress value on every tick, so the marker's tip is pinned to the
     // gap's bottom edge by construction and cannot drift by a frame.
     const state = { p: open ? 0 : 1 };
+    const wipers: { v: number }[] = [];
     const markerLen = panel.offsetHeight;
     if (line) {
       line.style.strokeDasharray = String(markerLen);
@@ -200,18 +219,21 @@ function ProjectRow({
     if (open) {
       tl.add(state, { p: 1, duration: OPEN_MS, ease: DRAW }, 0);
 
-      // claim -> stack -> links, in DOM order.
+      // claim -> stack -> links -> figure, in DOM order. Each block is already
+      // mounted at its final size and clipped; this only uncovers it.
       revealTargets().forEach((el, i) => {
-        el.style.clipPath = "inset(0 0 100% 0)";
+        const w = { v: 100 };
+        wipe(el, 100);
+        wipers.push(w);
         tl.add(
-          el,
+          w,
           {
-            clipPath: ["inset(0 0 100% 0)", "inset(0 0 0 0)"],
-            translateY: [10, 0],
-            duration: 380,
+            v: 0,
+            duration: REVEAL_MS,
             ease: REVEAL,
+            onUpdate: () => wipe(el, w.v),
           },
-          120 + i * 34
+          REVEAL_AT + i * REVEAL_STEP
         );
       });
 
@@ -250,12 +272,15 @@ function ProjectRow({
     } else {
       // Content wipes out first, then the gap and marker retract together.
       revealTargets().forEach((el) => {
+        const w = { v: 0 };
+        wipers.push(w);
         tl.add(
-          el,
+          w,
           {
-            clipPath: ["inset(0 0 0 0)", "inset(0 0 100% 0)"],
+            v: 100,
             duration: CONTENT_OUT_MS,
             ease: CLOSE_EASE,
+            onUpdate: () => wipe(el, w.v),
           },
           0
         );
@@ -266,6 +291,7 @@ function ProjectRow({
     return () => {
       tl.pause();
       utils.remove(state);
+      for (const w of wipers) utils.remove(w);
       const els: Element[] = [...revealTargets(), ...figurePaths()];
       if (line) els.push(line);
       utils.remove(els);
@@ -293,7 +319,7 @@ function ProjectRow({
 
       {/* The wrapper is what the unfold animates; it clips the panel so the
           marker's drawn tip and the gap's bottom edge are the same edge. */}
-      <div className="proj-panel-wrap" ref={wrapRef} hidden={!visible}>
+      <div className="proj-panel-wrap" ref={wrapRef} hidden={!visible} inert={!visible}>
         <div className="proj-panel-clip">
           <div
             id={panelId}
