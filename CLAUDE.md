@@ -428,11 +428,18 @@ those numbers is ~119px wide, which is too small to read as a photograph at all.
 Any attempt to mount a usefully-sized photo in the row grows the row. Do not
 re-derive this — it has been measured twice.
 
-- **the reference mark** — a 7px hollow ink square, a 0.5px muted leader across
-  a 10px gap, and `PHOTO` in mono-micro #6B6455, sitting 14px past the school
-  name's last character and optically aligned to its cap band. On hover/focus
-  the square fills solid ink and the label goes to #1A1815 over 150ms `micro`.
-  That is the entire interaction on the mark.
+- **the reference mark** — a 12px hollow ink square at 1px, a 0.5px muted
+  leader across a 14px gap, and `PHOTO` at 13px/0.20em #6B6455, sitting 14px
+  past the school name's last character and optically aligned to its cap band
+  (the label's centre at 14.5px above the baseline). On hover/focus the square
+  fills solid ink and the label goes to #1A1815 over 150ms `micro`. That is the
+  entire interaction on the mark.
+  **The hit area extends 8px past the ink on every side** — 94×29 against 78px
+  of ink, 2.8× the area of the first version, which was too small to notice or
+  to hit. It is padding on the button with the box offset by the same 8px, so
+  the ink did not move and the focus ring frames what is actually clickable.
+  Row heights are byte-identical before and after: 248.52 (1920), 306 (1440),
+  350.52/482.52 (1024), 350.52/526.52 (768), 488.53/642.52 (390).
   **This was a 28px crop of the photograph itself and that was wrong.** At 28px
   a photograph has no subject, only noise, and noise beside a heading reads as a
   failed image load — the exact opposite of an affordance. Do not put the image

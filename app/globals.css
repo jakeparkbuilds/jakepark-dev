@@ -420,7 +420,7 @@
      wide, which is too small to read as a photograph. So it is shown at two
      sizes rather than one bad one:
 
-       .edu-plate-ref    the reference mark — a 7px hollow square, a 0.5px
+       .edu-plate-ref    the reference mark — a 12px hollow square, a 14px
                          leader and the word PHOTO, 14px past the school name.
                          Absolutely positioned inside a zero-height anchor, so
                          it adds NOTHING to the line box: the row's height is
@@ -442,7 +442,7 @@
     position: relative;
     display: inline-block;
     vertical-align: baseline;
-    width: 64px;
+    width: 84px;
     height: 0;
     margin-left: 14px;
     white-space: nowrap;
@@ -461,38 +461,44 @@
      above the baseline and the 11px label's centre is put at 14.5px. */
   .edu-plate-ref {
     position: absolute;
-    left: 0;
-    bottom: 9px;
+    /* The hit area extends 8px past the ink on every side: 8px of padding, with
+       the box offset by the same 8px so the INK lands exactly where it did
+       before. Padding rather than a pseudo-element, so the focus ring frames
+       what is actually clickable. Content bottom therefore sits 8px above the
+       baseline and the 13px label's optical centre lands at 14.5px, the same
+       place the 11px one did. */
+    left: -8px;
+    bottom: 0;
     display: flex;
     align-items: center;
-    padding: 0;
+    padding: 8px;
     border: 0;
     background: none;
-    line-height: 11px;
+    line-height: 13px;
     white-space: nowrap;
     cursor: none;
   }
   .edu-plate-ref-square {
-    width: 7px;
-    height: 7px;
+    width: 12px;
+    height: 12px;
     flex: none;
-    border: 0.5px solid theme("colors.ink");
+    border: 1px solid theme("colors.ink");
     /* Hollow at rest, solid when addressed — the only thing that changes. */
     background: transparent;
     transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  /* The leader occupies the whole 10px gap, so the square and the word are one
+  /* The leader occupies the whole gap, so the square and the word are one
      object rather than two things that happen to be near each other. */
   .edu-plate-ref-leader {
-    width: 10px;
+    width: 14px;
     height: 0.5px;
     flex: none;
     background: theme("colors.muted");
   }
   .edu-plate-ref-label {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 400;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
     color: #6b6455;
     transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
