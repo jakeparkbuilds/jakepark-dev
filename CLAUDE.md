@@ -659,6 +659,13 @@ travel **max 14px**. Stagger 34ms, capped at 8 items.
 animating numbers, marquee, hover-lift with shadow, scroll-jacking, card flips,
 magnetic buttons anywhere except the outro links.
 
+**Marquee is banned as decorative background.** § 07 connect's counter-scrolling
+type bands are exempt: they are scroll-driven (never autoplaying), set in
+outlined display type as hairline drawing, and carry real content. No other
+marquee anywhere. The distinction is load-bearing and it is *not* stylistic — a
+band that moves while the page is still is the banned thing, whatever it is set
+in. Nothing may move unless the reader moves it.
+
 **Cursor followers are banned** — an element lagging behind the pointer. The
 custom pointer itself is exempt: it tracks with zero lag and *is* the pointer.
 Only deliberate ink residue may lag.
@@ -666,9 +673,9 @@ Only deliberate ink residue may lag.
 **Glyph substitution is exempt from "drawn, not faded"** — but only as the
 same-character roll described above, and only on the hero display type.
 
-### Set pieces — max 5
-The cap was 3. It is now **5**, and this is the roster — there is no sixth
-without removing one of these first.
+### Set pieces — max 6
+The cap was 3, then 5. It is now **6**, and this is the roster — there is no
+seventh without removing one of these first.
 
 1. **Hero / loader** — the DC map draws itself on a paper field, then travels to
    its hero position as the page arrives. One continuous event; the loader *is*
@@ -681,6 +688,8 @@ without removing one of these first.
    whole page, advanced by scroll. § 6.
 5. **The connect replay** — the visitor's own ink strokes, replayed into the
    final section. § 5 / § 06 connect.
+6. **The connect type bands** — two full-bleed rows of outlined display type
+   counter-scrolling against each other, driven by scroll position only.
 
 The §05 field is deliberately NOT a set piece: it has no entrance, draws
 nothing, and asserts nothing by arriving. It is a standing state, not an event,
