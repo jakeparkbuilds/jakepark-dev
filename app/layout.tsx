@@ -3,9 +3,29 @@ import PlotterCursor from "./components/cursor/PlotterCursor";
 import { bricolage, plexMono } from "./fonts";
 import "./globals.css";
 
+const DESCRIPTION =
+  "CS + Math at Georgetown. Building ML and data systems for civic and social impact.";
+
 export const metadata: Metadata = {
+  // Required, not optional: without it Next emits the og:image as a relative
+  // path, and iMessage / Slack / Twitter all resolve that against nothing and
+  // render a card with no image. Every absolute URL in the tags below is
+  // derived from this.
+  metadataBase: new URL("https://jakekpark.com"),
   title: "Jake Park",
-  description: "Jake Park — machine learning and data systems.",
+  description: DESCRIPTION,
+  openGraph: {
+    title: "Jake Park",
+    description: DESCRIPTION,
+    url: "https://jakekpark.com",
+    siteName: "Jake Park",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Jake Park",
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

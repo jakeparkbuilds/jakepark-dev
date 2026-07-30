@@ -24,6 +24,14 @@ Re-proposing them wastes a session.
 - anime.js v4 for set pieces, imported **modularly** (named submodule imports
   only, never the whole bundle)
 - Fonts self-hosted as woff2 via `next/font/local`. Never `<link>` to Google Fonts.
+  **`app/fonts/og/*.ttf` are not an exception to this** — nothing serves them
+  to a browser. Satori (the renderer behind `next/og`) reads sfnt only and has
+  no variable-font support, so the OG card needs static TTF instances read with
+  `fs.readFileSync` on the server. Built and subset by
+  `scripts/generate-og-fonts.py`; script and output both committed, the same
+  contract `scripts/generate-dc-paths.mjs` follows. Bricolage's fvar defaults
+  are opsz 96 / **wght 800**, so skipping the instancing step does not fail
+  loudly — it silently sets the name at 800.
 - Deployed on Vercel
 
 Do not add: Framer Motion, GSAP, three.js, a UI component library, a mapping
@@ -140,6 +148,13 @@ Rules:
   `vector-effect="non-scaling-stroke"` on all SVG strokes.
   Exception: the DC map's outer District boundary is **0.9px** so it dominates
   the 0.5px / 0.28-opacity neighborhood lines.
+  **Second exception — the OG card only, and it is a waiver, not a new
+  default.** `app/opengraph-image.tsx` draws the same map at 1.5px boundary /
+  1px clusters. An OG card is re-encoded lossily by every platform that shows
+  it and rendered ~260px wide in a timeline; a 0.5px ink line survives neither
+  step — it grays out and then vanishes, leaving a card with an empty right
+  half. It is the same drawing exposed for a lossy medium. Nothing that renders
+  in a browser may take this number.
 - `border-radius: 0` on everything, with exactly two exceptions: `.cursor-dot`
   uses `border-radius: 50%` because it is a literal circle, and § 05's field
   nodes are hairline `<circle>` elements — SVG geometry, not a rounded box. No
@@ -1163,6 +1178,51 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
   per education row, and `pizza.png` for § 07's easter egg. Everything else is
   SVG or type. The fourth is 31KB, is requested once and on demand by the rain,
   and is not part of any section's load.
+  **The count is about section content and stays at four.** `app/icon.png` and
+  the OG/Twitter cards are page metadata, not composition: no section renders
+  them, they cost no route JS, and the card is generated per deploy rather than
+  authored. Do not read this as room for a fifth image in a section.
+
+---
+
+## 14. The share card
+
+`app/opengraph-image.tsx` — 1200×630, and `app/twitter-image.tsx` **re-exports
+it**. One design; there is never a second one to keep in agreement.
+
+The card is the site's plate, not a photograph: paper ground, the name block at
+116px on the left, the District on the right, four L-shaped registration
+corners. No grain (it muddies under compression), no caption, no coordinates,
+no GEORGETOWN label — at feed size 11px mono is texture, not type.
+
+- The map imports its paths from `app/components/dc-paths.ts` and its star from
+  `DC_PROJECTION`, run forward exactly as `hero-figure` runs it. **Never
+  hand-copy or re-draw the geometry**, and never eyeball the star (§ 5 / hero).
+- The viewBox is cropped to `DC_OUTLINE`'s real extent on all four sides. The
+  projection square leaves ~46 units of dead space east and west, which would
+  otherwise shrink the ink for a given panel height.
+- The map is embedded as an `<img>` carrying a base64 SVG data URI. Satori's
+  native SVG-element support covers a subset of attributes and **silently drops
+  the rest**; the data URI goes through resvg intact. Same reason `icon.png` is
+  built that way.
+- Strokes are authored in **pixels and divided by units-per-pixel**.
+  `vector-effect="non-scaling-stroke"` does not survive rasterisation, so the
+  conversion has to be explicit.
+- Satori is flexbox-only, needs an explicit `display` on every element, and has
+  no `grid`. Render and look at the result — do not assume a CSS property took.
+
+`metadataBase` in `app/layout.tsx` is **required, not decorative**: without it
+Next emits `og:image` as a relative path and iMessage, Slack and Twitter all
+render a card with no image. Verified in a production build — the tags resolve
+to `https://jakekpark.com/opengraph-image`, not to localhost, which is what dev
+shows and which is not a bug.
+
+`app/icon.png` is rendered once by `scripts/generate-icon.mjs` and committed
+rather than served from an `app/icon.tsx` route — a favicon is fetched on every
+page load and there is no reason to rasterise it per request. It is the ochre
+star on paper at 40%, and nothing else. **That is not the star's third
+appearance** in the sense § 2 forbids: the bookend rule is about objects inside
+a viewport of the page, and the favicon is the page's identity at 16px.
 
 ---
 
