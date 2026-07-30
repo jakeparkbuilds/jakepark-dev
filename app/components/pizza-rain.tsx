@@ -25,7 +25,6 @@ const DUR_MIN = 1600;
 const DUR_MAX = 2800;
 /** Longest possible slice: 900 + 2800 = 3700ms, inside the 3.8s budget. */
 const BURST_MS = DELAY_MAX + DUR_MAX;
-const REPLAY_LOCKOUT = 4000;
 const SESSION_KEY = "pizza-rain-fired";
 /** Accelerating, like gravity. */
 const FALL = cubicBezier(0.45, 0, 0.9, 0.6);
@@ -90,13 +89,6 @@ export default function PizzaRain() {
   const nodesRef = useRef<(HTMLSpanElement | null)[]>([]);
   const rafRef = useRef<number | null>(null);
   const timersRef = useRef<number[]>([]);
-  // -Infinity, never 0. The lockout compares against performance.now(), which
-  // is milliseconds since page load, so a 0 here means "a rain just happened at
-  // load" and silently swallows every trigger in the first 4 seconds — which is
-  // exactly when a visitor who lands deep-linked at the bottom would hit it.
-  // Measured: the automatic trigger fired at progress 1 and rain() returned
-  // immediately.
-  const lastRunRef = useRef(-Infinity);
   const runningRef = useRef(false);
   const warmedRef = useRef(false);
 
@@ -109,12 +101,10 @@ export default function PizzaRain() {
 
   // ---- the fall ----
   const rain = useCallback(() => {
-    const now = performance.now();
-    // Clicking during a rain, or inside the lockout, does nothing — bursts
-    // never stack.
-    if (runningRef.current || now - lastRunRef.current < REPLAY_LOCKOUT) return;
+    // No cooldown and no guard: spam-clicking is the point. Each click throws a
+    // fresh set of 70, which restarts the single rAF against a new start time —
+    // bursts replace rather than stack, so the cost never exceeds one burst.
     runningRef.current = true;
-    lastRunRef.current = now;
     nodesRef.current = [];
     setSlices(makeSlices(COUNT));
   }, []);
@@ -168,10 +158,10 @@ export default function PizzaRain() {
 
   // ---- the static scatter, for reduced motion ----
   const showScatter = useCallback(() => {
-    const now = performance.now();
-    if (runningRef.current || now - lastRunRef.current < REPLAY_LOCKOUT) return;
+    // The scatter holds still for 1.2s on timers, so re-entry here would stack
+    // them against one layer. It is not rate-limited, only serialised.
+    if (runningRef.current) return;
     runningRef.current = true;
-    lastRunRef.current = now;
     setScatter(makeSlices(SCATTER_COUNT));
     // Visible for 1.2s, then a fade, then gone. No falling and no rotation —
     // the joke survives, the motion does not.

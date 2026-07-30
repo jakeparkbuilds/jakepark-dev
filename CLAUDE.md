@@ -263,12 +263,17 @@ afterwards to replay it. It is a joke and it is meant to read as one.
   cancelled when the last slice lands. Portalled to `<body>` so no transformed
   ancestor can break `position: fixed` — the same rule the ink canvas follows —
   at z-index 400: above every section, below the cursor's 9999.
-- **The replay lockout's reference must start at `-Infinity`, never 0.**
-  `performance.now()` is milliseconds since page load, so a 0 means "a rain just
-  happened at load" and swallows every trigger in the first four seconds — which
-  is exactly when a visitor deep-linked to the bottom would hit it. This cost a
-  debugging pass: the trigger fired correctly at progress 1 and the burst
-  returned immediately.
+- **There is no replay cooldown and there must not be one.** The button is
+  spam-clickable: every click throws a fresh 70 and restarts the same rAF
+  against a new start time, so bursts REPLACE rather than stack and the cost
+  never exceeds one burst however fast it is clicked. This reverses an earlier
+  4s lockout, which was itself the subject of a debugging pass (its reference
+  started at 0 against a `performance.now()` that is ms since page load, so it
+  swallowed every trigger in the first four seconds — exactly when a visitor
+  deep-linked to the bottom would hit it). The lockout and that whole hazard are
+  gone. The reduced-motion scatter is still **serialised** — it holds still on
+  timers, so a second run would stack timers against one layer — but it is not
+  rate-limited either.
 - The trigger wears the site's own affordance vocabulary — hollow square, gap,
   mono label — **because** what it does is off-theme. The joke is better for
   being announced in the same voice as everything else. It is 7px; § 06's photo
@@ -349,11 +354,12 @@ always up for a conversation …      Bricolage 19/400, #2E2A24, one line ≥120
   page's largest type in the data face is the joke of the section landing
   straight.
 - **The email's size is the smaller of the specified size and what fits.**
-  `clamp(28px, 4.2vw, 58px)` is a viewport measure and § 07's content box is not
-  the viewport — below 1280px it also gives up 180px to the nav gutter. At 1200
-  the spec asks for 50.4px, which lays the address out at 967px inside an 876px
-  column; `nowrap` does not wrap that, it pushes a horizontal scrollbar onto the
-  document. So `min(clamp(...), 5.1cqi)`: 32 characters at 0.6em advance less
+  `clamp(22px, 3.1vw, 42px)` is a viewport measure and § 07's content box is not
+  the viewport — below 1280px it also gives up 180px to the nav gutter. At the
+  earlier `clamp(28px, 4.2vw, 58px)` the 1200 case asked for 50.4px, which laid
+  the address out at 967px inside an 876px column; `nowrap` does not wrap that,
+  it pushes a horizontal scrollbar onto the document. So the ceiling is still
+  `min(clamp(...), 5.1cqi)`: 32 characters at 0.6em advance less
   0.01em tracking is 18.88em, so it fits at container/18.88 (5.30cqi), taken with
   a 4% margin. Where the spec fits it wins unchanged.
 - **§ 07 centres on the full viewport, so above 1280px nothing reserves the nav
