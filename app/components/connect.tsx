@@ -96,19 +96,19 @@ export default function Connect({ id }: { id: string }) {
                     ·
                   </span>
                 )}
-                {/* The middot is outside the Magnet and never moves — the
-                    separator is structure, and structure holding still is what
-                    makes the words read as moving. */}
-                <Magnet divisor={5}>
-                  <a
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline decoration-transparent decoration-[1px] underline-offset-4 transition-colors duration-150 ease-in-out hover:text-ink hover:decoration-ink"
-                  >
-                    {link.label}
-                  </a>
-                </Magnet>
+                {/* NOT magnetic. The footer is the page's last row and it is
+                    structure, not composition — the coordinates and the middots
+                    hold still, and links that drifted out of a line everything
+                    else keeps read as loose rather than as alive. Magnetism in
+                    § 07 is now the centre block only: the email and its label. */}
+                <a
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline decoration-transparent decoration-[1px] underline-offset-4 transition-colors duration-150 ease-in-out hover:text-ink hover:decoration-ink"
+                >
+                  {link.label}
+                </a>
               </li>
             ))}
           </ul>

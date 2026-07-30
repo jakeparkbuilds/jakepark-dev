@@ -182,10 +182,27 @@ disabled link — that asymmetry is honest.
 §03.
 
 ### §03 experience — the arrival
-Each of the five entries animates in as it is scrolled to, once: translateX 28
+Each of the five entries animates in as it is scrolled to: translateX 28
 → 0 with opacity 0 → 1 over 620ms on `reveal`, staggered 60ms across tile → org
-(the date stamp rides with it) → role title → description. It never reverses and
-never replays.
+(the date stamp rides with it) → role title → description.
+
+**It REPLAYS, every time the entry comes into view, arriving from above or from
+below with the same gesture — never the enter reversed.** This reverses the
+original once-only rule, deliberately and at Jake's request: the arrival now
+reads as how § 03 draws itself rather than as something that happened once at
+first sight. Do not restore the once-only behaviour.
+
+- **The play edge is 0.25 and the RESET EDGE IS 0 — the entry must leave
+  completely.** Both thresholds are given to the observer, since it reports
+  crossings of the thresholds it was handed and nothing else. Re-arming at 0.25
+  instead would reset an entry still a quarter on screen, so a slow scroll
+  parked at the boundary would blink it. A `playing` flag makes the play edge
+  idempotent; only a full exit clears it.
+- **At most one live timeline per entry.** A replay reverts the previous one
+  first, so an entry crossed fast in both directions can never have two
+  timelines writing to the same four elements. On land the timeline reverts and
+  `[data-landed]` goes on; on full exit the attribute comes off and the armed
+  CSS takes the entry back to opacity 0.
 
 - **Five independent triggers, never one section-level stagger.** A visitor
   landing mid-section would otherwise watch entries animate that they had
@@ -196,12 +213,10 @@ never replays.
   guaranteed to reveal them — with no JS, failed JS, or reduced motion the
   section renders exactly as it always did. Never make the hidden state the CSS
   default.
-- An observer reports a **change**, not a state. A reload that restores a scroll
-  position below § 03 delivers the one initial callback with the entry already
-  past, which strands it at opacity 0 — so that case lands instantly, with no
-  animation. Jumping past the section cannot be covered (above → below is
-  false → false, no callback) and needs no cover: those entries are off screen
-  and animate normally on the way back up.
+- The old **instant-land** branch for a reload below § 03 is gone with the
+  once-only rule. It existed because an entry scrolled past could otherwise
+  strand at opacity 0 forever; now anything off screen is simply armed, and
+  arrives whenever it is next scrolled to. Nothing can strand.
 - **The spine is not part of this.** Its segments belong to the margin trace and
   keep their own scroll-driven draw; nothing here touches `[data-role]`.
 
@@ -414,24 +429,26 @@ arrangement needs its own markup. Stacked, the middots are **removed, not
 hidden**, and with them gone the three names fit 390px on one line, which is why
 the row stays `nowrap` all the way down and can never orphan a separator.
 
-Magnetism covers § 07's **text as well as its links**, each element with its own
-independent field, and **strength is set by weight** — heavier type moves less,
-so the section reads as having mass rather than as uniformly springy:
+Magnetism is confined to § 07's **centre block — the email and its label, and
+nothing else on the page.** Each has its own independent field, and **strength
+is set by weight** — the heavier type moves less, so the block reads as having
+mass rather than as uniformly springy:
 
 | element | divisor | field |
 |---|---|---|
 | the email — the monument | 6 | 200px |
 | `LET'S CONNECT` | 4 | 140px |
-| each social link | 5 | 150px |
 
 Position only: no scale, no colour, no rotation. Pointer-fine only, never under
 reduced motion, and § 07 only.
 
-- **The blurb is deliberately excluded**, along with the footer coordinate line
-  and the bands. The blurb carries the character reveal, and two systems writing
-  to one element fight.
-- The middots between the socials never move — the separator is structure, and
-  structure holding still is what makes the words read as moving.
+- **The footer is entirely excluded, and the social links were removed from it.**
+  They carried divisor 5 / 150px and no longer do. The footer is the page's last
+  row and it is structure, not composition: the rule, the coordinates and the
+  middots all hold still, and links drifting out of a line everything else keeps
+  read as loose rather than as alive. Do not put it back.
+- **The blurb is deliberately excluded** too, along with the bands. The blurb
+  carries the character reveal, and two systems writing to one element fight.
 
 - **One pointermove listener for every magnet, not one per element.** Each
   magnet needs its rect on every move; four that each read and then wrote would
@@ -926,8 +943,9 @@ travel **max 14px**. Stagger 34ms, capped at 8 items.
 animating numbers, marquee, hover-lift with shadow, scroll-jacking, card flips,
 magnetic buttons.
 
-**Magnetism is confined to § 07**, where it applies to the section's text
-elements as well as its links. Nowhere else on the site.
+**Magnetism is confined to § 07's centre block** — the email monument and the
+`LET'S CONNECT` label above it, both text rather than links. Not the footer, not
+the social links, nowhere else on the site.
 
 **Marquee is banned as decorative background.** § 07 connect's counter-scrolling
 type bands are exempt: **they run a continuous autoplay loop.** This is a
