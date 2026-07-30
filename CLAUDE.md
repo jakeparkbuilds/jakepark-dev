@@ -264,9 +264,26 @@ afterwards to replay it. It is a joke and it is meant to read as one.
   ancestor can break `position: fixed` — the same rule the ink canvas follows —
   at z-index 400: above every section, below the cursor's 9999.
 - **There is no replay cooldown and there must not be one.** The button is
-  spam-clickable: every click throws a fresh 70 and restarts the same rAF
-  against a new start time, so bursts REPLACE rather than stack and the cost
-  never exceeds one burst however fast it is clicked. This reverses an earlier
+  spam-clickable and **clicks ACCUMULATE**: every click adds a WAVE of 70 that
+  falls alongside whatever is already in the air, each on its own clock, so
+  clicking fast buries the screen. That is the joke — a wave that replaced the
+  one before it would mean the screen never fills however hard it is clicked.
+  Each wave is dropped the frame its own last slice lands; when the last one
+  goes the layer unmounts and the rAF cancels.
+  - Still **one rAF for every wave**, walking the waves and writing transform
+    and opacity, reading nothing. A wave's start is taken on its FIRST FRAME,
+    not at click time — the click has to clear a React commit before its spans
+    exist, and dating it from the click skips that much of its fall.
+  - Concurrent waves are capped at **12** (840 slices), and the cap is not a
+    cooldown: every click is honoured and the OLDEST wave retires to make room,
+    being the one already nearest the bottom of the screen. Measured with all
+    840 in the air: 8.3ms median / 9.0 worst unthrottled, 16.7 / 25.5 under 6x
+    CPU throttle, no frame over 32ms.
+  - **The button appears with the first wave, not after it.** Gating it on the
+    burst ending made the first 3.7s un-spammable, which is exactly the window
+    in which someone wants to click again.
+
+  This reverses an earlier
   4s lockout, which was itself the subject of a debugging pass (its reference
   started at 0 against a `performance.now()` that is ms since page load, so it
   swallowed every trigger in the first four seconds — exactly when a visitor
@@ -349,6 +366,12 @@ always up for a conversation …      Bricolage 19/400, #2E2A24, one line ≥120
 - The `mailto:` href carries the **real address**; the bracket notation is
   display only, with `[at]` and `[dot]` in #6B6455 so they read as annotation
   rather than as part of the address.
+- There is exactly **one** space either side of each bracket group and it looks
+  like two, because Plex Mono is monospaced and each space is a full 0.6em
+  advance — 25px at 42px type. `word-spacing: -0.22em` on the annotation span
+  pulls those two spaces back. It must stay on the span: the address's own
+  letterfit has to remain monospaced to read as data, which is the whole point
+  of setting it in the data face.
 - **This is the one place mono is used at display scale** (§ 3's table assigns it
   to labels and metadata). It is deliberate: the address is data, and setting the
   page's largest type in the data face is the joke of the section landing

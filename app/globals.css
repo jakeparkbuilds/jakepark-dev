@@ -1310,9 +1310,16 @@
     white-space: nowrap;
     text-decoration: none;
   }
-  /* Annotation, not address. */
+  /* Annotation, not address.
+
+     There is exactly ONE space either side of each bracket group, but Plex Mono
+     is monospaced, so each of those spaces is a full 0.6em advance — 25px at
+     42px type — and the pair reads as a double space. word-spacing pulls the
+     two spaces inside this element back without touching the address's own
+     letterfit, which must stay monospaced to read as data. */
   .connect-email-br {
     color: #6b6455;
+    word-spacing: -0.22em;
   }
   /* Drawn left to right on arrival, retracted right to left on leave — never
      the enter played backwards. Switching transform-origin with the state is
