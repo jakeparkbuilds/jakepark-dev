@@ -1208,6 +1208,16 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
 
 - **Total route JS < 150KB gzipped — hard ceiling.** Report the gzipped figure
   and the delta on every build, with remaining headroom stated.
+  **THIS CEILING IS CURRENTLY VIOLATED AND HAS BEEN FOR SOME TIME.** Measured
+  over the nine JS chunks `/` actually requests from a production `next start`:
+  **228.1KB gzipped, 78KB over.** It is not § 04's doing — the same measurement
+  against the commit before the § 04 rebuild is **230.0KB**, so that pass took
+  1.9KB *off*. Nothing has been reporting this figure, which is how it drifted
+  this far; the number above is the first one on record. Framework and runtime
+  dominate it, so closing the gap is a dependency-level question (Lenis,
+  anime.js, the React/Next baseline), not something a section pass can fix.
+  **Do not claim this budget line is met**, and do not treat a section's small
+  delta as headroom.
 - LCP < 1.8s on 4G, CLS < 0.05, Lighthouse ≥ 95 all four
 - 60fps under 6× CPU throttle through a full page scroll
 - Zero persistent rAF loops and zero pending timers once the page settles —

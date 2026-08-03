@@ -1,61 +1,28 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { createTimeline, cubicBezier, utils } from "animejs";
+import Image from "next/image";
+import { useEffect, useRef } from "react";
 import { PROJECTS, type Project, type ProjectLink } from "../lib/projects";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import ProjectFigure, { FIG_W, figureDelays } from "./project-figures";
 import SectionShell from "./section-shell";
 
-// Motion tokens (CLAUDE.md § 7).
-const DRAW = cubicBezier(0.22, 1, 0.36, 1);
-const REVEAL = cubicBezier(0.33, 1, 0.68, 1);
-// The close gets its OWN curve, never the open's reversed: `draw` is an
-// ease-out, so running it backwards is heavily back-loaded — it crawls and then
-// snaps. Symmetric and quick; only opening gets the long drawn feel.
-const CLOSE_EASE = cubicBezier(0.4, 0, 0.2, 1);
-const OPEN_MS = 420;
-const CLOSE_MS = 340;
-const CONTENT_OUT_MS = 160;
-const FIGURE_MS = 900;
-const FIGURE_DELAY = 200;
-// Content starts wiping in 28% into the gap's open, while the gap is still
-// moving, and each block follows 34ms behind the last. The whole run is legible
-// before the gap finishes.
-const REVEAL_AT = 120;
-const REVEAL_STEP = 34;
-const REVEAL_MS = 380;
-const REVEAL_TRAVEL = 10; // px, under the 14px ceiling in CLAUDE.md § 7
-
-// anime.js cannot interpolate a multi-argument `inset()` string: it holds the
-// start value for the tween's whole duration and writes the end value on the
-// final tick, so a clip-path reveal reads as an instant pop rather than a wipe.
-// (Measured: translateY on the same tween interpolated normally while clip-path
-// sat at `inset(0 0 100% 0)` for all 380ms.) So the wipe is driven from a plain
-// number and the string is composed here, one write per frame per block.
-function wipe(el: HTMLElement, v: number) {
-  el.style.clipPath = `inset(0 0 ${v}% 0)`;
-  el.style.transform = `translateY(${((v / 100) * REVEAL_TRAVEL).toFixed(2)}px)`;
-}
-
-// A figure draws once per session, the first time its row opens. Re-opening
-// shows it already complete — no redraw, no flicker. Module scope, so it
-// survives unmounts and re-renders and resets only on reload.
-const DRAWN = new Set<string>();
-
-// Dash lengths are computed in CSS PIXELS, never in user units. These paths
-// carry vector-effect="non-scaling-stroke", so the browser resolves the dash
-// pattern in the SVG's viewBox→CSS space; a dasharray taken straight from
-// getTotalLength() is wrong by the viewBox scale factor and leaves part of the
-// path sitting in the pattern's gap. The marker is the sharp case — its viewBox
-// is 1×100 but it renders at the gap's full height. See CLAUDE.md § 7.
-
-// § 04 projects — a drawing register. At rest the section is a legible catalog:
-// one ruled line per project, everything visible, nothing hidden behind an
-// interaction. Clicking an entry unfolds it in place; the rows below move down
-// and a vertical ink marker runs the height of the opened gap.
+// § 04 projects — a register that hides nothing.
 //
-// § 05 skills holds the site's one axis break, so this section stays vertically
+// One project per ruled row on a 12-column grid, under a column header that
+// appears exactly once. Every row is fully open at all times: the header line,
+// the claim, the full stack, the links and a real screenshot, all of it visible
+// from first paint.
+//
+// The accordion this section used to be is deleted — the toggle, the
+// one-open-at-a-time state, the 0fr→1fr gap, the marker that drew down the
+// gap's height, the aria-expanded wiring and the keyboard handlers. So are the
+// three generated SVG figures and their seeded PRNG. See CLAUDE.md § 5 / §04
+// for why; the short version is that a three-item register concealing two
+// thirds of itself was the one piece of generic UI on a page with this much
+// drawn motion, and a generated figure describes work that a screenshot simply
+// shows.
+//
+// § 05 skills holds the site's one axis break, so this stays vertically
 // composed — a register, not a grid.
 //
 // Every projects-specific style lives in globals.css under `.proj-*`.
@@ -92,299 +59,99 @@ function LinkGlyph({ type }: { type: ProjectLink["icon"] }) {
   );
 }
 
-function StackRun({
-  items,
-  className,
-  reveal,
-}: {
-  items: string[];
-  className: string;
-  reveal?: boolean;
-}) {
+const CORNERS = ["tl", "tr", "bl", "br"] as const;
+
+function ProjectRow({ project }: { project: Project }) {
+  const { thumb } = project;
   return (
-    <p className={className} {...(reveal ? { "data-reveal": "" } : {})}>
-      {items.join(" · ")}
-    </p>
-  );
-}
+    <li className="proj-row">
+      {/* The header line. Not a button any more — nothing here toggles, so an
+          interactive role would advertise an affordance that does not exist. */}
+      <div className="proj-head" data-reveal>
+        <span className="proj-no">{project.no}</span>
+        <h3 className="proj-name">{project.name}</h3>
+        <p className="proj-stack">{project.headerStack.join(" · ")}</p>
+        <span className="proj-year">{project.year}</span>
+      </div>
 
-function ProjectRow({
-  project,
-  open,
-  onToggle,
-}: {
-  project: Project;
-  open: boolean;
-  onToggle: () => void;
-}) {
-  const btnId = `proj-btn-${project.no}`;
-  const panelId = `proj-panel-${project.no}`;
-  const reduced = useReducedMotion();
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  const lineRef = useRef<SVGLineElement | null>(null);
-  const first = useRef(true);
-  // `visible` keeps the panel in the DOM (and out of `hidden`) for the length
-  // of the close animation; closed panels end up genuinely hidden, not merely
-  // transparent, so they leave the accessibility tree.
-  const [visible, setVisible] = useState(open);
-  // Derived during render, not in an effect: opening must un-hide the panel in
-  // the same commit that the animation effect then measures, and React handles
-  // a render-phase adjustment by re-rendering before it commits.
-  if (open && !visible) setVisible(true);
-
-  useEffect(() => {
-    const wrap = wrapRef.current;
-    const panel = panelRef.current;
-    if (!wrap || !panel) return;
-
-    const figurePaths = () =>
-      Array.from(panel.querySelectorAll<SVGPathElement>("[data-fig-path]"));
-    const revealTargets = () =>
-      Array.from(panel.querySelectorAll<HTMLElement>("[data-reveal]"));
-    const line = lineRef.current;
-
-    // The gap is one grid row that goes 0fr -> 1fr. Never height:auto, never
-    // max-height with a guessed ceiling.
-    const setGap = (p: number) => {
-      wrap.style.gridTemplateRows = `${p}fr`;
-    };
-    const clearDash = (el: SVGGeometryElement) => {
-      el.style.removeProperty("stroke-dasharray");
-      el.style.removeProperty("stroke-dashoffset");
-    };
-
-    // Settle to the final frame with no motion at all: the first commit (row 01
-    // is server-rendered open) and every reduced-motion path.
-    const settle = () => {
-      setGap(open ? 1 : 0);
-      for (const el of revealTargets()) {
-        el.style.removeProperty("clip-path");
-        el.style.removeProperty("transform");
-      }
-      if (line) clearDash(line);
-      for (const p of figurePaths()) clearDash(p);
-      panel.querySelector<SVGGElement>("[data-fig-legend]")?.style.removeProperty("opacity");
-      if (open) DRAWN.add(project.no);
-      if (!open) setVisible(false);
-    };
-
-    if (first.current) {
-      first.current = false;
-      settle();
-      return;
-    }
-    if (!visible) return;
-    if (reduced) {
-      settle();
-      return;
-    }
-
-    // ONE timeline drives the whole gesture. The gap and the marker are not two
-    // instances that happen to share a duration — they are written from a
-    // SINGLE progress value on every tick, so the marker's tip is pinned to the
-    // gap's bottom edge by construction and cannot drift by a frame.
-    const state = { p: open ? 0 : 1 };
-    const wipers: { v: number }[] = [];
-    const markerLen = panel.offsetHeight;
-    if (line) {
-      line.style.strokeDasharray = String(markerLen);
-      line.style.strokeDashoffset = String(markerLen * (1 - state.p));
-    }
-
-    const tl = createTimeline({
-      defaults: {},
-      onUpdate: () => {
-        setGap(state.p);
-        if (line) line.style.strokeDashoffset = String(markerLen * (1 - state.p));
-      },
-      onComplete: () => {
-        if (line) clearDash(line);
-        panel.querySelector<SVGGElement>("[data-fig-legend]")?.style.removeProperty("opacity");
-        for (const el of revealTargets()) {
-          el.style.removeProperty("clip-path");
-          el.style.removeProperty("transform");
-        }
-        if (open) {
-          setGap(1);
-        } else {
-          setGap(0);
-          // The accessibility unmount fires here and nowhere else — never
-          // during the retraction, which would collapse the gap instantly.
-          setVisible(false);
-        }
-      },
-    });
-
-    if (open) {
-      tl.add(state, { p: 1, duration: OPEN_MS, ease: DRAW }, 0);
-
-      // claim -> stack -> links -> figure, in DOM order. Each block is already
-      // mounted at its final size and clipped; this only uncovers it.
-      revealTargets().forEach((el, i) => {
-        const w = { v: 100 };
-        wipe(el, 100);
-        wipers.push(w);
-        tl.add(
-          w,
-          {
-            v: 0,
-            duration: REVEAL_MS,
-            ease: REVEAL,
-            onUpdate: () => wipe(el, w.v),
-          },
-          REVEAL_AT + i * REVEAL_STEP
-        );
-      });
-
-      // The figure draws once, on the first open of this row.
-      if (!DRAWN.has(project.no)) {
-        DRAWN.add(project.no);
-        const svg = panel.querySelector("svg.proj-fig-svg");
-        const scale = svg ? svg.getBoundingClientRect().width / FIG_W : 1;
-        const paths = figurePaths();
-        const delays = figureDelays(paths.length);
-        paths.forEach((path, i) => {
-          const len = path.getTotalLength() * scale;
-          path.style.strokeDasharray = String(len);
-          path.style.strokeDashoffset = String(len);
-          tl.add(
-            path,
-            {
-              strokeDashoffset: 0,
-              duration: FIGURE_MS - 160,
-              ease: DRAW,
-              onComplete: () => clearDash(path),
-            },
-            FIGURE_DELAY + delays[i]
-          );
-        });
-        // The scale bar and its labels are a legend, not a drawn line — they
-        // arrive once the trails are mostly down.
-        const legend = panel.querySelector<SVGGElement>("[data-fig-legend]");
-        if (legend) {
-          // Hidden only because it is about to be animated in; it renders at
-          // full opacity without JS and on the reduced-motion path.
-          legend.style.opacity = "0";
-          tl.add(legend, { opacity: [0, 1], duration: 240, ease: "linear" }, 700);
-        }
-      }
-    } else {
-      // Content wipes out first, then the gap and marker retract together.
-      revealTargets().forEach((el) => {
-        const w = { v: 0 };
-        wipers.push(w);
-        tl.add(
-          w,
-          {
-            v: 100,
-            duration: CONTENT_OUT_MS,
-            ease: CLOSE_EASE,
-            onUpdate: () => wipe(el, w.v),
-          },
-          0
-        );
-      });
-      tl.add(state, { p: 0, duration: CLOSE_MS, ease: CLOSE_EASE }, CONTENT_OUT_MS);
-    }
-
-    return () => {
-      tl.pause();
-      utils.remove(state);
-      for (const w of wipers) utils.remove(w);
-      const els: Element[] = [...revealTargets(), ...figurePaths()];
-      if (line) els.push(line);
-      utils.remove(els);
-    };
-  }, [open, visible, reduced, project.no]);
-
-  return (
-    <li className="proj-row" data-open={open ? "" : undefined}>
-      <h3 className="proj-h3">
-        <button
-          type="button"
-          id={btnId}
-          className="proj-head"
-          aria-expanded={open}
-          aria-controls={panelId}
-          data-cursor="pen-down"
-          onClick={onToggle}
-        >
-          <span className="proj-no">{project.no}</span>
-          <span className="proj-name">{project.name}</span>
-          <StackRun items={project.closedStack} className="proj-stack" />
-          <span className="proj-year">{project.year}</span>
-        </button>
-      </h3>
-
-      {/* The wrapper is what the unfold animates; it clips the panel so the
-          marker's drawn tip and the gap's bottom edge are the same edge. */}
-      <div className="proj-panel-wrap" ref={wrapRef} hidden={!visible} inert={!visible}>
-        <div className="proj-panel-clip">
-          <div
-            id={panelId}
-            role="region"
-            aria-labelledby={btnId}
-            className="proj-panel"
-            ref={panelRef}
-          >
-          {/* The marker that makes the entry read as unfolded rather than as a
-              box that grew. Sits in the NO. column's gutter. */}
-          <svg
-            className="proj-marker"
-            viewBox="0 0 1 100"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <line
-              ref={lineRef}
-              x1="0.5"
-              y1="0"
-              x2="0.5"
-              y2="100"
-              stroke="#1A1815"
-              strokeWidth={0.5}
-              vectorEffect="non-scaling-stroke"
-            />
-          </svg>
-
-          <div className="proj-detail" data-has-figure={project.figure ? "" : undefined}>
-            <p className="proj-claim" data-reveal>
-              {project.claim}
-            </p>
-            <StackRun items={project.stack} className="proj-fullstack" reveal />
-            <ul className="proj-links" data-reveal>
-              {project.links.map((link) => {
-                const external = link.href.startsWith("http");
-                return (
-                  <li key={link.label}>
-                    <a
-                      href={link.href}
-                      {...(external
-                        ? { target: "_blank", rel: "noopener noreferrer" }
-                        : { target: "_blank" })}
-                      className="group inline-flex items-center gap-2 text-body hover:text-accent"
-                    >
-                      <LinkGlyph type={link.icon} />
-                      <span className="underline decoration-accent decoration-[1px] underline-offset-4">
-                        {link.label}
-                      </span>
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-
-            {project.figure && (
-              <figure className="proj-figure" data-reveal>
-                <ProjectFigure kind={project.figure.kind} />
-                <figcaption className="proj-fig-caption">{project.figure.caption}</figcaption>
-              </figure>
-            )}
-          </div>
+      <div className="proj-body">
+        <div className="proj-detail" data-has-thumb={thumb ? "" : undefined}>
+          <p className="proj-claim" data-reveal>
+            {project.claim}
+          </p>
+          <p className="proj-fullstack" data-reveal>
+            {project.stack.join(" · ")}
+          </p>
+          <ul className="proj-links" data-reveal>
+            {project.links.map((link) => {
+              const external = link.href.startsWith("http");
+              return (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    {...(external ? { rel: "noopener noreferrer" } : {})}
+                    className="group inline-flex items-center gap-2 text-body hover:text-accent"
+                  >
+                    <LinkGlyph type={link.icon} />
+                    <span className="underline decoration-accent decoration-[1px] underline-offset-4">
+                      {link.label}
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
         </div>
+
+        {thumb && (
+          <figure className="proj-figure">
+            {/* The whole thumbnail is a link, and the text link above stays:
+                this is a convenience, not the only affordance. The image link
+                carries its own aria-label rather than leaning on the alt, so a
+                screen reader hears a destination and not a description. */}
+            <a
+              className="proj-thumb"
+              href={thumb.href}
+              target="_blank"
+              {...(thumb.href.startsWith("http")
+                ? { rel: "noopener noreferrer" }
+                : {})}
+              aria-label={thumb.linkLabel}
+              data-cursor="pen-down"
+            >
+              <span className="proj-thumb-box">
+                <Image
+                  className="proj-thumb-img"
+                  src={thumb.src}
+                  alt={thumb.alt}
+                  width={thumb.width}
+                  height={thumb.height}
+                  quality={90}
+                  sizes="(min-width: 1440px) 560px, (min-width: 1200px) 42vw, (min-width: 900px) 520px, 92vw"
+                  // § 04 is the fourth section down, below a 100svh hero plus
+                  // § 02 and § 03 — it is off screen at every common viewport
+                  // height, so no row here is ever the LCP element and none of
+                  // them takes `priority`. Marking row 01 priority would only
+                  // contend with the hero's real LCP work.
+                  loading="lazy"
+                />
+                {/* Four L-shaped registration marks. The same vocabulary as
+                    § 06's plates and § 02's portrait — this is what makes a
+                    full-colour rectangle belong to a paper page. */}
+                {CORNERS.map((c) => (
+                  <span
+                    key={c}
+                    aria-hidden="true"
+                    className="proj-thumb-reg"
+                    data-c={c}
+                  />
+                ))}
+              </span>
+            </a>
+            <figcaption className="proj-thumb-caption">{thumb.caption}</figcaption>
+          </figure>
+        )}
       </div>
     </li>
   );
@@ -399,31 +166,52 @@ export default function Projects({
   id: string;
   label: string;
 }) {
-  // Row 01 is open on first paint — server-rendered open — so nobody meets a
-  // section of closed lines.
-  const [openNo, setOpenNo] = useState<string | null>(PROJECTS[0].no);
+  const reduced = useReducedMotion();
   const listRef = useRef<HTMLUListElement | null>(null);
 
-  const toggle = useCallback((no: string) => {
-    setOpenNo((cur) => (cur === no ? null : no));
-  }, []);
+  // Each row reveals once on entry and stays. The hidden start state is applied
+  // by [data-motion="armed"] on the list, set here in a layout effect — the
+  // same contract § 03 follows. Rows are hidden ONLY when something is
+  // guaranteed to reveal them, so with no JS, failed JS or reduced motion the
+  // register renders complete and legible. Never make the hidden state the CSS
+  // default.
+  //
+  // The reveal itself is CSS transitions keyed off [data-landed], not a
+  // timeline: there is no per-frame value to compute here, so there is nothing
+  // to drive and nothing to kill. Zero rAF, zero pending timers, and the
+  // observers disconnect themselves as they fire (CLAUDE.md § 12).
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || reduced) return;
 
-  // Escape closes the open row; Up/Down move between row headers.
-  const onKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      setOpenNo(null);
-      return;
-    }
-    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-    const heads = Array.from(
-      listRef.current?.querySelectorAll<HTMLButtonElement>(".proj-head") ?? []
-    );
-    const i = heads.indexOf(document.activeElement as HTMLButtonElement);
-    if (i === -1) return;
-    e.preventDefault();
-    const next = e.key === "ArrowDown" ? i + 1 : i - 1;
-    heads[(next + heads.length) % heads.length]?.focus();
-  }, []);
+    const rows = Array.from(list.querySelectorAll<HTMLElement>(".proj-row"));
+    if (!rows.length) return;
+
+    list.setAttribute("data-motion", "armed");
+
+    // One observer per row, each disconnecting on its own first crossing —
+    // never one section-level stagger. A visitor landing mid-section would
+    // otherwise watch rows animate that they had already scrolled past.
+    const observers = rows.map((row) => {
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            row.setAttribute("data-landed", "");
+            io.disconnect();
+          }
+        },
+        { threshold: 0.25 },
+      );
+      io.observe(row);
+      return io;
+    });
+
+    return () => {
+      for (const io of observers) io.disconnect();
+      list.removeAttribute("data-motion");
+    };
+  }, [reduced]);
 
   return (
     <SectionShell number={number} id={id} label={label}>
@@ -437,14 +225,9 @@ export default function Projects({
           <span className="proj-year">year</span>
         </div>
 
-        <ul className="proj-list" ref={listRef} onKeyDown={onKeyDown}>
+        <ul className="proj-list" ref={listRef}>
           {PROJECTS.map((p) => (
-            <ProjectRow
-              key={p.no}
-              project={p}
-              open={openNo === p.no}
-              onToggle={() => toggle(p.no)}
-            />
+            <ProjectRow key={p.no} project={p} />
           ))}
         </ul>
       </div>

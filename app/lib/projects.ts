@@ -1,12 +1,16 @@
-import type { FigureKind } from "../components/project-figures";
-
 // § 04 projects — the register's whole content. Adding a project means adding
-// one entry here and nothing else: the layout, the column header, the
-// accordion, the keyboard wiring and the figure slot all read off this array.
+// one entry here and nothing else: the column header, the row layout, the
+// thumbnail frame and the reveal all read off this array.
 //
-// `figure` is optional on purpose. An entry without one renders its text block
-// across cols 2–10 instead of 2–6, which reads as a deliberate full-width
-// entry rather than a panel with a hole in it.
+// `thumb` is optional. An entry without one renders its text block across cols
+// 2–10 instead of 2–6, which reads as a deliberate full-width entry rather than
+// a row with a hole in it. All three current entries have one.
+//
+// The generated SVG figures this file used to carry are gone (CLAUDE.md § 5 /
+// §04). They were the right answer while the projects had nothing to show and
+// the wrong one once they did — a generated figure asserts what work looked
+// like in the abstract; a screenshot shows it. Do not add a synthetic figure
+// back for a project that lacks a thumbnail.
 
 export type ProjectLink = {
   label: string;
@@ -14,18 +18,35 @@ export type ProjectLink = {
   icon: "live" | "github" | "pdf";
 };
 
+export type ProjectThumb = {
+  src: string;
+  /** Intrinsic pixels, read off the real file — never guessed, never rounded.
+   *  next/image reserves the box from these, which is what holds CLS at 0. */
+  width: number;
+  height: number;
+  alt: string;
+  /** Mono-micro, uppercased by CSS per CLAUDE.md § 3 — never in the string. */
+  caption: string;
+  /** Where the image links. Always one of this project's own link hrefs. */
+  href: string;
+  /** Spoken name for the image link; the visible text link carries the same
+   *  destination, so this has to distinguish itself from that one by naming
+   *  what is being clicked rather than repeating the label. */
+  linkLabel: string;
+};
+
 export type Project = {
   no: string;
   name: string;
   year: string;
-  /** Truncated for the closed row — one line, never wrapped. */
-  closedStack: string[];
-  /** The whole pitch, one sentence. */
+  /** The header line's one-line stack. Truncates from the tail, never wraps. */
+  headerStack: string[];
+  /** The whole pitch, one or two lines. */
   claim: string;
-  /** The complete list, shown only when expanded. */
+  /** The complete list, below the claim. Wraps freely. */
   stack: string[];
   links: ProjectLink[];
-  figure?: { kind: FigureKind; caption: string };
+  thumb?: ProjectThumb;
 };
 
 export const PROJECTS: Project[] = [
@@ -33,8 +54,8 @@ export const PROJECTS: Project[] = [
     no: "01",
     name: "My 5",
     year: "2026",
-    closedStack: ["Python", "AWS", "Terraform", "Next.js"],
-    claim: "a serverless monte carlo simulator that knows when to stop.",
+    headerStack: ["Python", "AWS", "Terraform", "Next.js"],
+    claim: "a basketball matchup simulator that knows when to stop.",
     stack: [
       "Python",
       "AWS Lambda",
@@ -44,14 +65,24 @@ export const PROJECTS: Project[] = [
       "WebSockets",
       "Next.js",
     ],
-    links: [{ label: "live", href: "https://my5-sigma.vercel.app/", icon: "live" }],
-    figure: { kind: "convergence", caption: "stopped early · 95% compute saved" },
+    links: [
+      { label: "live", href: "https://my5-sigma.vercel.app/", icon: "live" },
+    ],
+    thumb: {
+      src: "/my5.png",
+      width: 3024,
+      height: 1718,
+      alt: "The My 5 lab interface, running a basketball matchup simulation.",
+      caption: "my5 lab · matchup simulator",
+      href: "https://my5-sigma.vercel.app/",
+      linkLabel: "My 5 — open the live site",
+    },
   },
   {
     no: "02",
     name: "CapitolCast",
     year: "2025",
-    closedStack: ["Python", "PyTorch Geometric", "FastAPI", "Next.js"],
+    headerStack: ["Python", "PyTorch Geometric", "FastAPI", "Next.js"],
     claim:
       "forecasting which bills advance, across a 5.8m-edge cosponsorship graph.",
     stack: [
@@ -62,23 +93,47 @@ export const PROJECTS: Project[] = [
       "Next.js",
       "SHAP",
     ],
-    links: [{ label: "live", href: "https://capitol-cast.vercel.app/", icon: "live" }],
-    figure: { kind: "arcs", caption: "cosponsorship graph · 5.8m edges" },
+    links: [
+      {
+        label: "live",
+        href: "https://capitol-cast.vercel.app/",
+        icon: "live",
+      },
+    ],
+    thumb: {
+      src: "/capitolcast.png",
+      width: 3024,
+      height: 1718,
+      alt: "The CapitolCast interface, showing bill advancement forecasts.",
+      caption: "16,213 bills · 0.48 PR-AUC · 15× baseline",
+      href: "https://capitol-cast.vercel.app/",
+      linkLabel: "CapitolCast — open the live site",
+    },
   },
   {
     no: "03",
     name: "Bike Heat Exposure Research",
     year: "2024",
-    closedStack: ["ArcGIS Pro", "OpenStreetMap", "USGS", "NOAA"],
+    headerStack: ["ArcGIS Pro", "OpenStreetMap", "USGS", "NOAA"],
     claim:
       "mapping how land surface temperature and wind speed shape cycling across the DC metro area.",
-    stack: ["ArcGIS Pro", "OpenStreetMap", "USGS Earth Explorer", "NOAA NCEI"],
     // ArcGIS Pro is the mapping and analysis tool; the rest are data sources.
     // Nothing the poster does not name.
+    stack: ["ArcGIS Pro", "OpenStreetMap", "USGS Earth Explorer", "NOAA NCEI"],
+    // No live deployment and no repo. Not padded with a disabled link — that
+    // asymmetry is honest (CLAUDE.md § 5 / §04).
     links: [{ label: "poster (pdf)", href: "/assip-poster.pdf", icon: "pdf" }],
-    figure: {
-      kind: "heat",
-      caption: "lst × bike trails · dc metro · jul–aug 2023",
+    thumb: {
+      src: "/bike-heat.png",
+      width: 1914,
+      height: 1434,
+      // The poster is dense and is NOT legible at this size. That is accepted:
+      // it reads as "a research poster", the caption says so, and the link
+      // opens the real thing. Never cropped, never zoomed into one figure.
+      alt: "The ASSIP research poster on bike heat exposure across the DC metro area.",
+      caption: "ASSIP research poster · George Mason University",
+      href: "/assip-poster.pdf",
+      linkLabel: "Bike Heat Exposure Research — open the poster (PDF)",
     },
   },
 ];

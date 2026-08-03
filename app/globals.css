@@ -1552,17 +1552,19 @@
     }
   }
 
-  /* ── § 04 projects — the drawing register (see Projects) ──────────────────
-     One ruled line per project on a 12-column grid, a column header that
-     appears exactly once, and an in-place unfold. Vertically composed: § 05
-     skills holds the site's one axis break and this section must not break it
-     again — no grid of cards, no second axis.
+  /* ── § 04 projects — the open register (see Projects) ─────────────────────
+     One project per ruled row on a 12-column grid, under a column header that
+     appears exactly once. Every row is fully open at all times — there is no
+     accordion, no toggle, no marker line and no generated figure; all of that
+     was deleted (CLAUDE.md § 5 / §04). Vertically composed: § 05 skills holds
+     the site's one axis break and this section must not break it again — no
+     grid of cards, no second axis.
 
-     Columns, at ≥1200px:
-       1        NO.        2–5   PROJECT
-       6–10     STACK      11–12 YEAR (right-aligned)
-     The header row and every project row share one grid definition, so the
-     labels cannot drift out of alignment with the columns they name. */
+     Columns, at ≥1440px:
+       header   1 NO. · 2–5 PROJECT · 6–9 STACK · 11–12 YEAR
+       body     2–6 text · 7–12 thumbnail
+     The header row and every body row share one grid definition, so the labels
+     cannot drift out of alignment with the columns they name. */
 
   .proj-register {
     /* SectionShell puts 40px under the section's ink rule; the register's
@@ -1572,13 +1574,18 @@
   }
 
   .proj-colhead,
-  .proj-head {
+  .proj-head,
+  .proj-body {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
     column-gap: var(--proj-gap);
-    align-items: center;
     width: 100%;
     text-align: left;
+  }
+
+  .proj-colhead,
+  .proj-head {
+    align-items: center;
   }
 
   .proj-colhead {
@@ -1598,56 +1605,49 @@
     list-style: none;
   }
 
-  /* The row owns its own hairline so the hover rule can reach it, and so the
-     rule sits BELOW the opened panel rather than between header and detail. */
+  /* The row owns its own hairline, and the 72px between rows is split around
+     it: 40px of air below a row's content, the rule, then 32px before the next
+     row's header. The rule reads as closing the entry above it rather than
+     floating between two. */
   .proj-row {
+    padding-bottom: 40px;
     border-bottom: 0.5px solid theme("colors.muted");
-    transition: border-bottom-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-
-  .proj-h3 {
-    margin: 0;
-    font: inherit;
+  .proj-row + .proj-row {
+    padding-top: 32px;
   }
 
   .proj-head {
     min-height: 68px;
-    padding: 0;
-    border: 0;
-    background: none;
-    cursor: none;
-    color: inherit;
-  }
-  .proj-head:focus-visible {
-    outline: 1px solid theme("colors.accent");
-    outline-offset: 2px;
   }
 
   .proj-no {
     grid-column: 1 / 2;
+    align-self: center;
     font-family: var(--font-plex-mono), ui-monospace, monospace;
     font-size: 11px;
     font-weight: 400;
     letter-spacing: 0.16em;
     color: #6b6455;
-    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
   }
   .proj-name {
     grid-column: 2 / 6;
+    margin: 0;
     font-family: var(--font-bricolage), sans-serif;
     font-size: 24px;
     font-weight: 500;
+    line-height: 1.2;
     letter-spacing: -0.015em;
     color: theme("colors.ink");
-    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
   }
   /* One line, never wrapped. If a stack ever outgrows its column it clips from
-     the tail rather than wrapping the row — the full list is in the panel. */
+     the tail rather than wrapping the row — the full list is below the claim. */
   .proj-stack {
-    grid-column: 6 / 11;
+    grid-column: 6 / 10;
     margin: 0;
     overflow: hidden;
     white-space: nowrap;
+    text-overflow: ellipsis;
     font-family: var(--font-plex-mono), ui-monospace, monospace;
     font-size: 12px;
     font-weight: 400;
@@ -1675,87 +1675,20 @@
     color: #6b6455;
   }
 
-  /* Hover: the name darkens and the row's own rule goes to ink. Nothing else —
-     no fill, no lift, no shadow, no chevron, no indent, no scale. */
-  @media (hover: hover) and (pointer: fine) {
-    .proj-row:has(.proj-head:hover) {
-      border-bottom-color: theme("colors.ink");
-    }
-    .proj-head:hover .proj-name {
-      color: #0a0908;
-    }
-  }
-  .proj-row:has(.proj-head:focus-visible) {
-    border-bottom-color: theme("colors.ink");
-  }
-  /* Open: the NO. goes to ink. Nothing in the header line moves. */
-  .proj-row[data-open] .proj-no {
-    color: theme("colors.ink");
-  }
-
-  /* The wrapper is what the unfold animates. overflow:hidden means the panel's
-     visible bottom edge IS the wrapper's edge, so the marker's drawn tip and
-     the gap's edge cannot drift apart. */
-  /* The gap is ONE grid row animated 0fr -> 1fr — never height:auto, never
-     max-height with a guessed ceiling. The inner element does the clipping, so
-     the panel keeps its natural height throughout and the marker (which is as
-     tall as the panel) is simply cropped by the row. That is what pins the
-     marker's drawn tip to the gap's bottom edge. */
-  /* `display: grid` is an author rule and so beats the UA stylesheet's
-     `[hidden] { display: none }`. Without this the closed panels stay in the
-     layout and — worse — in the accessibility tree. */
-  .proj-panel-wrap[hidden] {
-    display: none;
-  }
-  .proj-panel-wrap {
-    display: grid;
-    grid-template-rows: 0fr;
-    /* Containment keeps the row's size change from re-laying-out and
-       repainting the panel's contents (the figures are 50-100 hairline paths);
-       the panel's own size never changes, only the window onto it. */
-    contain: layout paint;
-  }
-  .proj-panel-clip {
-    overflow: hidden;
-    min-height: 0;
-  }
-
-  .proj-panel {
-    display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    column-gap: var(--proj-gap);
-    align-items: center;
-    padding-bottom: 28px;
-  }
-  /* The gap's height belongs to the figure. An entry without one takes its
-     content's height instead of holding open an empty 360px well. */
-  .proj-panel:has(.proj-figure) {
-    min-height: 360px;
-  }
-
-  /* The vertical marker, in the NO. column's gutter: pinned to the right edge
-     of column 1 and pushed out by half the gap. */
-  .proj-marker {
-    grid-column: 1 / 2;
-    /* Spans every row of the panel: below 900px the figure wraps to a second
-       row, and the marker must still run the panel's full height. */
-    grid-row: 1 / -1;
-    justify-self: end;
-    align-self: stretch;
-    width: 1px;
-    height: 100%;
-    margin-right: calc(var(--proj-gap) / -2);
-    overflow: visible;
+  /* ── the body: text left, thumbnail right. Always this way round — a
+     register alternates nothing, and the eye has to be able to run down one
+     column of claims and one column of images. */
+  .proj-body {
+    align-items: start;
+    margin-top: 20px;
   }
 
   .proj-detail {
     grid-column: 2 / 11;
-    align-self: start;
-    padding-top: 4px;
   }
-  /* With a figure the text takes cols 2–6; without one it spans 2–10, which
-     reads as a deliberate full-width entry rather than a panel with a hole. */
-  .proj-detail[data-has-figure] {
+  /* With a thumbnail the text takes cols 2–6; without one it spans 2–10, which
+     reads as a deliberate full-width entry rather than a row with a hole. */
+  .proj-detail[data-has-thumb] {
     grid-column: 2 / 7;
   }
 
@@ -1787,36 +1720,192 @@
     font-size: 15px;
   }
 
+  /* ── the thumbnail. Native colours, no crop, no forced ratio: two entries are
+     3024×1718 UI captures and one is a 1914×1434 poster, so the three row
+     heights differ and that is correct. No filter, no grayscale, no duotone, no
+     tint, no opacity. No border, no shadow, no radius. */
   .proj-figure {
     grid-column: 7 / 13;
     justify-self: end;
-    align-self: center;
     margin: 0;
     width: 100%;
-    max-width: 400px;
+    /* Capped only at ≥1440px; below that it takes its column span whole. */
+    max-width: 560px;
   }
-  .proj-fig-svg {
+  .proj-thumb {
+    display: block;
+    /* The box hugs the image, so every registration offset is measured from
+       the picture's real edges rather than from a guessed container. */
+    width: 100%;
+  }
+  .proj-thumb:focus-visible {
+    outline: none;
+  }
+  .proj-thumb-box {
+    position: relative;
+    display: block;
+    width: 100%;
+  }
+  /* The ring frames the picture, not the anchor's padding box. */
+  .proj-thumb:focus-visible .proj-thumb-box {
+    outline: 1px solid theme("colors.accent");
+    outline-offset: 2px;
+  }
+  .proj-thumb-img {
     display: block;
     width: 100%;
     height: auto;
   }
-  .proj-fig-caption {
-    margin-top: 10px;
+
+  /* Four L-shaped registration marks: 0.5px ink, each arm 14px, vertex 8px
+     diagonally outside its corner, arms running back along the image's edges.
+     They never touch the picture and never close into a rectangle. This is the
+     same language as § 06's plates and § 02's portrait, and it is what makes a
+     full-colour rectangle belong to a paper page.
+
+     They are also the section's ONLY hover gesture: on hover or focus each
+     mark travels 5px further out along its own diagonal. The image itself does
+     not move, scale, lift, tint, or gain an overlay — that is hover-lift, and
+     § 8 bans it. Compositor-only, and the marks are the only thing that
+     moves. */
+  .proj-thumb-reg {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    transition:
+      transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 240ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .proj-thumb-reg[data-c="tl"] {
+    top: -8px;
+    left: -8px;
+    border-top: 0.5px solid theme("colors.ink");
+    border-left: 0.5px solid theme("colors.ink");
+  }
+  .proj-thumb-reg[data-c="tr"] {
+    top: -8px;
+    right: -8px;
+    border-top: 0.5px solid theme("colors.ink");
+    border-right: 0.5px solid theme("colors.ink");
+  }
+  .proj-thumb-reg[data-c="bl"] {
+    bottom: -8px;
+    left: -8px;
+    border-bottom: 0.5px solid theme("colors.ink");
+    border-left: 0.5px solid theme("colors.ink");
+  }
+  .proj-thumb-reg[data-c="br"] {
+    bottom: -8px;
+    right: -8px;
+    border-bottom: 0.5px solid theme("colors.ink");
+    border-right: 0.5px solid theme("colors.ink");
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .proj-thumb:hover .proj-thumb-reg[data-c="tl"] {
+      transform: translate(-5px, -5px);
+    }
+    .proj-thumb:hover .proj-thumb-reg[data-c="tr"] {
+      transform: translate(5px, -5px);
+    }
+    .proj-thumb:hover .proj-thumb-reg[data-c="bl"] {
+      transform: translate(-5px, 5px);
+    }
+    .proj-thumb:hover .proj-thumb-reg[data-c="br"] {
+      transform: translate(5px, 5px);
+    }
+  }
+  .proj-thumb:focus-visible .proj-thumb-reg[data-c="tl"] {
+    transform: translate(-5px, -5px);
+  }
+  .proj-thumb:focus-visible .proj-thumb-reg[data-c="tr"] {
+    transform: translate(5px, -5px);
+  }
+  .proj-thumb:focus-visible .proj-thumb-reg[data-c="bl"] {
+    transform: translate(-5px, 5px);
+  }
+  .proj-thumb:focus-visible .proj-thumb-reg[data-c="br"] {
+    transform: translate(5px, 5px);
+  }
+
+  /* Beneath the bottom-left registration mark: 8px of offset + its 14px arm +
+     10px of air, aligned to the mark's own left edge rather than the picture's.
+     In flow, not absolute — it is real content and it may take its row height,
+     which also keeps it out of the CLS budget. */
+  .proj-thumb-caption {
+    display: block;
+    margin: 32px 0 0 -8px;
     font-family: var(--font-plex-mono), ui-monospace, monospace;
     font-size: 11px;
     font-weight: 400;
+    line-height: 1.4;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: #6b6455;
   }
 
-  /* The STACK column leaves the closed row below 1440px. The threshold is set
-     by the longest project name, not by a round number: "Bike Heat Exposure
-     Research" measures 321px of ink at 24px/500, and the PROJECT column (cols
-     2–5) only reaches that at about 1360px — where it clears by 2px, which one
-     font-metric change would turn into a wrap. At 1440 the name has 25px of
-     slack and still leaves a 50px gutter before the stack. Below the threshold
-     the name takes cols 2–10 and has room to spare. */
+  /* ── the reveal. Each row arrives once on entry and stays.
+
+     The hidden start state is applied ONLY under [data-motion="armed"], which
+     the client sets in a layout effect — so with no JS, failed JS or reduced
+     motion the register renders complete. Never make the hidden state the CSS
+     default. [data-landed] is written by that row's own observer at 25% and
+     the observer disconnects itself, so nothing here polls and nothing is left
+     running once the three rows have landed. */
+  .proj-list[data-motion="armed"] .proj-row:not([data-landed]) [data-reveal] {
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(14px);
+  }
+  .proj-list[data-motion="armed"] .proj-row:not([data-landed]) .proj-thumb-img {
+    clip-path: inset(0 0 100% 0);
+  }
+  .proj-list[data-motion="armed"] .proj-row:not([data-landed]) .proj-thumb-reg,
+  .proj-list[data-motion="armed"] .proj-row:not([data-landed]) .proj-thumb-caption {
+    opacity: 0;
+  }
+
+  /* Text first and the thumbnail behind it: the four text blocks start at 0ms
+     and stagger 34ms, so the claim is already legible as its picture wipes
+     down. Travel is 14px, the ceiling in § 7. */
+  .proj-list[data-motion="armed"] .proj-row [data-reveal] {
+    transition:
+      clip-path 420ms cubic-bezier(0.33, 1, 0.68, 1),
+      transform 420ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  .proj-list[data-motion="armed"] .proj-row .proj-head {
+    transition-delay: 0ms;
+  }
+  .proj-list[data-motion="armed"] .proj-row .proj-claim {
+    transition-delay: 34ms;
+  }
+  .proj-list[data-motion="armed"] .proj-row .proj-fullstack {
+    transition-delay: 68ms;
+  }
+  .proj-list[data-motion="armed"] .proj-row .proj-links {
+    transition-delay: 102ms;
+  }
+  .proj-list[data-motion="armed"] .proj-row .proj-thumb-img {
+    transition: clip-path 560ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  /* The marks arrive behind the picture, once most of it is down. Their
+     transform transition is the hover's and must not pick up this delay, so
+     only the opacity leg is delayed. */
+  .proj-list[data-motion="armed"] .proj-row .proj-thumb-reg {
+    transition:
+      transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 240ms cubic-bezier(0.4, 0, 0.2, 1) 300ms;
+  }
+  .proj-list[data-motion="armed"] .proj-row .proj-thumb-caption {
+    transition: opacity 240ms cubic-bezier(0.4, 0, 0.2, 1) 380ms;
+  }
+
+  /* The STACK column leaves the header line below 1440px, and the thumbnail
+     gives up its cap. The threshold is set by the longest project name, not by
+     a round number: "Bike Heat Exposure Research" measures 321px of ink at
+     24px/500, and the PROJECT column (cols 2–5) only reaches that at about
+     1360px — where it clears by 2px, which one font-metric change would turn
+     into a wrap. Below the threshold the name takes cols 2–10 and has room to
+     spare, which is what keeps the header line to one line at every width. */
   @media (max-width: 1439.98px) {
     .proj-stack {
       display: none;
@@ -1824,22 +1913,33 @@
     .proj-name {
       grid-column: 2 / 11;
     }
+    .proj-figure {
+      max-width: none;
+    }
   }
 
-  /* 900–1200px: the detail panel keeps its two-part split, figure scaled back. */
+  /* Below 1200px the two-part split runs out of room: the text column would
+     fall under 300px beside a thumbnail worth showing. The picture moves BELOW
+     the text at the content's full width, capped so it does not become the
+     largest thing in the section, and the registration marks and caption follow
+     it because they are positioned against the picture, not the column. */
   @media (max-width: 1199.98px) {
-    .proj-panel:has(.proj-figure) {
-      min-height: 320px;
+    .proj-detail,
+    .proj-detail[data-has-thumb] {
+      grid-column: 2 / 13;
     }
     .proj-figure {
-      max-width: 312px; /* ~78% */
+      grid-column: 2 / 13;
+      justify-self: start;
+      max-width: 520px;
+      margin-top: 32px;
     }
   }
 
-  /* Below 900px: the figure moves BELOW the text at full content width and the
-     gap becomes auto-measured. The marker stays, running the panel's height.
-     The column gap tightens too — twelve 24px gutters consume more than a third
-     of the content width at these sizes. */
+  /* Below 900px the nav gutter is gone and the content column is already
+     narrow, so the picture takes it whole. The marks come in to 10px arms at a
+     6px offset — real registration marks stay small, and at this width a 14px
+     arm 8px clear of the edge starts to read as a frame. */
   @media (max-width: 899.98px) {
     .proj-register {
       --proj-gap: 16px;
@@ -1847,23 +1947,38 @@
     .proj-head {
       min-height: 60px;
     }
-    .proj-panel,
-    .proj-panel:has(.proj-figure) {
-      min-height: 0;
-      align-items: start;
+    .proj-row {
+      padding-bottom: 32px;
     }
-    .proj-detail,
-    .proj-detail[data-has-figure] {
-      grid-column: 2 / 13;
+    .proj-row + .proj-row {
+      padding-top: 28px;
     }
     .proj-figure {
-      grid-column: 2 / 13;
-      justify-self: start;
-      /* Natural ratio, not a forced height: a fixed 220px box inside a
-         600px-wide column letterboxes the drawing and shrinks it to a third of
-         the space it was given. */
-      max-width: 460px;
-      margin-top: 28px;
+      max-width: none;
+    }
+    .proj-thumb-reg {
+      width: 10px;
+      height: 10px;
+    }
+    .proj-thumb-reg[data-c="tl"] {
+      top: -6px;
+      left: -6px;
+    }
+    .proj-thumb-reg[data-c="tr"] {
+      top: -6px;
+      right: -6px;
+    }
+    .proj-thumb-reg[data-c="bl"] {
+      bottom: -6px;
+      left: -6px;
+    }
+    .proj-thumb-reg[data-c="br"] {
+      bottom: -6px;
+      right: -6px;
+    }
+    .proj-thumb-caption {
+      /* 6px offset + 10px arm + 10px air. */
+      margin: 26px 0 0 -6px;
     }
   }
 
@@ -1872,12 +1987,9 @@
      and the YEAR leaves its column to sit beneath the name as a mono-micro
      line — so the header stops labelling a column that no longer exists. */
   @media (max-width: 639.98px) {
-    .proj-register {
-      --proj-gap: 16px;
-    }
     .proj-colhead,
     .proj-head,
-    .proj-panel {
+    .proj-body {
       grid-template-columns: 32px minmax(0, 1fr);
     }
     .proj-head {
@@ -1886,6 +1998,7 @@
     }
     .proj-no {
       grid-column: 1 / 2;
+      align-self: start;
     }
     .proj-name {
       grid-column: 2 / 3;
@@ -1901,12 +2014,9 @@
       display: none;
     }
     .proj-detail,
-    .proj-detail[data-has-figure],
+    .proj-detail[data-has-thumb],
     .proj-figure {
       grid-column: 2 / 3;
-    }
-    .proj-marker {
-      grid-column: 1 / 2;
     }
   }
 
