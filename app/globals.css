@@ -1613,6 +1613,13 @@
     padding-bottom: 40px;
     border-bottom: 0.5px solid theme("colors.muted");
   }
+  /* The last row does NOT get one. Its rule would land a few pixels above the
+     next section's own ink rule and read as a double line closing the register
+     twice — the separator's job is to divide rows, and after the last row there
+     is nothing left to divide. */
+  .proj-row:last-child {
+    border-bottom: 0;
+  }
   .proj-row + .proj-row {
     padding-top: 32px;
   }
