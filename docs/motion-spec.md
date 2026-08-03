@@ -3,6 +3,17 @@
 Read with `CLAUDE.md`. That file governs how the site looks; this one governs how
 it moves. Where they conflict, `CLAUDE.md` wins.
 
+> **⚠ THIS DOCUMENT IS STALE. `CLAUDE.md` § 7 is the live motion spec.**
+>
+> It has fallen far enough behind to be actively misleading and is kept only for
+> the reasoning in it, not the numbers. Known-wrong at minimum: the set-piece cap
+> below says **two** (it is six, five of them filled); it describes the hero as a
+> stochastic Brownian path, which was **rejected** (`CLAUDE.md` § 9); and the
+> § 04 projects sections below describe per-card generated SVG figures and an
+> accordion, **both of which were deleted** when § 04 took real screenshot
+> thumbnails. Do not implement anything from this file without checking
+> `CLAUDE.md` first.
+
 ## Governing principle
 
 **Motion must encode a claim.** Every animation on this site either draws

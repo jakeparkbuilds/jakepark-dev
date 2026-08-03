@@ -106,6 +106,11 @@ drafting  #EDEBE4   § 04 projects ONLY — cooler and one step darker than
   only ruled one. Both are full-bleed horizontally, breaking the plate frame.
   A third register is the point — three sections, three grounds, no repetition
   — so do not give a fourth section a ground of its own to match them.
+
+  **`drafting` is specified but not built.** § 04 renders on paper through the
+  ordinary `SectionShell` and `#EDEBE4` appears nowhere in the codebase, so as
+  of now **two grounds exist**, not three. Read this block as the intent and
+  § 5 / §04 as the state.
 - **Never double-soften.** `body` #2E2A24 is already the softened ink. Applying
   an opacity utility on top of it is a bug — this caused a site-wide washed-out
   contrast problem that took a full pass to correct.
@@ -188,10 +193,12 @@ Rules:
 prose each of the five roles gets. Never write placeholder copy. If content is
 missing, stop and ask.
 
-Still outstanding for §04: the GitHub repo URLs for My 5 and CapitolCast. Each
-is a one-line addition to that project's `links` array in `app/lib/projects.ts`.
-Row 03 has no repo and no deployment and is **not** to be padded with a
-disabled link — that asymmetry is honest.
+§04 is content-complete. Jake specified each row's links verbatim and **no repo
+URLs were among them** — every row carries exactly one link, `live ↗` on 01 and
+02 and `poster (pdf) ↗` on 03. The earlier note asking for GitHub URLs is
+withdrawn: their absence is now the specified state, not a gap. Row 03 has no
+repo and no deployment and is **not** to be padded with a disabled link — that
+asymmetry is honest, and it now applies to all three rows equally.
 
 **§05 skills is the quality bar.** Match its level of composition when building
 §03.
@@ -354,29 +361,63 @@ else — never a heading, a mono label, or the hero blurb.
   client-only value during render is the § 05 hydration trap.
 
 ### §04 projects
-A drawing register, vertically composed — §05 holds the site's one axis break.
-A column header that appears once (never repeats, never sticks), then one 68px
-ruled row per project on a 12-column grid: NO. / PROJECT / STACK / YEAR.
-Clicking a row unfolds it in place.
+A register that hides nothing, vertically composed — §05 holds the site's one
+axis break. A column header that appears once (never repeats, never sticks),
+then one project per 0.5px-ruled row on a 12-column grid: NO. / PROJECT / STACK
+/ YEAR. **All three rows are fully open at all times.**
+
+**The accordion is gone and it is not coming back.** The click-to-toggle, the
+one-open-at-a-time logic, the 0fr→1fr gap, the vertical marker that drew down
+the gap's height, the `aria-expanded` wiring and the keyboard toggles were all
+deleted. A three-item register that hides two thirds of itself behind an
+interaction was costing more than it bought: the section is short enough to read
+whole, and an expand affordance on a page with this much drawn motion read as
+the one piece of generic UI on it. The header line and the hairlines stay — it
+still reads as an index, it just no longer conceals anything.
+
+**The generated figures are gone with it** — the convergence plot, the arc
+diagram and the thermal trail network, their seeded mulberry32 helpers, the
+draw-on-entry motion, the captions and the scale bar. They were set piece 2 and
+the roster is now five (§ 7). They were replaced by real screenshots because a
+generated figure asserts what the work *looked like* in the abstract while a
+screenshot shows it; the figures were the right answer while the projects had
+nothing to show, and the wrong one once they did. **Do not regenerate them and
+do not add a synthetic figure to a project that lacks a thumbnail.**
 
 - All content lives in one typed array, `app/lib/projects.ts`. **Adding a
-  project is one entry and no layout work.** `figure` is optional: an entry
-  without one spans its text across cols 2–10 and the gap drops to its content
-  height instead of holding open an empty well.
-- Figures are generated from real path math behind a **fixed integer seed**
-  (mulberry32) evaluated at module scope, so SSR and client agree byte for byte.
-  Never `Math.random()` at render time.
-- The unfold's marker and gap must be driven as **one** gesture: same duration,
-  same curve, and the wrapper's overflow clips the marker so the drawn tip and
-  the gap's edge are literally the same edge. Verify frame-by-frame; the
-  measured divergence is 0.01px.
-- Dash lengths are in **CSS pixels**, never user units — the marker's viewBox is
-  1×100 but it renders at the gap's full height, so `getTotalLength()`
-  understates it ~3.6× and paints the marker as a dashed line. See §7.
-- An accordion that pushes content down requires per-frame reflow; that is
-  inherent, and its cost is independent of figure complexity (measured: rows
-  with 4, 51 and 40 paths cost the same). Do not go looking for it in the
-  figures.
+  project is one entry and no layout work.** `thumb` is optional; an entry
+  without one spans its text across cols 2–10.
+- **The thumbnail is always on the right and there is no alternation.** A
+  register alternates nothing — the eye must be able to run down one column of
+  claims and one column of images. Do not "vary" it.
+- Native colors, no filter of any kind, no crop, and **no uniform aspect ratio
+  across the three**. Two are 3024×1718 UI captures and one is a 1914×1434
+  poster; forcing them to one ratio means cropping, and cropping a poster to a
+  register's convenience destroys the only thing it is showing. Row heights
+  differ and that is correct.
+- **The registration corners are what make a full-color rectangle belong to the
+  page.** 0.5px ink, 14px arms, 8px outside the image's corners, never touching
+  it and never closing into a rectangle — the same vocabulary as § 06's plates
+  and § 02's portrait. They are the section's only hover gesture: they translate
+  5px further out along their diagonals. **The image itself never moves, scales,
+  lifts, tints, or gains an overlay** — that is hover-lift and § 8 bans it.
+- Row 03's poster is dense and illegible at thumbnail scale. **That is accepted
+  and expected**: it reads as "a research poster," its caption says so, and
+  clicking opens the full PDF. Never crop it, never zoom into one figure of it,
+  never add a magnifier.
+- The thumbnail is a link **and the text link below it stays**. The image link
+  is a convenience carrying an `aria-label`; the text link is the affordance a
+  screen reader and a keyboard get. Neither replaces the other.
+- Row 03 has no live deployment and no repo. **Do not pad it, do not add a
+  disabled link, and do not invent a GitHub URL** — that asymmetry is honest.
+
+**The drafting ground and the blueprint ruling described in § 2 were never
+built.** § 04 renders on paper through the ordinary `SectionShell`, and `#EDEBE4`
+appears nowhere in the codebase. § 2's "exactly three grounds" is therefore
+aspirational, not descriptive: **two grounds exist**, paper and § 03's ink.
+Building the third is an open decision, not a bug to be fixed in passing — and
+if it is ever built, note that a cooler ground under three native-color
+thumbnails is a different composition than the one § 2 was written against.
 
 ### §07 connect — the composition
 **Three elements in the centre, and the EMAIL is the monument.** It holds the
@@ -984,18 +1025,22 @@ same-character roll described above, and only on the hero display type.
 The cap was 3, then 5. It is now **6**, and this is the roster — there is no
 seventh without removing one of these first.
 
+**§ 04's generated figures were set piece 2 and they are gone**, deleted with the
+accordion when the register took real thumbnails. The roster is now **five of
+six**, and the free slot is not an invitation: it exists because a piece was
+removed, and a seventh idea still has to argue for itself against the cap. Do
+not restore the figures to fill it (§ 9).
+
 1. **Hero / loader** — the DC map draws itself on a paper field, then travels to
    its hero position as the page arrives. One continuous event; the loader *is*
    this set piece, not a fourth.
-2. **Projects** — each card carries a small SVG figure generated in-browser from
-   what the project actually did. Draws once on entry, then stops.
-3. **Experience spine** — the segmented 6px bar, which is now a widening of the
+2. **Experience spine** — the segmented 6px bar, which is now a widening of the
    margin trace rather than its own line (see below).
-4. **The margin trace** — one continuous 0.5px path down the left gutter of the
+3. **The margin trace** — one continuous 0.5px path down the left gutter of the
    whole page, advanced by scroll. § 6.
-5. **The connect replay** — the visitor's own ink strokes, replayed into the
+4. **The connect replay** — the visitor's own ink strokes, replayed into the
    final section. § 5 / § 06 connect.
-6. **The connect type bands** — two full-bleed rows of outlined display type
+5. **The connect type bands** — two full-bleed rows of outlined display type
    counter-scrolling against each other, driven by scroll position only.
 
 The §05 field is deliberately NOT a set piece: it has no entrance, draws
@@ -1076,6 +1121,13 @@ introduce an image on this precedent.
 
 This replaced a hand-authored inline SVG slice. The SVG is not coming back; if
 the asset ever needs changing, change the file.
+
+**§ 04's three project thumbnails are the other exception**, and they are a
+different kind: not an illustration but photographic evidence of the work, shown
+at native color inside registration corners (§ 5 / §04, § 12). Between them,
+§ 03's brand logos and the pizza, every pixel of off-palette color on this site
+is accounted for by an explicit, contained exception. There is no general
+licence, and a fourth needs its own argument.
 - Centered hero with headline + subhead + two side-by-side CTA buttons
 - Card grids with hover-lift + shadow
 - Inter / Poppins / Montserrat / Space Grotesk as display
@@ -1174,14 +1226,21 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
   every section on the page and this pass was scoped to § 02 and § 07. Do not
   claim this budget line is met until that gate exists.
 - anime.js imported modularly, never the whole bundle
-- Raster images are limited to **four** — the about-section portrait, one photo
-  per education row, and `pizza.png` for § 07's easter egg. Everything else is
-  SVG or type. The fourth is 31KB, is requested once and on demand by the rain,
-  and is not part of any section's load.
-  **The count is about section content and stays at four.** `app/icon.png` and
-  the OG/Twitter cards are page metadata, not composition: no section renders
-  them, they cost no route JS, and the card is generated per deploy rather than
-  authored. Do not read this as room for a fifth image in a section.
+- Raster images now number **seven** — the about-section portrait, one photo per
+  education row, `pizza.png` for § 07's easter egg, and **three project
+  thumbnails** in § 04. Everything else is SVG or type. `pizza.png` is 31KB, is
+  requested once and on demand by the rain, and is not part of any section's
+  load.
+  **The project thumbnails display at their native colors** — two dark UI
+  screenshots and one research poster. Their color is quarantined to § 04's
+  thumbnail frames and appears nowhere else. This is a third quarantine
+  alongside § 03's brand logos and § 07's pizza, and like both of those it is a
+  containment rule, not a licence: no other section may introduce color on this
+  precedent, and nothing outside a thumbnail frame in § 04 may carry it.
+  **The count is about section content.** `app/icon.png` and the OG/Twitter
+  cards are page metadata, not composition: no section renders them, they cost
+  no route JS, and the card is generated per deploy rather than authored. They
+  are not part of the seven and do not create room for an eighth.
 
 ---
 
