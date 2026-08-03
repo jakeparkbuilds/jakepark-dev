@@ -1616,8 +1616,15 @@
   /* The last row does NOT get one. Its rule would land a few pixels above the
      next section's own ink rule and read as a double line closing the register
      twice — the separator's job is to divide rows, and after the last row there
-     is nothing left to divide. */
+     is nothing left to divide.
+
+     Its bottom padding goes with the rule, and for the same reason: those 40px
+     are the air ABOVE a separator, so with no separator under the last row they
+     are just dead space stacked on top of the section's own bottom padding.
+     Separating § 04 from § 05 is that padding's job, not the row's. Higher
+     specificity than `.proj-row`, so this also beats the ≤900px override. */
   .proj-row:last-child {
+    padding-bottom: 0;
     border-bottom: 0;
   }
   .proj-row + .proj-row {
