@@ -55,19 +55,11 @@ accent   #22384F   ink blue — section marks, link underlines, § 02 linkage
 body     #2E2A24   softened ink for body copy (same hue, not a 5th color)
 mark     #C8952E   warm ochre — the Georgetown star on the hero map, AND
                    § 02's active node ring + ticks. One node at a time.
-ruling   #C5CBD1   cool gray — the drafting ground's ruling. QUARANTINED.
 ```
 
-**`#C5CBD1` — drafting-ground ruling ONLY. Never on type, never on a hairline,
-never on a border, never on an interactive element, never outside the drafting
-ground. If it appears anywhere else in a diff, that diff is wrong.**
-
-It is a restoration, not an invention: it was in the original drafting-ground
-spec and never made it into this file. It is admitted rather than substituting
-`muted` #9B9382 because #9B9382 is a *warm* gray and `drafting` #EDEBE4 is
-explicitly the *cooler* ground — warm-gray ruling on a cool ground reads as dust
-rather than as blueprint, which would make the third register look like paper
-with a dirty overlay instead of a third register.
+**There is no ruling token and there must not be one.** `#C5CBD1` was admitted
+here for a 32px lattice on the drafting ground, built, measured, and then struck
+along with the lattice — see § 9. The palette is closed at the values above.
 
 Legibility variants: `#6B6455` for any mono text a user must read (nav labels,
 section markers, gutter annotations, captions, coursework). `#0A0908` for the
@@ -124,9 +116,19 @@ appears nowhere else on the site.
 ```
 paper     #F5F1E8   § 01 hero, § 04 background, § 05 connect
 ink       #1A1815   § 03 experience ONLY — the inverted plate, paper type
-drafting  #EDEBE4   § 02 work ONLY — cooler and one step darker than paper,
-                    carrying the blueprint ruling (§ 5 / §02)
+drafting  #EDEBE4   § 02 work ONLY — cooler and one step darker than paper.
+                    FLAT. No ruling, no lattice, no grid of any kind, ever.
 ```
+
+**`drafting` is a tonal shift and nothing else, and that is the whole of the
+third register.** It was specified as carrying a blueprint ruling; the ruling
+was built — a 32px #C5CBD1 lattice, heavier every fifth line, measured crisp at
+every device pixel ratio — and then removed. **A friend's portfolio uses a ruled
+paper ground, and § 9 forbids close imitation of another site's signature move.
+That rule is not a preference; borrowing one has already cost this project a
+full revert.** Do not rebuild the lattice, do not substitute a dot grid, a
+graph-paper texture, a blueprint tint or a faint repeating anything. If § 02
+ever reads unfinished, the answer is composition, not a pattern.
 
   § 03 is the only inverted section and no other may become one. § 02 is the
   only ruled one. Both are full-bleed horizontally, running edge to edge past
@@ -414,63 +416,35 @@ else — never a heading, a mono label, or the hero blurb.
   client-only value during render is the § 02 hydration trap.
 
 ### §02 work — the drafting ground
-The site's third register, and the ground the whole of § 02 sits on.
-`app/components/drafting-ground.tsx` + `.dg-*` in globals.css. Two parts, and
-only one of them animates.
+The site's third register, and the ground the whole of § 02 sits on. **It is a
+background colour and nothing else** — `.has-drafting` in globals.css, one
+declaration. No component, no element, no JS, no observer, nothing to arm.
 
-**The ground** — a flat `drafting` #EDEBE4 fill, full-bleed to the section's own
-box and **hard-edged**. No fade, no feather, no transition band against the
-grounds above and below. It is `position: absolute; inset: 0` on a
-`position: relative` section, which *is* the full bleed — never
+`drafting` #EDEBE4, full-bleed to the section box and **hard-edged**: no fade, no
+feather, no transition band against the grounds above and below. The section is
+already viewport-width, so a background on it *is* the full bleed — never
 `left: 50%; width: 100vw`, which would have to reason about the scrollbar.
 
-**The ruling** — a 32px lattice in `ruling` #C5CBD1, minor at 0.45 and every
-fifth line (160px) at 0.85, **inset to the section CONTENT box, not full-bleed**,
-with four 0.5px muted registration corners (14px arms) at that box's corners.
-The ground bleeds and the ruling does not: that difference is what makes the
-ruling read as drawn on a sheet rather than as wallpaper.
+**IT CARRIES NO RULING AND MUST NEVER CARRY ONE.** A 32px #C5CBD1 lattice,
+heavier every fifth line, inset to the content box and uncovered by a clip-path
+wipe, was built here and measured — crisp at dpr 1/1.5/2/3, stable across
+sub-pixel scroll, zero long tasks. It was removed anyway, under § 9: **a
+friend's portfolio uses a ruled paper ground, and close imitation of another
+site's signature move has already cost this project one full revert.** The
+component, the pattern, the wipe, the `ruling` token and the scratch route that
+existed to judge it are all deleted. Do not rebuild the lattice, and do not
+substitute a dot grid, graph paper, a blueprint tint or a faint repeating
+anything. If § 02 ever reads unfinished, the answer is composition, not a
+pattern.
 
-- **One `<rect>` filled with a `<pattern>`, not ~185 drawn lines.** The spec
-  word was "self-drawing" and the literal reading is a `stroke-dashoffset` draw
-  per rule — roughly 185 animated elements at 1920 × 4000. This is a deliberate,
-  recorded deviation: the lattice is a pattern painted onto a single rect and
-  the drawing is a `clip-path` wipe over that rect. One property, one element,
-  900ms `draw`. **The visual spec is unchanged.**
-- **The pattern is built from `<rect>`s, never `<line>`s.** A 1px stroke is
-  centred on its coordinate, straddles two device pixels, and renders as two
-  half-covered columns — grey, soft, and inconsistent across the tile boundary.
-  A 1px-wide filled rect at an integer x covers exactly one device pixel. This
-  is the whole reason the lattice is crisp; measured, every rule is a single
-  solid device-pixel column at dpr 1, 1.5, 2 and 3.
-- **The tile is 160 × 160 — five 32px cells — so the major rule is the tile's
-  own leading edge.** The "every fifth line is heavier" rhythm is structural and
-  cannot drift out of phase, because it is the same grid, not a second one.
-- **The origin is the content box's top-left, ROUNDED.** `--dg-inset` is
-  `round(clamp(24px, 6vw, 96px), 1px)` with the bare clamp as the fallback:
-  `section-pad` resolves to 86.4px at 1440, and a fractional origin puts every
-  rule on a half pixel. Measured integral at 1920/1440/1024/900/768/390.
-- **The ruling scrolls with its section.** Never fixed, never parallaxed —
-  measured, the plate's offset from the section's top is 0.00px at every scroll
-  position.
-- **THE OBSERVER WATCHES THE GROUND, NEVER THE PLATE.** `clip-path` is part of
-  what an IntersectionObserver measures, so an armed plate — clipped to zero
-  height — reports `intersectionRatio: 0, isIntersecting: false` at every scroll
-  position forever, and the arming suppresses the callback that would undo it.
-  Measured before the fix: rect top 164px in a 900px viewport, 1232px tall,
-  ratio 0.000, ruling permanently invisible. The ground is the same box and is
-  never clipped. **Any future clip-path reveal on this site has this hazard.**
-- The hidden start state is armed from the client, never the CSS default — the
-  same contract § 02's rows and thumbnails follow. No JS, failed JS or reduced
-  motion renders the ruling at full extent. No rAF, no timer; the observer
-  disconnects on its own first crossing.
-- **Non-integer device pixel ratios and non-100% browser zoom resample the
-  ruling and nothing can prevent it.** Measured: dpr 1 / 1.5 / 2 / 3 and zoom
-  100% are single-luminance solid rules; dpr 1.25 and zoom 80/90/110/125/150%
-  spread a rule across two device pixels at mixed luminance. This is what any
-  1px line does at a fractional scale. **What matters is that it does not
-  CHANGE while scrolling** — measured across 12 sub-pixel scroll positions at
-  dpr 1 and dpr 2: identical rule count, identical widths, one luminance set.
-  No crawl, no shimmer, no weight alternation.
+**One thing learned there is worth keeping, and it generalises: an
+IntersectionObserver cannot watch the element it clips.** `clip-path` is part of
+what the observer measures, so an armed element — clipped to zero height —
+reports `intersectionRatio: 0, isIntersecting: false` at every scroll position
+forever, and the arming suppresses the callback that would undo it. Measured:
+rect top 164px in a 900px viewport, 1232px tall, ratio 0.000, permanently
+invisible. **Any clip-path reveal on this site must observe an unclipped
+ancestor, never itself.**
 
 ### §02 work — the project rows
 The upper half of § 02, above the index, and **the recruiter must reach a named,
@@ -586,18 +560,24 @@ finding.** Edge contrast of each image against the ground it sits on:
 
 Row 03's own outer margin is near-white and does not read as an edge against
 either ground — **this predates the drafting ground and is not caused by it.**
-What defines that rectangle is the registration corners (ink, ~14.9:1) and, on
-drafting, the INTERRUPTION OF THE RULING: the lattice stops where the image
-starts, so the poster's silhouette is drawn by the absence of the grid. That is
-better than what paper gave it. **Do not strengthen the corners for row 03, do
-not add a border, and do not tint the poster** — the corners are already the
-strongest thing near it, and the vocabulary is doing exactly its job.
+On paper it was 1.12:1 and nobody called it a bug; flat drafting takes it to
+1.06:1, a difference of 0.06 that no eye resolves.
 
-**The drafting ground carries these rows, and that is a composition change, not
-just a fill.** Three native-color thumbnails on `#EDEBE4` under `#C5CBD1` ruling
-is a different picture than the same three on paper, which is what the register
-was originally composed against. Verify the thumbnails and their registration
-corners in situ; do not assume the paper-ground judgement carried over.
+What defines that rectangle is **the four registration corners** — ink at
+~14.9:1, the single strongest mark anywhere near the image — plus the caption
+directly beneath it. That is the same vocabulary § 04's plates and § 02's
+portrait use, and it is what the vocabulary is *for*: making a full-colour
+rectangle belong to a drawn page without drawing a box around it.
+
+**Do not add a border, a hairline frame, a keyline, an inset shadow or a tint to
+row 03.** Nothing on this site is enclosed by its own complete border (§ 4), and
+a frame on one of three thumbnails would break the register's only consistent
+treatment to solve a 0.06 contrast difference.
+
+**The drafting ground carries these rows, and it is a tonal shift only.** Three
+native-color thumbnails on a flat `#EDEBE4` is a slightly different picture than
+the same three on paper — every ink value loses 0.1–1.0 contrast points (§ 11) —
+but the composition the register was drawn against is otherwise intact.
 
 ### §05 connect — the composition
 **Three elements in the centre, and the EMAIL is the monument.** It holds the
@@ -1331,14 +1311,12 @@ fiction survived four rounds of review.
    § 5 / §03.
 3. **The connect type bands** — two full-bleed rows of outlined display type
    counter-scrolling against each other, on a continuous autoplay loop.
-4. **The drafting ruling** — § 02's ground rules itself in as the section is
-   reached: one `<rect>` filled with an SVG `<pattern>`, uncovered by a
-   `clip-path` wipe. § 5 / §02.
 
-**Four of six occupied.** The two free slots are not an invitation: they are
-what is left after § 02's generated figures were deleted (§ 9) and after two
-entries that had never been built were struck. A seventh idea still argues for
-itself against the cap, and a new piece has to ship to take a slot.
+**Three of six occupied.** The free slots are not an invitation. They are what
+is left after § 02's generated figures were deleted (§ 9), after two entries
+that had never been built were struck, and after the drafting ruling was removed
+under § 9 — a piece that shipped and was then taken out. A seventh idea still
+argues for itself against the cap, and a new piece has to ship to take a slot.
 
 The §02 field is deliberately NOT a set piece: it has no entrance, draws
 nothing, and asserts nothing by arriving. It is a standing state, not an event,
@@ -1442,6 +1420,18 @@ licence, and a fourth needs its own argument.
   real data converted at build time. Never ask the model to draw it from memory.**
 - **The cursor was a crosshair.** Rejected — read as a videogame reticle. It is a
   dot. Do not add a ring, halo, outline, label, blend mode, or magnetic snap.
+- **§ 02's drafting ground had a ruling and it was removed.** A 32px #C5CBD1
+  lattice, heavier every fifth line, inset to the content box, uncovered by a
+  900ms clip-path wipe. It was fully built and measured well. **A friend's
+  portfolio uses a ruled paper ground**, and the rule against close imitation is
+  the same one that killed the Brownian-walk hero. The ground is now a flat
+  tonal shift. Do not rebuild it, and do not route around it with a dot grid,
+  graph paper, a blueprint tint or any faint repeating texture.
+- **§ 02 had a standfirst**, `three systems · seventeen tools · 2024—2026`.
+  Removed: a counted inventory goes stale the moment a project or a tool is
+  added, and a line that lies is worse than no line. **There is no replacement
+  and no substitute tagline.** The section reads `02 / WORK`, `work`, then the
+  column header.
 - **Skills took the site's one axis break** when it was a stepped spine. It is
   now the drifting field, which breaks the grid in a different way but is still
   the site's one non-linear composition. Since the merge it lives inside § 02

@@ -9,7 +9,6 @@ import {
   type ProjectLink,
 } from "../lib/projects";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import DraftingGround from "./drafting-ground";
 import SectionMark from "./section-mark";
 
 // § 02 work — the project rows, on the drafting ground.
@@ -333,18 +332,17 @@ export default function Work({
       aria-labelledby={headingId}
       className="work has-drafting section-pad py-section-y"
     >
-      <DraftingGround />
-
+      {/* The ground is a background colour on this section and nothing more —
+          no element, no component, no JS. See .has-drafting in globals.css for
+          why it carries no ruling. */}
       <div className="work-head">
         <SectionMark mark={number} label={label} />
         <h2 id={headingId} className="font-display text-h2 text-ink">
           {label}
         </h2>
-        {/* Mono standfirst: what the section contains, in one line, before any
-            of it. Not a claim — an inventory. */}
-        <p className="work-standfirst font-mono">
-          three systems · seventeen tools · 2024—2026
-        </p>
+        {/* No standfirst. A line reading "three systems · seventeen tools"
+            goes stale the moment a project or a tool is added, and a line that
+            lies is worse than no line. Do not add a replacement. */}
       </div>
 
       <div className="work-body">

@@ -20,17 +20,17 @@ const config: Config = {
       body: "#2E2A24",
       label: "#6B6455",
       // Warm ochre. Three permitted objects and no fourth (CLAUDE.md § 2): the
-      // Georgetown star on the hero map, the same star on connect's ghost map,
-      // and § 05's addressed node — its ring and its ticks, one node at a time.
+      // Georgetown star on the hero map, and § 02's addressed index node — its
+      // ring and its ticks, one node at a time. Two uses, not three: the "ghost
+      // map on connect" this comment used to name does not exist.
       // The hero's star predates this token and still carries the raw hex; the
       // two values must stay identical.
       mark: "#C8952E",
-      // § 02 work's ground, and the ruling drawn on it. QUARANTINED: `ruling`
-      // is the drafting ground's lattice and nothing else — never type, never a
-      // hairline, never a border, never an interactive element, never outside
-      // the drafting ground (CLAUDE.md § 2).
+      // § 02 work's ground. FLAT — cooler and one step darker than paper, and
+      // that tonal shift is the whole of the third register. It carries no
+      // ruling: a #C5CBD1 lattice token sat here and was struck under
+      // CLAUDE.md § 9 together with the lattice it served.
       drafting: "#EDEBE4",
-      ruling: "#C5CBD1",
       // Darkest marks on the page: the cursor dot and the active nav label.
       // Consumed through theme() in globals.css, not as a utility class.
       "near-black": "#0A0908",
