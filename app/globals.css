@@ -2897,3 +2897,144 @@
     }
   }
 }
+
+/* ── § 02 work — the section shell and what the merge added ─────────────────
+   The rows themselves keep every .proj-* rule above; what follows is the
+   section's own furniture (head, standfirst, body), the widened type scale,
+   the metric row and the stack tokens. */
+@layer components {
+  .work {
+    /* Full-bleed horizontally: the ground runs edge to edge past every other
+       section's measure, the same way § 03's ink plate does. The padding stays
+       on the section, so the content plate — and the ruling inset to it — is
+       unchanged. */
+    position: relative;
+  }
+
+  .work-head {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .work-standfirst {
+    margin: 4px 0 0;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #6b6455;
+  }
+
+  .work-body {
+    margin-top: 40px;
+    padding-top: 40px;
+    border-top: 0.5px solid theme("colors.ink");
+  }
+
+  /* ── the widened type scale.
+     The site had almost no dynamic range: every section header, every project
+     title and the § 04 school names all sat within a few px of each other. The
+     project title is the recruiter's target on the page, so it is the one that
+     grows — 24px to 38px at >=1024px, a 1.58x step (1.6x asked, taken to a
+     whole pixel because a fractional display size shivers against its own
+     mask). Below 1024 it is unchanged: the register is already tight there and
+     a 38px title would wrap.
+
+     The mono metadata drops one step in the same pass. Widening the title
+     alone would have raised the whole row's weight; stepping the metadata down
+     is what turns the change into CONTRAST rather than inflation. */
+  @media (min-width: 1024px) {
+    .proj-name {
+      font-size: 38px;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+    .proj-head {
+      min-height: 86px;
+    }
+    .proj-stack {
+      font-size: 11px;
+    }
+    .proj-no,
+    .proj-year {
+      font-size: 10px;
+    }
+    /* The column header must not follow the title up — it is a label for the
+       column, not an instance of it. */
+    .proj-colhead .proj-name {
+      font-size: 10px;
+      line-height: 1;
+      letter-spacing: 0.2em;
+    }
+  }
+
+  /* ── the metric row. Measured results, static, rendered once.
+     A <dl> because that is what it is: each value is a term and its label is
+     the description. Never a counter, never a bar, never a percentage of
+     anything (§ 8).
+
+     Built for 0, 1 and 4 metrics with no special case: it is a wrapping flex
+     row, so one metric sits alone at the left exactly as four sit spread
+     across, and zero metrics render no element at all. */
+  .proj-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px 64px;
+    margin: 28px 0 0;
+  }
+
+  .proj-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .proj-metric-value {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    /* Ink, not body: these are the only numbers in the section and they are
+       the thing a recruiter scans for. */
+    color: theme("colors.ink");
+  }
+
+  .proj-metric-label {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    /* Decorative-weight muted, which is legitimate here and only here: the
+       label is redundant beside its own value and never has to be read on its
+       own. */
+    color: theme("colors.muted");
+  }
+
+  @media (min-width: 1024px) {
+    .proj-metric-value {
+      font-size: 30px;
+    }
+  }
+
+  /* ── stack tokens.
+     A real <button> so it is in the tab order and reachable, styled to be
+     indistinguishable from the text it replaced — no chrome, no box, no
+     background, no radius. Until the index is wired to them they do nothing;
+     the wiring lands in the next commit. */
+  .proj-tool {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    cursor: none;
+  }
+  .proj-tool:focus-visible {
+    outline: 1px solid theme("colors.accent");
+    outline-offset: 2px;
+  }
+}

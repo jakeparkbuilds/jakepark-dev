@@ -531,6 +531,68 @@ do not add a synthetic figure to a project that lacks a thumbnail.**
 - Row 03 has no live deployment and no repo. **Do not pad it, do not add a
   disabled link, and do not invent a GitHub URL** — that asymmetry is honest.
 
+**The type scale is deliberately wide here, and it is the only place on the
+site that is.** Project titles are the recruiter's target, so they go to 38px
+at ≥1024px (from 24px — a 1.58× step; 1.6× was asked for and taken to a whole
+pixel, because a fractional display size shivers against its own mask). Below
+1024px they are unchanged: the register is already tight there and a 38px title
+wraps. **The mono metadata drops one step in the same pass** — stack 12→11px,
+index and year 11→10px. Widening the title alone would raise the whole row's
+weight; stepping the metadata down is what makes the change read as CONTRAST
+rather than as inflation. The column header does not follow the title up: it
+labels the column, it is not an instance of it.
+
+**Captions identify, metrics measure. A caption carries no numbers.**
+CapitolCast's used to read `16,213 bills · 0.48 PR-AUC · 15× baseline`; those
+moved into the metric row and the caption became
+`capitolcast · bill advancement forecast`. My 5's and Bike Heat's were already
+correct.
+
+**The metric row.** Value in mono at 30px (22px below 1024px) in ink — the only
+numbers in the section and the thing a recruiter scans for — over an 11px mono
+label in `muted`, uppercased by CSS. 64px between metrics, wrapping. A `<dl>`,
+because each value is a term and its label describes it.
+- **It must look deliberate at 0, 1 and 4 metrics, and it is built so with no
+  special case**: a wrapping flex row, so one metric sits alone at the left
+  exactly as four spread across, and an empty array renders **no element at
+  all** rather than an empty row.
+- `muted` on the label is legitimate here and only here: the label is redundant
+  beside its own value and never has to be read alone. It is not a licence to
+  use `muted` for type anywhere else (§ 2, § 11).
+- **Every number must already exist in the repo.** My 5's `43×` was promoted
+  from the index's evidence line for `aws`, which keeps it — the same fact is a
+  claim about the tool there and a result of the project here. Bike Heat has
+  none and shows none. **Banned: animated counters, count-up on scroll,
+  percentage bars, any self-rated figure.**
+
+**Stack tokens.** Each entry in the FULL stack below the claim is a real
+`<button>` carrying `data-tool="<node-id>"`, styled to be indistinguishable from
+the text it replaced — no chrome, no box, no background. Entries the index does
+not carry render as plain text; a node is never invented for a tool. The
+mapping lives in `TOOL_FOR_STACK` in `app/lib/projects.ts` and **a module-scope
+check throws if any stack string is missing from it**, because a missing key
+would render an inert token that looks interactive.
+- **The header line's stack stays inert.** It is a truncating one-liner and an
+  affordance that clips is not an affordance.
+
+**The three thumbnails on the drafting ground — measured, and one is a
+finding.** Edge contrast of each image against the ground it sits on:
+
+| row | image | on paper | on drafting |
+|---|---|---|---|
+| 01 | my5, dark UI | 16.64:1 | 15.73:1 |
+| 02 | capitolcast, dark UI | 16.64:1 | 15.73:1 |
+| 03 | bike-heat, light poster | **1.12:1** | **1.06:1** |
+
+Row 03's own outer margin is near-white and does not read as an edge against
+either ground — **this predates the drafting ground and is not caused by it.**
+What defines that rectangle is the registration corners (ink, ~14.9:1) and, on
+drafting, the INTERRUPTION OF THE RULING: the lattice stops where the image
+starts, so the poster's silhouette is drawn by the absence of the grid. That is
+better than what paper gave it. **Do not strengthen the corners for row 03, do
+not add a border, and do not tint the poster** — the corners are already the
+strongest thing near it, and the vocabulary is doing exactly its job.
+
 **The drafting ground carries these rows, and that is a composition change, not
 just a fill.** Three native-color thumbnails on `#EDEBE4` under `#C5CBD1` ruling
 is a different picture than the same three on paper, which is what the register

@@ -35,6 +35,38 @@ export type ProjectThumb = {
   linkLabel: string;
 };
 
+/** A measured result. Static, rendered once — never counted up, never a bar,
+ *  never a self-rated figure (CLAUDE.md § 8). `value` and `label` are both
+ *  lowercase in the source; the label is uppercased by CSS (§ 3). */
+export type ProjectMetric = { value: string; label: string };
+
+/** Stack entry → the index node it addresses, or null for one with no node.
+ *  Exhaustive over every string in every project's `stack` and `headerStack`:
+ *  a missing key would render an inert token that LOOKS interactive, so the
+ *  component asserts against this map rather than falling back. */
+export const TOOL_FOR_STACK: Record<string, string | null> = {
+  Python: "python",
+  "Next.js": "next.js",
+  Terraform: "terraform",
+  AWS: "aws",
+  "AWS Lambda": "aws",
+  SQS: "aws",
+  DynamoDB: "aws",
+  "PyTorch Geometric": "pytorch",
+  "scikit-learn": "scikit-learn",
+  FastAPI: "fastapi",
+  // No node. Rendered as plain, non-interactive text — a node is not invented
+  // for a tool the index does not carry.
+  WebSockets: null,
+  SHAP: null,
+  "ArcGIS Pro": null,
+  OpenStreetMap: null,
+  "USGS Earth Explorer": null,
+  USGS: null,
+  "NOAA NCEI": null,
+  NOAA: null,
+};
+
 export type Project = {
   no: string;
   name: string;
@@ -43,8 +75,13 @@ export type Project = {
   headerStack: string[];
   /** The whole pitch, one or two lines. */
   claim: string;
-  /** The complete list, below the claim. Wraps freely. */
+  /** The complete list, below the claim. Wraps freely. Every entry must be a
+   *  key of TOOL_FOR_STACK. */
   stack: string[];
+  /** Measured results, in the order they should read. May be empty: a project
+   *  with no published numbers shows no metric row, and the layout is built so
+   *  that reads as deliberate rather than as a missing element. */
+  metrics: ProjectMetric[];
   links: ProjectLink[];
   thumb?: ProjectThumb;
 };
@@ -65,6 +102,10 @@ export const PROJECTS: Project[] = [
       "WebSockets",
       "Next.js",
     ],
+    // Promoted from the index's evidence line for `aws`, which keeps it: the
+    // same fact is a claim about the tool there and a result of the project
+    // here, and both are true. Nothing here is new.
+    metrics: [{ value: "43×", label: "hot-path speedup" }],
     links: [
       { label: "live", href: "https://my5-sigma.vercel.app/", icon: "live" },
     ],
@@ -93,6 +134,15 @@ export const PROJECTS: Project[] = [
       "Next.js",
       "SHAP",
     ],
+    // All four were already on the page — three in the thumbnail caption, the
+    // fourth inside the claim. The caption gave them up when captions became
+    // identification only; the claim keeps its wording.
+    metrics: [
+      { value: "16,213", label: "bills" },
+      { value: "0.48", label: "pr-auc" },
+      { value: "15×", label: "baseline" },
+      { value: "5.8m", label: "edges" },
+    ],
     links: [
       {
         label: "live",
@@ -105,7 +155,11 @@ export const PROJECTS: Project[] = [
       width: 2400,
       height: 1363,
       alt: "The CapitolCast interface, showing bill advancement forecasts.",
-      caption: "16,213 bills · 0.48 PR-AUC · 15× baseline",
+      // A caption NAMES THE ARTIFACT and carries no numbers. This one used to
+      // read "16,213 bills · 0.48 PR-AUC · 15× baseline"; those three moved up
+      // into the metric row, where measured results live and only measured
+      // results live.
+      caption: "capitolcast · bill advancement forecast",
       href: "https://capitol-cast.vercel.app/",
       linkLabel: "CapitolCast — open the live site",
     },
@@ -120,6 +174,10 @@ export const PROJECTS: Project[] = [
     // ArcGIS Pro is the mapping and analysis tool; the rest are data sources.
     // Nothing the poster does not name.
     stack: ["ArcGIS Pro", "OpenStreetMap", "USGS Earth Explorer", "NOAA NCEI"],
+    // No published numbers exist for this one anywhere in the repo, and none
+    // are invented. The row renders with no metric block at all — see
+    // MUST SUPPLY in the § 02 notes.
+    metrics: [],
     // No live deployment and no repo. Not padded with a disabled link — that
     // asymmetry is honest (CLAUDE.md § 5 / §04).
     links: [{ label: "poster (pdf)", href: "/assip-poster.pdf", icon: "pdf" }],
