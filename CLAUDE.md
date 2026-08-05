@@ -227,6 +227,18 @@ number, which is why the ink ground and the cursor/ink-trail inversion keyed to
 
 Ground sequence, top to bottom: **paper → drafting → ink → paper → paper.**
 
+**The numbers are DERIVED from `CONTENT_SECTIONS` in `app/lib/sections.ts` and
+are written down nowhere else.** The page maps over that array and so does the
+nav, so a reorder is one edit. Never hardcode a section number.
+
+**The four anchors the site used to publish are remapped, silently.**
+`#projects` and `#skills` → `#work`; `#about` and `#education` → `#background`,
+via `LEGACY_ANCHORS` in `sections.ts`, applied by Nav on mount and on
+`hashchange`. `history.replaceState`, never assignment — a remap that pushed a
+history entry would send the back button to the same dead hash. The scroll is
+instant, not smoothed: a deep link is a request to already be there, and that is
+what the browser would have done natively for a hash that still resolved.
+
 Because two former sections map onto each of § 02 and § 04, a bare number is no
 longer specific enough inside them. Say **§ 02's project rows** or **§ 02's
 index**, and **§ 04's about copy** or **§ 04's education stations**.

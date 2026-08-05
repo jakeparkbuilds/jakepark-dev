@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { NAV_SECTIONS } from "../lib/sections";
+import { LEGACY_ANCHORS, NAV_SECTIONS } from "../lib/sections";
 import { scrollToElement, subscribeGlobal } from "../lib/scroll-controller";
 
 export default function Nav() {
@@ -76,6 +76,30 @@ export default function Nav() {
 
     elements.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
+  }, []);
+
+  // ---- the anchors the site used to publish ----
+  //
+  // #projects and #skills became #work; #about and #education became
+  // #background. A link into one of those now lands on a page with no such
+  // element, so the browser leaves it at the top with nothing to explain why.
+  //
+  // replaceState, not assignment: the remap must not create a history entry, or
+  // the back button would return the visitor to the same dead hash. The scroll
+  // is instant rather than smoothed — a deep link is a request to already BE
+  // there, and it is what the browser would have done natively for a hash that
+  // still resolved.
+  useEffect(() => {
+    const remap = () => {
+      const next = LEGACY_ANCHORS[window.location.hash.slice(1)];
+      if (!next) return;
+      const el = document.getElementById(next);
+      window.history.replaceState(null, "", `#${next}`);
+      el?.scrollIntoView({ block: "start" });
+    };
+    remap();
+    window.addEventListener("hashchange", remap);
+    return () => window.removeEventListener("hashchange", remap);
   }, []);
 
   const handleClick = (event: React.MouseEvent<HTMLAnchorElement>, id: string) => {
