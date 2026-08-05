@@ -45,10 +45,10 @@ library, a text-splitting library, or any icon package. Ask first.
 paper    #F5F1E8   base surface
 ink      #1A1815   primary type, strong hairlines
 muted    #9B9382   decorative hairlines, frames, quiet rules
-accent   #22384F   ink blue — section marks + link underlines ONLY
+accent   #22384F   ink blue — section marks, link underlines, § 05 linkage
 body     #2E2A24   softened ink for body copy (same hue, not a 5th color)
-mark     #C8952E   warm ochre — the Georgetown star ONLY (hero map + its
-                   ghost on connect; the same star, twice)
+mark     #C8952E   warm ochre — the Georgetown star (hero map + its ghost on
+                   connect) AND § 05's active node ring + ticks. One at a time.
 ```
 
 Legibility variants: `#6B6455` for any mono text a user must read (nav labels,
@@ -56,16 +56,22 @@ section markers, gutter annotations, captions, coursework). `#0A0908` for the
 cursor dot and active nav label — the two darkest objects on the page.
 
 Rules:
-- Accent appears on **~3% of any viewport**. Reaching for it a third time in one
-  section means the composition is wrong, not that it needs more accent.
-- `mark` #C8952E appears as **exactly one object, in exactly two places**: the
-  filled Georgetown star, on the hero map and again on the connect section's
-  ghost map. It is the same star at the same coordinates on the same geometry,
-  and connect's copy exists only to close the bookend the hero opened — the
-  first and last saturated points on the page are the same mark. Nothing else,
-  in any section, ever. If a future section wants ochre, the answer is no; and
-  if a future element wants to be the star's third appearance, the answer is
-  also no, because two is a bookend and three is a motif.
+- Accent is **section marks, link underlines, and § 05's co-occurrence linkage
+  hairlines** — nothing else. Still **~3% of any viewport** maximum. The linkage
+  lines are 0.5px at 0.55 alpha and exist only while a node is active; they are
+  a wiring diagram drawn on demand, never a standing web (§ 5 / §05). Reaching
+  for accent a third time in one section means the composition is wrong, not
+  that it needs more accent.
+- `mark` #C8952E is the **filled Georgetown star** — the hero map and the connect
+  section's ghost map, the same star at the same coordinates on the same
+  geometry, a bookend closing what the hero opened — **and § 05's active node's
+  ring stroke and tick marks.** Never more than one node at a time, and it
+  reverts to muted on deselect. § 05 is the only major section with no chromatic
+  event at all, and one node at ~0.2% of the viewport reads as an instrument
+  needle: the same semantic as the star, *this is the thing you are pointing
+  at*. That is the whole of the widening. It does **not** become a
+  general-purpose highlight colour, and nothing outside those three uses may
+  take it.
 - `#9B9382` is ~2.4:1 on paper and is **decorative only**. Never use it for text
   a user must read. On § 03's ink ground the same value is ~7:1 and *is* legible
   — the rule is about the pairing, not the hex.
@@ -784,6 +790,16 @@ not a ground.
 Coursework column: two-column grid, column-first flow, one course per cell, no
 separators of any kind. Items must never wrap; reduce mono size at a breakpoint
 rather than allowing a wrap or truncating.
+
+**Coursework lists are right-aligned to the section content edge at ≥900px** —
+the same x the row hairlines terminate at, inherited from the row's own box
+rather than from an invented inset. The **ragged LEFT edge is intentional**:
+Georgetown has 6 courses and TJHSST 10, and left-aligning both made the shorter
+list read as an orphaned block floating mid-row with dead space to its right.
+Anchored right, the length difference is what the ragged edge shows. Below 900px
+they revert to left-aligned, full width, beneath the entry. **The hover wipe's
+origin follows the alignment** — it uncovers from the right, because a
+left-origin wipe on right-aligned text reads backwards.
 
 Photo per row — **the reference mark and the plate.**
 
