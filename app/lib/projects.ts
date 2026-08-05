@@ -70,8 +70,8 @@ export const PROJECTS: Project[] = [
     ],
     thumb: {
       src: "/my5.png",
-      width: 3024,
-      height: 1718,
+      width: 2400,
+      height: 1363,
       alt: "The My 5 lab interface, running a basketball matchup simulation.",
       caption: "my5 lab · matchup simulator",
       href: "https://my5-sigma.vercel.app/",
@@ -102,8 +102,8 @@ export const PROJECTS: Project[] = [
     ],
     thumb: {
       src: "/capitolcast.png",
-      width: 3024,
-      height: 1718,
+      width: 2400,
+      height: 1363,
       alt: "The CapitolCast interface, showing bill advancement forecasts.",
       caption: "16,213 bills · 0.48 PR-AUC · 15× baseline",
       href: "https://capitol-cast.vercel.app/",

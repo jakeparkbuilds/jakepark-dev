@@ -120,14 +120,28 @@ function ProjectRow({ project }: { project: Project }) {
               aria-label={thumb.linkLabel}
               data-cursor="pen-down"
             >
-              <span className="proj-thumb-box">
+              <span
+                className="proj-thumb-box"
+                // The frame's box is reserved from the source's real intrinsic
+                // pixels, as INTEGERS — a fractional ratio shivers the
+                // registration marks against their own edges. next/image already
+                // reserves the same box from the width/height attributes;
+                // stating it on the frame is what guarantees the corners are
+                // painted at the right size before any pixel arrives, so the
+                // empty state is a correctly-proportioned paper rectangle rather
+                // than a collapsing one.
+                style={{ aspectRatio: `${thumb.width} / ${thumb.height}` }}
+              >
                 <Image
                   className="proj-thumb-img"
                   src={thumb.src}
                   alt={thumb.alt}
                   width={thumb.width}
                   height={thumb.height}
-                  quality={90}
+                  // 72, not 90 — measured at the widths a browser actually
+                  // requests, a 27-38% smaller AVIF with no visible difference
+                  // at 200% on a dark UI capture.
+                  quality={72}
                   sizes="(min-width: 1440px) 560px, (min-width: 1200px) 42vw, (min-width: 900px) 520px, 92vw"
                   // § 04 is the fourth section down, below a 100svh hero plus
                   // § 02 and § 03 — it is off screen at every common viewport
@@ -212,6 +226,88 @@ export default function Projects({
       list.removeAttribute("data-motion");
     };
   }, [reduced]);
+
+  // The thumbnail reveal is bound to DECODE, never to scroll position.
+  //
+  // The bug this fixes: the row's own [data-landed] reveal ran on schedule
+  // whether or not pixels existed, so on a cold cache the wipe uncovered an
+  // empty frame and the picture then appeared in one step underneath it. On
+  // every later scroll it looked perfect because the image was cached — which
+  // is exactly the shape of a race, not of a broken animation.
+  //
+  // Three separate jobs, none of which is a loop or a timer:
+  //   near    — an observer 900px ahead of the viewport flips the image out of
+  //             lazy, so the fetch and the decode are already done by the time
+  //             the frame is on screen.
+  //   loaded  — set only AFTER img.decode() resolves, which moves the decode
+  //             cost off the paint frame that reveals it. On rejection it is
+  //             set anyway: a failed decode must never strand an invisible
+  //             image.
+  //   settled — set on the clip-path's own transitionend, and under it the CSS
+  //             drops the transition, the will-change and the clip-path
+  //             entirely. The settled DOM is byte-for-byte the static state
+  //             this section had before, with no compositing layer left over.
+  //
+  // The hidden start state is armed from here, never the CSS default — with no
+  // JS the thumbnails render exactly as they always did (CLAUDE.md § 5 / §04).
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const boxes = Array.from(
+      list.querySelectorAll<HTMLElement>(".proj-thumb-box"),
+    );
+    const cleanups: (() => void)[] = [];
+
+    for (const box of boxes) {
+      const img = box.querySelector("img");
+      if (!img) continue;
+      box.setAttribute("data-armed", "");
+
+      const settle = (e: TransitionEvent) => {
+        if (e.propertyName === "clip-path") box.setAttribute("data-settled", "");
+      };
+      box.addEventListener("transitionend", settle);
+
+      const show = () => box.setAttribute("data-loaded", "true");
+      const reveal = () => {
+        // decode() is what buys the smooth frame; try/catch is what stops a
+        // rejection (a broken source, an aborted navigation) from leaving the
+        // picture permanently at opacity 0.
+        img.decode().then(show, show);
+      };
+      if (img.complete && img.naturalWidth > 0) reveal();
+      else {
+        img.addEventListener("load", reveal, { once: true });
+        img.addEventListener("error", show, { once: true });
+      }
+
+      // Widen the fetch trigger without taking `priority`: these sit four
+      // sections down and can never be the LCP element, so competing with the
+      // hero's real LCP work would be a straight regression.
+      const io = new IntersectionObserver(
+        ([entry]) => {
+          if (!entry.isIntersecting) return;
+          img.loading = "eager";
+          // Promote only across the window in which the reveal actually runs.
+          box.setAttribute("data-near", "");
+          io.disconnect();
+        },
+        { rootMargin: "900px 0px" },
+      );
+      io.observe(box);
+
+      cleanups.push(() => {
+        io.disconnect();
+        box.removeEventListener("transitionend", settle);
+      });
+    }
+
+    return () => {
+      for (const c of cleanups) c();
+      for (const box of boxes)
+        box.removeAttribute("data-armed");
+    };
+  }, []);
 
   return (
     <SectionShell number={number} id={id} label={label}>

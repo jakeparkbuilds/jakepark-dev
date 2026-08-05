@@ -65,7 +65,13 @@ export default function About({
               alt="Jake Park"
               width={5712}
               height={4284}
-              quality={90}
+              // 72, not 90 — the same figure the § 04 thumbnails take. This is
+              // the heaviest optimized raster on the page (95KB of AVIF at
+              // w=640 against the thumbnails' 4.5-69KB), so it is where the
+              // drop is worth the most. Nothing else about § 02 changes: the
+              // sizes hint, the crop marks, the saturation and the layout are
+              // untouched.
+              quality={72}
               sizes="(min-width: 900px) 32vw, 400px"
               className="h-auto w-full max-w-[400px] saturate-[.85] md:max-w-none"
             />

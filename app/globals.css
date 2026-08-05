@@ -1782,6 +1782,14 @@
     position: relative;
     display: block;
     width: 100%;
+    /* The empty state: flat paper inside a correctly-proportioned frame. Not a
+       skeleton, not a shimmer, not a blur-up bitmap — all three are
+       off-vocabulary for this site, and a blurred JPEG placeholder is
+       explicitly forbidden. The box's own aspect-ratio is set inline from the
+       source's integer pixels (see projects.tsx), so the registration corners
+       are painted at final size before any pixel arrives and the row height
+       never changes. */
+    background: theme("colors.paper");
   }
   /* The ring frames the picture, not the anchor's padding box. */
   .proj-thumb:focus-visible .proj-thumb-box {
@@ -1792,6 +1800,53 @@
     display: block;
     width: 100%;
     height: auto;
+  }
+
+  /* ── the picture's own reveal — bound to DECODE, never to scroll.
+
+     [data-armed] is written by the client (projects.tsx), so this hidden start
+     state exists only when something is guaranteed to undo it: with no JS or
+     failed JS the picture renders exactly as it always did. [data-loaded] is
+     written only after img.decode() resolves, which is what keeps the decode
+     off the paint frame that uncovers it — the whole cause of the first-scroll
+     stutter this replaces.
+
+     Drawn, not faded: a horizontal wipe. The opacity resolves inside the first
+     140ms so the wipe's leading edge is not a hard line struck against paper,
+     and the clip-path carries the remaining motion on its own. There is no
+     stagger — each picture arrives on its own decode, which is the honest
+     order. One CSS transition, one writer, no JS animator, no rAF. */
+  .proj-thumb-box[data-armed] .proj-thumb-img {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+  }
+  /* Promoted only across the window the reveal actually runs in — from 900px
+     ahead of the viewport (where the fetch is kicked off) to the transition's
+     own end. Never for the life of the page. */
+  .proj-thumb-box[data-near]:not([data-settled]) .proj-thumb-img {
+    will-change: opacity, clip-path;
+  }
+  .proj-thumb-box[data-armed][data-loaded="true"] .proj-thumb-img {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    transition:
+      clip-path 520ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 140ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  /* And then it stops being an animation. On the clip-path's own transitionend
+     the transition, the will-change and the clip-path all come off, so the
+     settled DOM is identical to the static state this section had before any of
+     this existed and no compositing layer survives it.
+
+     Every attribute in the chain is repeated deliberately: this has to OUTWEIGH
+     the [data-armed][data-loaded] rule above it, and `clip-path: none` losing
+     to `inset(0)` on specificity is a silent failure — the picture looks
+     identical while a clip region survives on the element. Measured that way
+     first. */
+  .proj-thumb-box[data-armed][data-loaded][data-settled] .proj-thumb-img {
+    transition: none;
+    will-change: auto;
+    clip-path: none;
   }
 
   /* Four L-shaped registration marks: 0.5px ink, each arm 14px, vertex 8px
@@ -1893,9 +1948,13 @@
     clip-path: inset(0 0 100% 0);
     transform: translateY(14px);
   }
-  .proj-list[data-motion="armed"] .proj-row:not([data-landed]) .proj-thumb-img {
-    clip-path: inset(0 0 100% 0);
-  }
+  /* The PICTURE is deliberately not in this rule any more. Its clip-path has
+     exactly one writer — the decode-gated block above — because the row's
+     observer fires on scroll position and the image's readiness has nothing to
+     do with scroll position. Two rules writing one property is what produced a
+     wipe running across an empty frame. The marks and the caption still ride
+     the row's arrival: they are drawing, not photography, and they exist
+     whether or not the picture has arrived. */
   .proj-list[data-motion="armed"] .proj-row:not([data-landed]) .proj-thumb-reg,
   .proj-list[data-motion="armed"] .proj-row:not([data-landed]) .proj-thumb-caption {
     opacity: 0;
@@ -1920,9 +1979,6 @@
   }
   .proj-list[data-motion="armed"] .proj-row .proj-links {
     transition-delay: 102ms;
-  }
-  .proj-list[data-motion="armed"] .proj-row .proj-thumb-img {
-    transition: clip-path 560ms cubic-bezier(0.33, 1, 0.68, 1);
   }
   /* The marks arrive behind the picture, once most of it is down. Their
      transform transition is the hover's and must not pick up this delay, so
@@ -2054,6 +2110,26 @@
     .proj-detail[data-has-thumb],
     .proj-figure {
       grid-column: 2 / 3;
+    }
+  }
+
+  /* Reduced motion: the picture still waits for its decode — that is what
+     keeps it off the paint frame, and it is a performance property, not a
+     gesture — but there is NO wipe. It goes 0 → 1 opacity over 120ms and
+     nothing is clipped. Nothing is promoted and nothing is left transitioning,
+     so the settled state needs no transitionend to reach it. */
+  @media (prefers-reduced-motion: reduce) {
+    /* The attribute chain is repeated to outweigh the [data-near] promotion
+       rule: with no clip-path transition there is no transitionend, so
+       [data-settled] never arrives and nothing else would ever take the
+       will-change back off. */
+    .proj-thumb-box[data-armed][data-near] .proj-thumb-img,
+    .proj-thumb-box[data-armed][data-loaded="true"] .proj-thumb-img {
+      clip-path: none;
+      will-change: auto;
+    }
+    .proj-thumb-box[data-armed][data-loaded="true"] .proj-thumb-img {
+      transition: opacity 120ms linear;
     }
   }
 
