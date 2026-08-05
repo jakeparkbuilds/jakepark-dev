@@ -64,7 +64,9 @@ const CORNERS = ["tl", "tr", "bl", "br"] as const;
 function ProjectRow({ project }: { project: Project }) {
   const { thumb } = project;
   return (
-    <li className="proj-row">
+    // The id is § 05's landing target: its readout links a tool to the rows it
+    // shipped in. Nothing in this section reads it.
+    <li className="proj-row" id={`project-${project.no}`}>
       {/* The header line. Not a button any more — nothing here toggles, so an
           interactive role would advertise an affordance that does not exist. */}
       <div className="proj-head" data-reveal>

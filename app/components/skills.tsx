@@ -1,11 +1,14 @@
 "use client";
 
 import { createBodies, step, type Body } from "../lib/field-physics";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ARC_INSET,
   CLUSTERS,
+  CONTEXT_HREF,
+  CONTEXT_LABEL,
   keepOutZones,
+  LINKED,
   type Rect,
   NODE_INDEX,
   NODE_SEEDS,
@@ -19,6 +22,7 @@ import {
   drift,
   type NodeSeed,
 } from "../lib/skills";
+import { scrollToElement } from "../lib/scroll-controller";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import SectionShell from "./section-shell";
 
@@ -120,7 +124,18 @@ export default function Skills({
   const fieldRef = useRef<HTMLDivElement | null>(null);
   const nodeRefs = useRef<(HTMLDivElement | null)[]>([]);
   const ringRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const [active, setActive] = useState<number | null>(null);
+  const linksRef = useRef<SVGGElement | null>(null);
+  // Two sources, one verdict. `hover` is transient and `pinned` survives the
+  // pointer leaving — that is the whole difference between the two, and keeping
+  // them apart is what makes a pin actually hold: a single `active` would be
+  // cleared by the pointerleave that immediately follows any click.
+  const [hover, setHover] = useState<number | null>(null);
+  const [pinned, setPinned] = useState<number | null>(null);
+  const active = pinned ?? hover;
+  const setActive = useCallback((v: number | null) => {
+    setHover(v);
+    if (v === null) setPinned(null);
+  }, []);
   // The one thing the field accumulates. An arc sweeps on first visit and stays
   // swept, so a visitor who has explored can see which dials they opened.
   const [visited, setVisited] = useState<Set<number>>(() => new Set());
@@ -197,14 +212,46 @@ export default function Skills({
         TIER_OPACITY[s.tool.tier] * (0.88 + (z - 0.5) * 0.24)
       ).toFixed(3);
     }
+
+    // ── the linkage endpoints, written in THIS pass and no other.
+    //
+    // A line between two drifting nodes changes length every frame, so its
+    // geometry has to be written by whatever is already writing their
+    // positions. A second rAF for it would be a fourth loop on a page whose
+    // budget is three (CLAUDE.md § 6, § 12); this rides the one that already
+    // exists, in the same pass, reading nothing from the DOM.
+    //
+    // With no node addressed there is nothing in the group and the whole block
+    // is skipped — at rest this costs one null check per frame.
+    const g = linksRef.current;
+    const a = activeRef.current;
+    if (!g || a === null || !bodies) return;
+    const from = bodies[a];
+    if (!from) return;
+    // Integers. Sub-pixel endpoints make a 0.5px hairline shiver against its
+    // own antialiasing as the nodes drift.
+    const x1 = String(Math.round(from.x));
+    const y1 = String(Math.round(from.y));
+    for (const el of Array.from(g.children) as SVGLineElement[]) {
+      const to = bodies[Number(el.dataset.to)];
+      if (!to) continue;
+      el.setAttribute("x1", x1);
+      el.setAttribute("y1", y1);
+      el.setAttribute("x2", String(Math.round(to.x)));
+      el.setAttribute("y2", String(Math.round(to.y)));
+    }
   }, []);
 
   // Measure the field and seed the bodies. Once on mount and again on resize —
   // never in the loop. On resize the bodies are rebuilt from the seeds rather
   // than rescaled: a node's position after a collision is not a fraction of
   // anything, so there is nothing meaningful to rescale.
+  // Runs under reduced motion too, and must. The loop below does not, but the
+  // LINKAGE still renders — it is content — and its endpoints come from these
+  // composed homes. Skipping the measurement here left every line drawn from
+  // 0,0 to 0,0, i.e. the wiring silently missing for exactly the people the
+  // reduced-motion path serves. Measured that way first.
   useEffect(() => {
-    if (reduced) return;
     const field = fieldRef.current;
     if (!field) return;
 
@@ -233,7 +280,7 @@ export default function Skills({
       window.clearTimeout(rt);
       ro.disconnect();
     };
-  }, [reduced]);
+  }, []);
 
   useEffect(() => {
     const field = fieldRef.current;
@@ -304,6 +351,22 @@ export default function Skills({
   }, [reduced, layout]);
 
   const tool = active === null ? null : NODE_SEEDS[active].tool;
+
+  // The readout outlives the selection by one exit. A conditionally rendered
+  // card unmounts the instant `active` goes null, leaving nothing for the
+  // 180ms fade to animate — the same `shown` vs `open` split § 06's plate
+  // already uses. The timer is created only by a deselection and cleared on
+  // every change, so nothing is pending once the page settles.
+  const [shown, setShown] = useState<typeof tool>(null);
+  useEffect(() => {
+    if (tool) {
+      setShown(tool);
+      return;
+    }
+    if (!shown) return;
+    const t = window.setTimeout(() => setShown(null), 180);
+    return () => window.clearTimeout(t);
+  }, [tool, shown]);
   // Reduced motion is deliberately NOT consulted here. It is a client-only
   // value, so branching on it during render produces a hydration mismatch that
   // React does not patch up — the arcs would stay at 0 sweep for exactly the
@@ -313,16 +376,96 @@ export default function Skills({
   const isSwept = (i: number) => visited.has(i);
 
   const address = useCallback((i: number) => {
-    setActive(i);
+    setHover(i);
     setVisited((v) => (v.has(i) ? v : new Set(v).add(i)));
   }, []);
+
+  // The nodes this one shipped something with. Derived once per selection, not
+  // per frame — the wiring is data and never changes.
+  const linked = active === null ? null : LINKED.get(NODE_SEEDS[active].tool.name)!;
+  const linkedSet = linked ? new Set(linked) : null;
+
+  // Nearest first, by straight-line distance from the addressed node. Ordering
+  // here is what makes the 40ms stagger read as the wiring propagating outward
+  // rather than as an arbitrary sequence. Positions come from the composed
+  // homes rather than from the live bodies so the order is stable for the whole
+  // time a node is held; the physics only moves the endpoints, never the story.
+  const drawOrder = useMemo(() => {
+    if (!linked || active === null) return [];
+    const base = baseRef.current;
+    if (!base.length) return linked;
+    const from = base[active];
+    return [...linked].sort(
+      (i, j) =>
+        Math.hypot(base[i].x - from.x, base[i].y - from.y) -
+        Math.hypot(base[j].x - from.x, base[j].y - from.y),
+    );
+    // baseRef is a ref by design: it is re-measured only on mount and resize,
+    // and re-sorting on every hover would be the same answer every time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, linked]);
+
+  // Arrow-key traversal, by ANGLE-WEIGHTED distance rather than raw distance:
+  // a node 300px to the right beats one 200px away but 70° off the axis, which
+  // is what makes "right" mean right. Candidates more than ~70° off-axis are
+  // not candidates at all.
+  const onFieldKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === "Escape") {
+        setPinned(null);
+        setHover(null);
+        fieldRef.current?.focus();
+        e.preventDefault();
+        return;
+      }
+      const dir = (
+        {
+          ArrowLeft: [-1, 0],
+          ArrowRight: [1, 0],
+          ArrowUp: [0, -1],
+          ArrowDown: [0, 1],
+        } as Record<string, [number, number]>
+      )[e.key];
+      if (!dir) return;
+      const buttons = Array.from(
+        fieldRef.current?.querySelectorAll<HTMLButtonElement>(".sk-node-btn") ??
+          [],
+      );
+      const current = buttons.indexOf(
+        document.activeElement as HTMLButtonElement,
+      );
+      if (current < 0) return;
+      e.preventDefault();
+      const base = baseRef.current;
+      if (!base.length) return;
+      const from = base[current];
+      let best = -1;
+      let bestScore = Infinity;
+      for (let j = 0; j < base.length; j++) {
+        if (j === current) continue;
+        const dx = base[j].x - from.x;
+        const dy = base[j].y - from.y;
+        const d = Math.hypot(dx, dy);
+        if (d < 1) continue;
+        const cos = (dx * dir[0] + dy * dir[1]) / d;
+        if (cos < 0.35) continue; // more than ~70 degrees off-axis
+        const score = d / cos;
+        if (score < bestScore) {
+          bestScore = score;
+          best = j;
+        }
+      }
+      if (best >= 0) buttons[best]?.focus();
+    },
+    [],
+  );
 
   return (
     <SectionShell number={number} id={id} label={label}>
       <div className="sk-stage">
         {/* ── the readout, cols 1–4. Fixed: it never moves and never drifts. */}
         <div className="sk-readout" aria-live="polite">
-          {tool === null ? (
+          {shown === null ? (
             <>
               <p className="sk-readout-rest font-mono text-mono-label uppercase">
                 select a node
@@ -334,13 +477,51 @@ export default function Skills({
           ) : (
             // Keyed on the tool, so switching nodes remounts and the wipe
             // replays from the start instead of interpolating mid-transition.
-            <div className="sk-readout-card" key={tool.name}>
-              <p className="sk-readout-name font-display font-medium">{tool.name}</p>
+            <div
+              className="sk-readout-card"
+              key={shown.name}
+              data-out={tool === null ? "" : undefined}
+            >
+              <p className="sk-readout-name font-display font-medium">{shown.name}</p>
               <p className="sk-readout-cat font-mono text-mono-label uppercase">
-                {CLUSTER_LABEL.get(tool.cluster)}
+                {CLUSTER_LABEL.get(shown.cluster)}
               </p>
               <span aria-hidden="true" className="sk-readout-rule" />
-              <p className="sk-readout-ev font-display">{tool.evidence}</p>
+              <p className="sk-readout-ev font-display">{shown.evidence}</p>
+              {/* The fourth line is the linkage in words. The two contexts that
+                  are § 04 rows link into the register; the transit API and
+                  coursework do not, because there is nothing on this page for
+                  them to land on and a link that scrolls nowhere is worse than
+                  no link. */}
+              <p className="sk-readout-ctx font-mono">
+                appears in —{" "}
+                {shown.contexts.map((c, k) => {
+                  const href = CONTEXT_HREF.get(c);
+                  const label = CONTEXT_LABEL.get(c);
+                  return (
+                    <span key={c}>
+                      {k > 0 && ", "}
+                      {href ? (
+                        <a
+                          href={href}
+                          className="sk-readout-link"
+                          data-cursor="pen-down"
+                          onClick={(e) => {
+                            const el = document.querySelector(href);
+                            if (!el) return;
+                            e.preventDefault();
+                            scrollToElement(el as HTMLElement);
+                          }}
+                        >
+                          {label}
+                        </a>
+                      ) : (
+                        label
+                      )}
+                    </span>
+                  );
+                })}
+              </p>
             </div>
           )}
         </div>
@@ -350,9 +531,61 @@ export default function Skills({
         <div
           className="sk-field"
           ref={fieldRef}
+          tabIndex={-1}
+          onKeyDown={onFieldKeyDown}
           data-quiet={active !== null ? "" : undefined}
           data-domain={tool ? tool.cluster : undefined}
         >
+          {/* ── the wiring. Behind every ring, so a line terminates UNDER the
+              dial it points at rather than crossing its label. Rendered only
+              while a node is addressed: a permanent web between 17 nodes is
+              noise, and the whole claim this section makes is that the
+              structure is there to be revealed, not to be displayed.
+
+              pathLength="1" is load-bearing. The nodes drift, so a line's real
+              length changes every frame; a dasharray computed from its initial
+              length would break the moment it grew. Normalised, the fraction
+              stays correct whatever the geometry does. */}
+          <svg className="sk-links" aria-hidden="true">
+            <g
+              ref={linksRef}
+              onAnimationEnd={(e) => {
+                // Clear the dash geometry the instant the draw is over. A path
+                // still carrying a dasharray re-evaluates it against any later
+                // scale change, and this exact omission has caused three
+                // separate visible regressions on this site.
+                const el = e.target as SVGLineElement;
+                el.removeAttribute("stroke-dasharray");
+                el.removeAttribute("stroke-dashoffset");
+                el.setAttribute("data-drawn", "");
+              }}
+            >
+              {active !== null &&
+                drawOrder.map((j, k) => {
+                  const base = baseRef.current;
+                  const a = base[active];
+                  const b = base[j];
+                  return (
+                    // Keyed on the pair, so switching nodes remounts every line
+                    // and the draw replays from the start — a line reused
+                    // across two selections would keep its finished state.
+                    <line
+                      key={`${active}-${j}`}
+                      data-to={j}
+                      x1={a ? Math.round(a.x) : 0}
+                      y1={a ? Math.round(a.y) : 0}
+                      x2={b ? Math.round(b.x) : 0}
+                      y2={b ? Math.round(b.y) : 0}
+                      pathLength={1}
+                      strokeDasharray={1}
+                      strokeDashoffset={1}
+                      style={{ animationDelay: `${k * 40}ms` }}
+                    />
+                  );
+                })}
+            </g>
+          </svg>
+
           {/* Dev-only: outlines the four keep-out zones so the amplitude clamp
               can be checked by eye against the drifting field. Gated on
               NODE_ENV, so it is eliminated from the production bundle. */}
@@ -399,6 +632,7 @@ export default function Skills({
               className="sk-node"
               data-tier={s.tool.tier}
               data-active={active === i ? "" : undefined}
+              data-linked={linkedSet?.has(i) ? "" : undefined}
               ref={(el) => {
                 nodeRefs.current[i] = el;
               }}
@@ -408,13 +642,44 @@ export default function Skills({
                 type="button"
                 className="sk-node-btn"
                 data-cursor="pen-down"
-                aria-pressed={active === i}
-                onPointerEnter={() => address(i)}
-                onPointerLeave={() => setActive((v) => (v === i ? null : v))}
+                aria-pressed={pinned === i}
+                aria-label={`${s.tool.name} — ${CLUSTER_LABEL.get(s.tool.cluster)}`}
+                // Hover is for pointers that hover. A touch fires
+                // pointerenter too and never fires the matching leave, which
+                // is exactly how a "hover" state gets stuck on a phone; the
+                // pointerType gate is what stops it, and the tap goes through
+                // onClick like any other press.
+                onPointerEnter={(e) => {
+                  if (e.pointerType === "mouse") address(i);
+                }}
+                onPointerLeave={(e) => {
+                  if (e.pointerType === "mouse")
+                    setHover((v) => (v === i ? null : v));
+                }}
                 onFocus={() => address(i)}
-                onBlur={() => setActive((v) => (v === i ? null : v))}
-                onClick={() => (active === i ? setActive(null) : address(i))}
+                onBlur={() => setHover((v) => (v === i ? null : v))}
+                // A click PINS: the selection survives the pointer leaving, so
+                // the readout's links can actually be walked to. Clicking the
+                // pinned node again, or anywhere off a node, unpins.
+                onClick={() => {
+                  setPinned((v) => (v === i ? null : i));
+                  address(i);
+                }}
               >
+                {/* The focus bracket — four registration corners, the same
+                    motif as § 04's thumbnails and § 06's plates, in accent.
+                    The browser default is suppressed only because this
+                    replaces it: a round outline on a dial read as a second
+                    ring, which is the one thing this section cannot afford. */}
+                {(["tl", "tr", "bl", "br"] as const).map((c) => (
+                  <span
+                    key={c}
+                    aria-hidden="true"
+                    className="sk-node-focus"
+                    data-c={c}
+                  />
+                ))}
+
                 <span
                   className="sk-node-ring"
                   aria-hidden="true"
@@ -440,6 +705,16 @@ export default function Skills({
                           strokeWidth={0.5}
                           vectorEffect="non-scaling-stroke"
                         />
+                        {/* The ticks live in their own group so the settle can
+                            rotate them. That group is a CHILD of the node the
+                            drift loop writes transform to, so the two never
+                            touch the same element's transform — the separation
+                            is structural, not a convention. Origin is the
+                            viewBox's centre, which is the dial's centre
+                            exactly; fill-box would take the group's bounding
+                            box, and a primary's longer index tick makes that
+                            box asymmetric. */}
+                        <g className="sk-ticks">
                         {d.ticks.map((t, k) => (
                           <line
                             key={k}
@@ -465,6 +740,7 @@ export default function Skills({
                             }
                           />
                         ))}
+                        </g>
                         {/* The value the dial carries. Swept on first visit and
                             kept — pathLength normalises it so no measurement is
                             needed and the server can render it at 0. */}

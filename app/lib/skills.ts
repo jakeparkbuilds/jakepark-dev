@@ -13,6 +13,7 @@
 
 export type Tier = "primary" | "secondary" | "tertiary";
 export type ClusterId = "languages" | "ml" | "infra" | "interfaces";
+export type ContextId = "my5" | "capitolcast" | "transit" | "coursework";
 
 export type Tool = {
   name: string;
@@ -20,7 +21,26 @@ export type Tool = {
   cluster: ClusterId;
   /** One concrete thing Jake did with it. This is what makes the field content. */
   evidence: string;
+  /** The shipped work this tool was part of. Not a tag and not a taxonomy: it
+      is the wiring the field draws on selection, and it is derived from the
+      evidence lines here and the stacks in app/lib/projects.ts — never
+      invented. Two tools are linked iff they share at least one of these. */
+  contexts: ContextId[];
 };
+
+/** Display labels, and where a context corresponds to a § 04 row. The two that
+    are real projects link into the register; coursework and the transit API do
+    not, because there is nothing on the page to land on. */
+export const CONTEXTS: { id: ContextId; label: string; href?: string }[] = [
+  { id: "my5", label: "my 5", href: "#project-01" },
+  { id: "capitolcast", label: "capitolcast", href: "#project-02" },
+  { id: "transit", label: "multi-agency transit api" },
+  { id: "coursework", label: "coursework" },
+];
+export const CONTEXT_LABEL = new Map(CONTEXTS.map((c) => [c.id, c.label]));
+export const CONTEXT_HREF = new Map(
+  CONTEXTS.filter((c) => c.href).map((c) => [c.id, c.href!]),
+);
 
 export const CLUSTERS: { id: ClusterId; label: string; cx: number; cy: number }[] = [
   // Centres in [0,1] of the field's usable area. The four are pulled well in
@@ -36,25 +56,25 @@ export const CLUSTERS: { id: ClusterId; label: string; cx: number; cy: number }[
 // the tab order, which is deliberately not the visual arrangement.
 export const TOOLS: Tool[] = [
   // primary — 4
-  { name: "python", tier: "primary", cluster: "languages", evidence: "2m+ apc records spatially joined to census tracts" },
-  { name: "pytorch", tier: "primary", cluster: "ml", evidence: "graphsage gnn benchmarked on a 5.8m-edge cosponsorship graph" },
-  { name: "aws", tier: "primary", cluster: "infra", evidence: "serverless monte carlo simulator, 43× hot-path speedup" },
-  { name: "next.js", tier: "primary", cluster: "interfaces", evidence: "live explainable bill forecasts across 16k bills" },
+  { name: "python", tier: "primary", cluster: "languages", evidence: "2m+ apc records spatially joined to census tracts", contexts: ["my5", "capitolcast", "transit"] },
+  { name: "pytorch", tier: "primary", cluster: "ml", evidence: "graphsage gnn benchmarked on a 5.8m-edge cosponsorship graph", contexts: ["capitolcast"] },
+  { name: "aws", tier: "primary", cluster: "infra", evidence: "serverless monte carlo simulator, 43× hot-path speedup", contexts: ["my5"] },
+  { name: "next.js", tier: "primary", cluster: "interfaces", evidence: "live explainable bill forecasts across 16k bills", contexts: ["my5", "capitolcast"] },
   // secondary — 6
-  { name: "typescript", tier: "secondary", cluster: "languages", evidence: "full-stack demo interfaces for capitolcast and my 5" },
-  { name: "scikit-learn", tier: "secondary", cluster: "ml", evidence: "ml pipeline forecasting bill advancement, 15× lift over baseline" },
-  { name: "xgboost", tier: "secondary", cluster: "ml", evidence: "86% cross-validated r² on transit ridership forecasting" },
-  { name: "docker", tier: "secondary", cluster: "infra", evidence: "containerized services for the multi-agency transit api" },
-  { name: "terraform", tier: "secondary", cluster: "infra", evidence: "infrastructure-as-code for the my 5 serverless stack" },
-  { name: "react", tier: "secondary", cluster: "interfaces", evidence: "component interfaces for capitolcast and my 5" },
+  { name: "typescript", tier: "secondary", cluster: "languages", evidence: "full-stack demo interfaces for capitolcast and my 5", contexts: ["my5", "capitolcast"] },
+  { name: "scikit-learn", tier: "secondary", cluster: "ml", evidence: "ml pipeline forecasting bill advancement, 15× lift over baseline", contexts: ["capitolcast"] },
+  { name: "xgboost", tier: "secondary", cluster: "ml", evidence: "86% cross-validated r² on transit ridership forecasting", contexts: ["transit"] },
+  { name: "docker", tier: "secondary", cluster: "infra", evidence: "containerized services for the multi-agency transit api", contexts: ["transit"] },
+  { name: "terraform", tier: "secondary", cluster: "infra", evidence: "infrastructure-as-code for the my 5 serverless stack", contexts: ["my5"] },
+  { name: "react", tier: "secondary", cluster: "interfaces", evidence: "component interfaces for capitolcast and my 5", contexts: ["my5", "capitolcast"] },
   // tertiary — 7
-  { name: "java", tier: "tertiary", cluster: "languages", evidence: "coursework — data structures and advanced programming" },
-  { name: "c++", tier: "tertiary", cluster: "languages", evidence: "coursework — data structures and systems programming" },
-  { name: "sql", tier: "tertiary", cluster: "languages", evidence: "multi-agency transit api with schema-level data isolation" },
-  { name: "r", tier: "tertiary", cluster: "languages", evidence: "statistical modeling coursework" },
-  { name: "pandas", tier: "tertiary", cluster: "ml", evidence: "anomaly detection pipeline across 2m+ vehicle records" },
-  { name: "postgresql", tier: "tertiary", cluster: "infra", evidence: "relational store behind the transit api" },
-  { name: "fastapi", tier: "tertiary", cluster: "interfaces", evidence: "serving live bill forecasts to the capitolcast frontend" },
+  { name: "java", tier: "tertiary", cluster: "languages", evidence: "coursework — data structures and advanced programming", contexts: ["coursework"] },
+  { name: "c++", tier: "tertiary", cluster: "languages", evidence: "coursework — data structures and systems programming", contexts: ["coursework"] },
+  { name: "sql", tier: "tertiary", cluster: "languages", evidence: "multi-agency transit api with schema-level data isolation", contexts: ["transit"] },
+  { name: "r", tier: "tertiary", cluster: "languages", evidence: "statistical modeling coursework", contexts: ["coursework"] },
+  { name: "pandas", tier: "tertiary", cluster: "ml", evidence: "anomaly detection pipeline across 2m+ vehicle records", contexts: ["transit"] },
+  { name: "postgresql", tier: "tertiary", cluster: "infra", evidence: "relational store behind the transit api", contexts: ["transit"] },
+  { name: "fastapi", tier: "tertiary", cluster: "interfaces", evidence: "serving live bill forecasts to the capitolcast frontend", contexts: ["capitolcast"] },
 ];
 
 export const TIER_R: Record<Tier, number> = { primary: 62, secondary: 44, tertiary: 32 };
@@ -391,6 +411,41 @@ function buildSeeds(): NodeSeed[] {
 }
 
 export const NODE_SEEDS = buildSeeds();
+
+// ── the wiring. Two tools are linked iff they shipped something together.
+//
+// Verified loudly, at module scope, on the server: a node with no context is
+// a node the field would draw as a stranger for ever, and it would fail
+// silently — the section would just look slightly emptier on that one
+// selection. Every one of the 17 must appear in at least one context.
+{
+  const orphans = TOOLS.filter((t) => t.contexts.length === 0).map((t) => t.name);
+  if (orphans.length)
+    throw new Error(
+      `skills.ts: every tool must carry at least one context. Missing: ${orphans.join(", ")}`,
+    );
+}
+
+/** For each tool name, the names of every tool sharing at least one context —
+    computed once here, never per frame and never per hover. Indices are into
+    NODE_SEEDS, which is what the field and the loop both address nodes by. */
+export const LINKED: Map<string, number[]> = (() => {
+  const index = new Map(NODE_SEEDS.map((s, i) => [s.tool.name, i]));
+  const out = new Map<string, number[]>();
+  for (const s of NODE_SEEDS) {
+    const mine = new Set(s.tool.contexts);
+    out.set(
+      s.tool.name,
+      NODE_SEEDS.reduce<number[]>((acc, o, j) => {
+        if (o.tool.name !== s.tool.name && o.tool.contexts.some((c) => mine.has(c)))
+          acc.push(j);
+        return acc;
+      }, []),
+    );
+    void index;
+  }
+  return out;
+})();
 
 // Plate annotations: 01..17, assigned by tier then alphabetically — a stable
 // index into the field, not the visual or the tab order.

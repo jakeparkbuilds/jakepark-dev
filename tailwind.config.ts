@@ -19,6 +19,12 @@ const config: Config = {
       accent: "#22384F",
       body: "#2E2A24",
       label: "#6B6455",
+      // Warm ochre. Three permitted objects and no fourth (CLAUDE.md § 2): the
+      // Georgetown star on the hero map, the same star on connect's ghost map,
+      // and § 05's addressed node — its ring and its ticks, one node at a time.
+      // The hero's star predates this token and still carries the raw hex; the
+      // two values must stay identical.
+      mark: "#C8952E",
       // Darkest marks on the page: the cursor dot and the active nav label.
       "near-black": "#0A0908",
       // The map coordinate readout only — deliberately its own value, not

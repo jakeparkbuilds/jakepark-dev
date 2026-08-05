@@ -765,6 +765,73 @@ change the layout or ask.
 
 AWS is one entry. Never expand it to Lambda / S3 / SQS / DynamoDB.
 
+**Selection exposes the wiring, and that is what the section is for.** Seventeen
+tools that shipped real work together were being drawn as seventeen strangers:
+the field was technically alive and visually inert, and the only event on
+selection was a text swap in the left rail. The fix was never colour — it was
+that the field had no structure to reveal. Four things now happen at once, and
+they are additive: **nothing about node positions, sizes, drift speed, the drift
+algorithm or the four-quadrant layout changed, and none of it may.**
+
+- **Co-occurrence linkage.** Each tool carries `contexts: string[]` in
+  `app/lib/skills.ts` — `my5`, `capitolcast`, `transit`, `coursework` — derived
+  from its own evidence line and from § 04's stacks, never invented. Two nodes
+  are linked iff they share one. On select, a 0.5px accent hairline at 0.55
+  alpha runs from the addressed node's centre to every node it shipped with,
+  drawn in 420ms `draw`, staggered 40ms **nearest-first by euclidean distance**.
+  A module-scope check throws if any tool has an empty array: an orphan would
+  fail silently, as a section that just looks emptier on one selection.
+  - **Links exist ONLY while a node is active.** A permanent web between 17
+    nodes is noise, and the claim the section makes is that the structure is
+    there to be *revealed*.
+  - **`pathLength="1"` is load-bearing.** The nodes drift, so a line's real
+    length changes every frame and a dasharray computed from its initial length
+    breaks the moment it grows. Normalised, the fraction stays correct.
+  - **Both dash attributes come off on `animationend`**, and the animation is
+    killed with them. This omission has caused three separate visible
+    regressions on this site.
+  - **Endpoints are written inside the EXISTING drift loop**, in the same pass
+    that writes node transforms, rounded to integers, with an early return when
+    nothing is active. A fourth rAF is a hard fail (§ 6, § 12). Measured max
+    fan-out is **13** (python), not the 6 that was assumed — still far too few
+    to need a cap, and a cap or culling must not be added.
+- **The field dims, in OPACITY only.** Active 1.0, linked 0.62, unlinked 0.24,
+  260ms `micro`, uniform 1.0 on deselect. This is the largest visual change the
+  section has and it costs nothing chromatically. Never introduce a lighter grey
+  to do it — dimming is opacity against paper.
+- **The active node takes `mark` #C8952E** on its ring and its ticks, with the
+  label to ink. Exactly one node at a time, enforced in state; it reverts to
+  #1A1815, the circle's own presentation-attribute value. Its tick group rotates
+  **12deg** over 520ms — an instrument reading, not a spin. The ticks live in
+  their own `<g>`, a **child** of the element the drift loop writes transform to,
+  so the two can never collide; that separation is structural and must stay.
+- **The readout takes a fourth line** — `appears in —` and the contexts' display
+  labels, with `my 5` and `capitolcast` linking to their § 04 rows (which is why
+  `.proj-row` carries `id="project-NN"`). The transit API and coursework are not
+  links: there is nothing on the page to land on. Lines wipe in at 380ms
+  `reveal` staggered 50ms and leave on 180ms of opacity with no wipe — a
+  reversed wipe would read as the pen un-drawing, which this vocabulary does not
+  have. The card is held through the exit by a `shown`/`active` split, the same
+  pattern § 06's plate uses. **The block reserves 220px**, measured by focusing
+  all 17 at 1920/1440/1360: the tallest is python's at 216px, the only node with
+  three contexts.
+- **Interaction.** Hover selects and a **click PINS** — the selection survives
+  the pointer leaving, which is what makes the readout's links reachable;
+  clicking the pinned node or anywhere off a node unpins. Hover is gated on
+  `pointerType === "mouse"`, because a touch fires `pointerenter` and never the
+  matching leave, which is exactly how a hover state gets stuck on a phone.
+  Every node is a real `<button>` with an accessible name; **arrow keys move
+  focus by ANGLE-WEIGHTED distance** (candidates more than ~70° off-axis are not
+  candidates), Enter/Space pins, Escape clears and returns focus to the field.
+  Focus draws **four accent registration corners**, the § 04 / § 06 motif — the
+  browser default is suppressed only because a round outline on a dial read as a
+  second ring.
+- **Reduced motion:** links appear at dashoffset 0 with no draw and no stagger,
+  no tick rotation, no readout wipe. Dimming and every colour change still
+  apply — those are state, not motion. **The field measurement must still run
+  under reduced motion**: skipping it left every line drawn from 0,0 to 0,0, the
+  wiring silently missing for exactly the people the path serves.
+
 ### §06 education
 The left side of both rows — crests, school names, degree lines, location lines,
 row heights, hairline rules — is **final**. Do not touch it.
@@ -1234,6 +1301,18 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
   anime.js, the React/Next baseline), not something a section pass can fix.
   **Do not claim this budget line is met**, and do not treat a section's small
   delta as headroom.
+
+  **The 228.1KB figure above does not reproduce, and the discrepancy is
+  unresolved.** Measured again — production `next start`, gzipping every `.js`
+  the `/` route requests across a full page scroll — the same commit the 228.1
+  was taken at (`f2a6905`) comes out at **189.6KB over EIGHT chunks, not nine**.
+  Either the earlier pass counted a chunk this method does not see or it
+  measured a different set; the method above is the one now on record, and the
+  two numbers must not be mixed. Same method, same session: 189.6 at `f2a6905`,
+  **189.8** after the § 04 image pass, **190.9** after the § 05 linkage pass —
+  **+1.3KB across the whole session**. The ceiling is still breached by ~40KB on
+  this method, framework and runtime still dominate, and it is still not
+  something a section pass can fix.
 - LCP < 1.8s on 4G, CLS < 0.05, Lighthouse ≥ 95 all four
 - 60fps under 6× CPU throttle through a full page scroll
 - Zero persistent rAF loops and zero pending timers once the page settles —

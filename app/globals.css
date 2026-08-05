@@ -2155,7 +2155,12 @@
   .sk-readout {
     grid-column: 1 / 5;
     align-self: center;
-    min-height: 190px; /* holds the tallest card, so the field never shifts */
+    /* Reserved for the MAXIMUM case, so switching between nodes never reflows
+       the rail. Measured by focusing all 17 in turn at 1920, 1440 and 1360: the
+       tallest card is python's at 216px — four lines, the longest evidence
+       string and the only node with three contexts. 220 leaves a little over
+       it. Was 190, which was the three-line card's figure. */
+    min-height: 220px;
   }
   .sk-readout-rest {
     color: #6b6455;
@@ -2167,8 +2172,34 @@
   /* Uncovered, not faded — the section's own vocabulary. Keyed on the tool in
      Skills, so switching nodes replays the wipe from the start rather than
      interpolating out of a half-finished one. */
-  .sk-readout-card {
-    animation: sk-wipe 260ms cubic-bezier(0.33, 1, 0.68, 1) both;
+  /* Line by line, not as one block: 380ms each, staggered 50ms, so the readout
+     assembles in reading order. Out on deselect is opacity only and no wipe —
+     a reversed wipe would read as the pen un-drawing, which this vocabulary
+     does not have. */
+  .sk-readout-card > * {
+    animation: sk-wipe 380ms cubic-bezier(0.33, 1, 0.68, 1) both;
+  }
+  .sk-readout-card .sk-readout-name {
+    animation-delay: 0ms;
+  }
+  .sk-readout-card .sk-readout-cat {
+    animation-delay: 50ms;
+  }
+  .sk-readout-card .sk-readout-rule {
+    animation-delay: 100ms;
+  }
+  .sk-readout-card .sk-readout-ev {
+    animation-delay: 150ms;
+  }
+  .sk-readout-card .sk-readout-ctx {
+    animation-delay: 200ms;
+  }
+  .sk-readout-card[data-out] {
+    opacity: 0;
+    transition: opacity 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sk-readout-card[data-out] > * {
+    animation: none;
   }
   @keyframes sk-wipe {
     from {
@@ -2202,6 +2233,22 @@
     line-height: 1.5;
     color: #2e2a24;
     text-wrap: pretty;
+  }
+  /* The fourth line — the linkage in words, so the wiring the field draws is
+     also readable rather than only visible. Mono, because it is metadata about
+     the node and not a claim of its own. */
+  .sk-readout-ctx {
+    margin-top: 14px;
+    max-width: 34ch;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #6b6455;
+  }
+  .sk-readout-link {
+    color: theme("colors.accent");
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
   }
 
   /* ── the field. position: relative is the coordinate system every node's
@@ -2301,14 +2348,14 @@
   /* Addressing a node lifts its own region and recedes the other three. No line
      is drawn between the node and its label — the tie is the emphasis. */
   .sk-field[data-domain] .sk-cluster-label {
-    opacity: 0.3;
+    opacity: 0.35;
   }
   .sk-field[data-domain="languages"] .sk-cluster-label[data-cluster="languages"],
   .sk-field[data-domain="ml"] .sk-cluster-label[data-cluster="ml"],
   .sk-field[data-domain="infra"] .sk-cluster-label[data-cluster="infra"],
   .sk-field[data-domain="interfaces"] .sk-cluster-label[data-cluster="interfaces"] {
     opacity: 1;
-    color: theme("colors.ink");
+    color: theme("colors.body");
   }
   .sk-field[data-domain="languages"] .sk-cluster-label[data-cluster="languages"] .sk-cluster-mark,
   .sk-field[data-domain="ml"] .sk-cluster-label[data-cluster="ml"] .sk-cluster-mark,
@@ -2326,10 +2373,54 @@
     will-change: transform;
     /* The recession when another node is addressed. The loop never writes this
        property — it writes opacity on .sk-node-ring — so the two cannot fight. */
-    transition: opacity 220ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 260ms cubic-bezier(0.4, 0, 0.2, 1);
   }
+  /* Three tiers, and all three are OPACITY against paper — no new colour and no
+     lighter grey. This is the single largest change the section has and it
+     costs nothing chromatically: addressing a node states what shipped with it
+     and recedes what did not. */
   .sk-field[data-quiet] .sk-node:not([data-active]) {
-    opacity: 0.18;
+    opacity: 0.24;
+  }
+  .sk-field[data-quiet] .sk-node[data-linked]:not([data-active]) {
+    opacity: 0.62;
+  }
+
+  /* ── the co-occurrence linkage. Drawn only while a node is addressed.
+     0.5px accent at 0.55 alpha, per the amended § 2 — the third and last use
+     accent has, and the lines are gone the moment nothing is selected. */
+  .sk-links {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    /* Equal z-index to a node's minimum, and earlier in the DOM, so every ring
+       paints over every line by document order — no z-index arithmetic to keep
+       in agreement with the depth cycle's 0..100. */
+    z-index: 0;
+  }
+  .sk-links line {
+    stroke: theme("colors.accent");
+    stroke-opacity: 0.55;
+    stroke-width: 0.5;
+    vector-effect: non-scaling-stroke;
+    animation: sk-link-draw 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  /* Set on animationend, after the dash attributes are stripped. Killing the
+     animation here is what stops its fill mode from holding a value on an
+     element that no longer has the geometry for one. */
+  .sk-links line[data-drawn] {
+    animation: none;
+  }
+  @keyframes sk-link-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
   }
 
   .sk-node-btn {
@@ -2397,22 +2488,90 @@
   .sk-node[data-active] .sk-node-ring {
     opacity: 1 !important;
   }
+  /* The addressed node takes the mark. Per the amended § 2 this is the star's
+     third permitted use and its last: exactly one node is gold at a time, it is
+     ~0.2% of the viewport, and it reverts to ink on deselect. The revert value
+     is the circle's own presentation attribute (#1A1815, set in skills.tsx) —
+     stated here explicitly so the transition has something to travel back to
+     rather than snapping off a UA-computed default. */
+  .sk-node circle,
+  .sk-node .sk-tick {
+    stroke: theme("colors.ink");
+    transition: stroke 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sk-node[data-active] circle,
+  .sk-node[data-active] .sk-tick {
+    stroke: theme("colors.mark");
+  }
   .sk-node[data-active] circle {
     stroke-width: 0.9;
-    transition: stroke-width 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      stroke-width 150ms cubic-bezier(0.4, 0, 0.2, 1),
+      stroke 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
   .sk-node[data-active] .sk-node-label {
     color: theme("colors.ink");
   }
-  .sk-node-btn:focus-visible circle {
-    outline: none;
+
+  /* The tick settle — an instrument reading, not a spin. 12deg and no more.
+     Rotated about the viewBox's centre, which is the dial's centre exactly. */
+  .sk-ticks {
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+    transition: transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .sk-node[data-active] .sk-ticks {
+    transform: rotate(12deg);
+  }
+
+  /* ── the focus state: four registration corners in accent, the same motif as
+     § 04's thumbnails and § 06's plates. The browser default is suppressed only
+     because this replaces it — a round outline around a dial read as a second
+     ring, which is the one thing this field cannot afford. */
+  .sk-node-focus {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 140ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sk-node-btn:focus-visible .sk-node-focus {
+    opacity: 1;
+  }
+  .sk-node-focus[data-c="tl"] {
+    top: 0;
+    left: 0;
+    border-top: 0.5px solid theme("colors.accent");
+    border-left: 0.5px solid theme("colors.accent");
+  }
+  .sk-node-focus[data-c="tr"] {
+    top: 0;
+    right: 0;
+    border-top: 0.5px solid theme("colors.accent");
+    border-right: 0.5px solid theme("colors.accent");
+  }
+  .sk-node-focus[data-c="bl"] {
+    bottom: 0;
+    left: 0;
+    border-bottom: 0.5px solid theme("colors.accent");
+    border-left: 0.5px solid theme("colors.accent");
+  }
+  .sk-node-focus[data-c="br"] {
+    bottom: 0;
+    right: 0;
+    border-bottom: 0.5px solid theme("colors.accent");
+    border-right: 0.5px solid theme("colors.accent");
   }
   .sk-node-btn:focus-visible {
-    outline: 1px solid theme("colors.accent");
-    outline-offset: 2px;
-    border-radius: 50%; /* the focus ring follows the circle it belongs to */
+    outline: none;
   }
   .sk-node-btn:focus:not(:focus-visible) {
+    outline: none;
+  }
+  /* The field itself is a tab stop only as Escape's landing place; it never
+     shows a ring of its own. */
+  .sk-field:focus {
     outline: none;
   }
 
@@ -2497,16 +2656,33 @@
      The readout's wipe and the recession are dropped too — content is never
      lost, only the drawing of it. */
   @media (prefers-reduced-motion: reduce) {
-    .sk-readout-card {
+    .sk-readout-card,
+    .sk-readout-card > * {
       animation: none;
     }
     .sk-node,
     .sk-node[data-active] circle,
+    .sk-node circle,
+    .sk-node .sk-tick,
+    .sk-ticks,
     .sk-tick,
     .sk-arc,
     .sk-cluster-label,
-    .sk-cluster-mark {
+    .sk-cluster-mark,
+    .sk-node-focus {
       transition: none !important;
+    }
+    /* The linkage still appears — it is the section's content, and withholding
+       it from someone who cannot see it draw would be withholding information.
+       It simply arrives whole: no draw, no stagger. Likewise the ticks do not
+       settle. Dimming and the colour changes are untouched; they are state, not
+       motion. */
+    .sk-links line {
+      animation: none;
+      stroke-dashoffset: 0;
+    }
+    .sk-node[data-active] .sk-ticks {
+      transform: none;
     }
     /* Every dial shows the value it carries immediately. The arc is the one
        piece of state the field accumulates, and withholding it from someone who
