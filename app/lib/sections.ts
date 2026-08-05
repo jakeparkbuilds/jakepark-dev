@@ -7,11 +7,10 @@
 // and in document order at every step, so the page is never left with a gap in
 // its numbering or a section missing from the nav.
 export const CONTENT_SECTIONS = [
-  { number: "02", id: "about", label: "about" },
+  { number: "02", id: "background", label: "background" },
   { number: "03", id: "experience", label: "experience" },
   { number: "04", id: "work", label: "work" },
-  { number: "05", id: "education", label: "education" },
-  { number: "06", id: "connect", label: "connect" },
+  { number: "05", id: "connect", label: "connect" },
 ] as const;
 
 export const NAV_SECTIONS = [

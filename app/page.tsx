@@ -1,6 +1,5 @@
-import About from "./components/about";
+import Background from "./components/background";
 import Connect from "./components/connect";
-import Education from "./components/education";
 import Experience from "./components/experience";
 import Hero from "./components/hero";
 import Nav from "./components/nav";
@@ -14,12 +13,10 @@ export default function Home() {
       <Nav />
       <Hero />
       {CONTENT_SECTIONS.map(({ number, id, label }) =>
-        id === "about" ? (
-          <About key={id} number={number} id={id} label={label} />
+        id === "background" ? (
+          <Background key={id} number={number} id={id} label={label} />
         ) : id === "experience" ? (
           <Experience key={id} number={number} id={id} label={label} />
-        ) : id === "education" ? (
-          <Education key={id} number={number} id={id} label={label} />
         ) : id === "work" ? (
           <Work key={id} number={number} id={id} label={label} />
         ) : id === "connect" ? (

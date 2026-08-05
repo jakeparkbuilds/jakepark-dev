@@ -3,14 +3,11 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-// § 06 education — the contact print and the plate.
+// § 04 background — the contact print and the plate.
 //
-// The row has no room for a mounted photograph. Measured at 1440px: the body
-// column is a locked 620px, the coursework starts 32px after it, and the clear
-// space right of the body's ink is 52–74px; the row itself is 260px tall at
-// ≥1440px. A photo that fits those numbers is ~119px wide — too small to read
-// as a photograph at all. So the photo is shown at two sizes instead of one bad
-// one.
+// The station has no room for a mounted photograph. A photo that fits the clear
+// space beside the 620px body column is ~119px wide — too small to read as a
+// photograph at all. So the photo is shown at two sizes instead of one bad one.
 //
 //   the reference mark — a 7px hollow ink square, a 0.5px muted leader across a
 //     10px gap, and the word PHOTO in mono-micro, 14px past the school name's
@@ -21,18 +18,20 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 //     noise, and it read as a failed image load rather than as an affordance.
 //
 //   the plate — the full photograph. There is exactly ONE of these for the
-//     whole section, rendered by Education inside the grid wrapper rather than
-//     inside either trigger. That is what makes "both rows stage the photo to
-//     the same coordinates" structural rather than a pair of numbers that have
-//     to be kept in agreement: there is only one box, and only its image and
-//     caption change. It is absolutely positioned against the grid — never
-//     fixed, never computed from scroll — and centred on the divider between
-//     the two rows, which the equal-height grid puts at exactly 50%.
+//     whole section, rendered by Background inside `.bg-plates` rather than
+//     inside either trigger. That is what makes "both stations stage the photo
+//     to the same coordinates" structural rather than a pair of numbers that
+//     have to be kept in agreement: there is only one box, and only its image
+//     and caption change. It is absolutely positioned against that wrapper —
+//     never fixed, never computed from scroll — which holds exactly the two
+//     stations that carry a school, and so cannot reach the Kyoto portrait in
+//     station 01's aside.
 //
-// The stage. Addressing a print does not just open a plate — the row clears
-// around it: whichever coursework column is open closes, coursework hover-open
-// is suppressed so a pointer crossing the column cannot reopen it, and the
-// divider between the two rows retracts so it does not run under the plate.
+// The stage. Addressing a print does not just open a plate — the station clears
+// around it: whichever coursework column is open closes, and coursework
+// hover-open is suppressed so a pointer crossing the column cannot reopen it.
+// There is no divider retraction: it came from `.edu-grid`'s equal-height rows,
+// which the four-station route does not have. See CLAUDE.md § 5 / §04.
 
 export type EduPhoto = {
   src: string;
@@ -42,8 +41,12 @@ export type EduPhoto = {
   height: number;
 };
 
-// Above this width the plate can sit clear of all type, so hover may open it.
-const HOVER_OPENS = "(hover: hover) and (pointer: fine) and (min-width: 1360px)";
+// Above this width the aside is its own right-hand column, so the plate can sit
+// clear of all type and hover may open it. Tied to that layout change, not to a
+// number: it was 1360 before the merge, and the station's 140px meta column and
+// the route's 16px spine indent moved it to 1436 (rounded to the 1440
+// breakpoint the file already uses). See --plate-w in globals.css.
+const HOVER_OPENS = "(hover: hover) and (pointer: fine) and (min-width: 1440px)";
 const STAGE_IN_MS = 180; // intent delay, so a pointer crossing the print does nothing
 const STAGE_OUT_MS = 260; // grace, so the trigger -> plate journey is one region
 const REARM_MS = 200; // extra beat before coursework may hover-open again
@@ -72,29 +75,6 @@ const subscribe = (fn: () => void) => {
 const getActive = () => active;
 const getServerActive = () => null;
 
-function setDividerScale() {
-  // The divider retracts from its RIGHT end and must stop at least 48px clear
-  // of the plate's left crop mark. Measured once per stage entry — never per
-  // frame — and applied as a scale, so the retraction animates on transform and
-  // never on width.
-  //
-  // Derived from --plate-w rather than from the image's own rect: the image is
-  // swapped by React when the active row changes, so on re-open it may not be
-  // in the DOM yet on the next frame and the scale silently kept its previous
-  // value (measured: the divider stayed at full length on 4 of 6 stage
-  // entries). The plate's right edge and the divider's right edge are the same
-  // content edge, so the geometry needs no image to be present.
-  const plate = document.querySelector<HTMLElement>(".edu-plate");
-  const rows = document.querySelectorAll<HTMLElement>(".edu-row");
-  if (!plate || rows.length < 2) return;
-  const plateW = plate.getBoundingClientRect().width;
-  const rule = rows[1].getBoundingClientRect();
-  if (!(plateW > 0) || rule.width <= 0) return;
-  // 8px crop-mark offset + the required 48px of clear paper.
-  const scale = Math.max(0, Math.min(1, (rule.width - plateW - 56) / rule.width));
-  document.documentElement.style.setProperty("--edu-divider-scale", String(scale));
-}
-
 function commit(next: number | null) {
   if (active === next) return;
   active = next;
@@ -110,7 +90,6 @@ function commit(next: number | null) {
   } else {
     el.classList.add("edu-staged");
     el.classList.remove("edu-rearming");
-    setDividerScale();
   }
   listeners.forEach((fn) => fn());
 }
@@ -326,7 +305,7 @@ export function EduPlate({ photos }: { photos: EduPhoto[] }) {
             alt={photo.alt}
             width={photo.width}
             height={photo.height}
-            sizes="(min-width: 1800px) 500px, (min-width: 1600px) 430px, (min-width: 1440px) 300px, (min-width: 1360px) 235px, 72vw"
+            sizes="(min-width: 1800px) 390px, (min-width: 1600px) 360px, (min-width: 1440px) 220px, 72vw"
             className="edu-plate-img"
           />
         )}

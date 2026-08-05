@@ -1049,17 +1049,81 @@ algorithm or the four-quadrant layout changed, and none of it may.**
   under reduced motion**: skipping it left every line drawn from 0,0 to 0,0, the
   wiring silently missing for exactly the people the path serves.
 
-### §04 background — the education stations
-The left side of both rows — crests, school names, degree lines, location lines,
-row heights, hairline rules — is **final**. Do not touch it.
+### §04 background — the route
+**Four stations on one continuous 0.5px hairline**, then `elsewhere` off the end
+of it. about + education, merged: the four markers that used to label the about
+paragraphs are the stations, and the two schools hang off the two stations where
+they happened.
+
+```
+01  seoul              37.5665°n 126.9780°e
+02  alexandria         38.8048°n  77.0469°w   + TJHSST     + coursework
+03  washington, d.c.   38.9076°n  77.0723°w   + Georgetown + coursework
+04  what for           —
+    elsewhere                                 + the Kyoto portrait
+```
+
+Chronological, which means **the schools run TJ → Georgetown, the reverse of the
+old education section's order.** The plate's `photos` array is derived from the
+stations rather than written beside them, so the two can never disagree.
+
+**Every string is the string it already was.** No sentence, degree line, course
+or caption was rewritten for the merge. The Seoul and Alexandria coordinates are
+the only values that did not previously exist in the repo; they were supplied
+with the merge instruction. Washington's are the Georgetown star's, already in
+`DC_PROJECTION`.
+
+**The spine must not read as § 03's, and here is the difference in one
+sentence:** § 03's is a 6px *bar* assembled from one colour-carrying segment per
+employer, so the rule itself is the data; § 04's is a single unsegmented
+hairline that carries nothing, marked by a 12px ink tick at each station — a
+route with stops, not a stack of blocks.
+- It is **one absolutely-positioned element on `.bg-route`**, stretched top to
+  bottom. Not per-station segments: a segment per station is exactly § 03's
+  construction, and it would also break at the `.bg-plates` wrapper.
+- Ticks are **static ink, 12px, centred on the spine by the route's own
+  `--spine-indent`**, so a tick never has to know where the spine is in page
+  coordinates. The education rows' hairline used to go ink on hover; the route
+  has no row boundaries to light up, and the coursework wipe is the hover
+  feedback. Do not add a tick gesture.
+- The spine stops above `elsewhere`. It is not a station.
+
+**The station's tracks, and where every number comes from.** `140px · 24 · 620 ·
+32 · 1fr` inside a box inset 16px by the spine. At 1440 that is 1087.2 − 16 −
+140 − 24 − 620 − 32 = **255.2px of aside**, which is what sizes the plate and
+sets the hover breakpoint. 620px for the body is unchanged and still measured:
+TJHSST's name only wraps to two lines above ~601px. The aside is its own column
+at ≥1440 and a row spanning body + aside below it, so **the coursework and the
+portrait both terminate on the section's content edge at every width** —
+verified, longest item's right edge equals the content edge at 1920/1600/1440/
+1360/1024/900, and left-aligned below 900.
+
+**The crest moved into the meta column and the location line is gone.** Both
+follow from the merge and both were previously locked by this file:
+- The crest sat in its own 80px track. A fourth track does not fit — with the
+  meta column added, the aside falls to 141px at 1440 and the coursework cannot
+  hold a one-line title. It now sits below the coordinates in the meta column,
+  24px down, which reads as a seal on a station plate.
+- **`location` is deleted from the school block.** The station's place name and
+  coordinates *are* the location — Georgetown's line was verbatim redundant with
+  `washington, d.c.`, and `Alexandria, Virginia` differs from `alexandria` at
+  38.8048°N only by the state. Nothing is lost that the coordinates do not say.
+
+**Coordinates are `#9B9382`.** This is the one place on the site where metadata
+a reader might read is set in the decorative token — 2.4:1 on paper, below § 11's
+floor. It was specified explicitly with the merge, and the reasoning is that a
+coordinate pair is an annotation on a plate rather than copy: the place NAME
+beside it carries #6B6455 and is what the reader actually reads. **This is not a
+precedent.** Nothing else may take #9B9382 for type, and if the pair ever has to
+read as content the fix is one token change to `#6B6455`.
 
 **The two crests are sized individually and must never be normalised to one
 height.** They are opposite kinds of mark: Georgetown's G is a solid navy glyph,
 TJHSST's is a fine-line seal. Measured at an identical 200px set height the G
 carries 2.7× the contrast-weighted ink (19,339 units at 0.578 density against
 7,190 at 0.180), so at equal height the seal reads as the smaller of the two.
-TJHSST is therefore set 1.20× Georgetown — 48/62px against 40/52px, per entry
-via `logoHeight` in `education.tsx`. Size by perceived weight, never by bounding
+TJHSST is therefore set 1.20× Georgetown — 48/62px against 40/52px, per school
+via `logoHeight` in `background.tsx`. Size by perceived weight, never by bounding
 box.
 
 Neither crest sits in a tile. On a paper section a paper tile is invisible by
@@ -1071,13 +1135,27 @@ photographs, which on paper was the only thing reading as an edge. It is
 removed. `tjhsst.svg` is already transparent — its white is interior artwork,
 not a ground.
 
+**The plate's height cap is load-bearing and was not before.** `.bg-plates` is
+just the two school stations, measured **598px at every width ≥1440** — the
+coursework goes to two columns there and stops driving the height. At the
+inherited `--plate-h: 668` the box came out 667px tall inside that 598px block
+and overflowed 34.5px at each end; measured at 1920, its top crop marks landed
+2.5px under the portrait's caption. `--plate-h` is **520 for every band**, which
+is 598 less the 8px crop-mark offsets and a 31px top margin. Above 1800 the
+height binds before the width does, so 390 (= 520 × 3/4) is the widest the photo
+can be however much room the track has. Measured with the plate open, both
+triggers, every width: clear above the portrait's caption **≥76px**, and clear
+right of the body column **+59.2px (1440) / +60 (1600) / +230 (1800) / +350
+(1920)** — negative below 1440, which is the lightbox band where the body
+deliberately recedes.
+
 Coursework column: two-column grid, column-first flow, one course per cell, no
 separators of any kind. Items must never wrap; reduce mono size at a breakpoint
 rather than allowing a wrap or truncating.
 
 **Coursework lists are right-aligned to the section content edge at ≥900px** —
-the same x the row hairlines terminate at, inherited from the row's own box
-rather than from an invented inset. The **ragged LEFT edge is intentional**:
+inherited from the station's own last track rather than from an invented inset.
+The **ragged LEFT edge is intentional**:
 Georgetown has 6 courses and TJHSST 10, and left-aligning both made the shorter
 list read as an orphaned block floating mid-row with dead space to its right.
 Anchored right, the length difference is what the ragged edge shows. Below 900px
@@ -1085,14 +1163,22 @@ they revert to left-aligned, full width, beneath the entry. **The hover wipe's
 origin follows the alignment** — it uncovers from the right, because a
 left-origin wipe on right-aligned text reads backwards.
 
-Photo per row — **the reference mark and the plate.**
+**The Kyoto portrait closes the section, off the route.** It sits in the
+`elsewhere` row's aside — the same track the coursework runs in, so the right
+side of § 04 reads as one column top to bottom: coursework, coursework,
+portrait. **It was tried in station 01's aside and that was wrong**: at 1440 it
+drove that station to 463px for two lines of copy and opened a ~250px hole in
+the middle of the route. It is 100% of its track capped at 400px (480 at
+≥1600), right-anchored, and it is **not a trigger** — no hover response,
+because a plate that opens is a different object and the portrait must not
+suggest it is one.
 
-**There is no room in the row for a mounted photograph, and this is measured,
-not opinion.** At 1440px the body column is a locked 620px, the coursework
-starts 32px after it, and the clear space right of the body's ink is 74px
-(Georgetown) / 52px (TJHSST); the row is 260px tall at ≥1440px. A photo obeying
-those numbers is ~119px wide, which is too small to read as a photograph at all.
-Any attempt to mount a usefully-sized photo in the row grows the row. Do not
+Photo per school — **the reference mark and the plate.**
+
+**There is no room in the station for a mounted photograph, and this is
+measured, not opinion.** A photo obeying the clear space beside the 620px body
+column is ~119px wide, which is too small to read as a photograph at all. Any
+attempt to mount a usefully-sized photo in the station grows the station. Do not
 re-derive this — it has been measured twice.
 
 - **the reference mark** — a 12px hollow ink square at 1px, a 0.5px muted
@@ -1105,8 +1191,7 @@ re-derive this — it has been measured twice.
   of ink, 2.8× the area of the first version, which was too small to notice or
   to hit. It is padding on the button with the box offset by the same 8px, so
   the ink did not move and the focus ring frames what is actually clickable.
-  Row heights are byte-identical before and after: 248.52 (1920), 306 (1440),
-  350.52/482.52 (1024), 350.52/526.52 (768), 488.53/642.52 (390).
+  Station heights are byte-identical with and without it.
   **This was a 28px crop of the photograph itself and that was wrong.** At 28px
   a photograph has no subject, only noise, and noise beside a heading reads as a
   failed image load — the exact opposite of an affordance. Do not put the image
@@ -1115,8 +1200,9 @@ re-derive this — it has been measured twice.
 - **the anchor's height must be `0`, never `1em`.** An inline-block whose content
   is all out of flow takes its baseline from its bottom margin edge, so at `1em`
   it is a 40px box sitting entirely above the text baseline — taller than the
-  name's own ascent. Measured: that grew the ≥1600px rows from 260px to 265px.
-  At `height: 0` the row heights are byte-identical with and without the print.
+  name's own ascent. Measured on the education rows this replaced: that grew the
+  ≥1600px rows from 260px to 265px. At `height: 0` the heights are
+  byte-identical with and without the print.
 - **the plate** — the full photograph. There is exactly **one** for the whole
   section, rendered by the section rather than inside either trigger, which is
   what makes "both stations stage it to the same coordinates" structural rather
@@ -1133,12 +1219,15 @@ re-derive this — it has been measured twice.
 
   **The wrapper is what keeps the plate off the Kyoto portrait, and that is
   structural, not a number.** § 04 carries two photo mechanisms — the portrait,
-  which is always visible and lives in station 01's aside, and this plate, which
-  is staged. The portrait is outside the wrapper, so no value of `top` can put
-  the plate over it. Do not anchor the plate to the section, to the route, or to
-  a station: to the section or the route and it can reach the portrait; to a
-  station and the two stations stage to different coordinates, which is the one
-  property this design exists to guarantee.
+  which is always visible and lives in the `elsewhere` row, and this plate,
+  which is staged. The portrait is outside the wrapper, so no value of `top` can
+  put the plate over it. Do not anchor the plate to the section, to the route,
+  or to a station: to the section or the route and it can reach the portrait; to
+  a station and the two stations stage to different coordinates, which is the
+  one property this design exists to guarantee.
+  **Exactly one image is ever in the DOM**: measured 1 while open and **0** while
+  closed, at every width, and both triggers resolve to identical box
+  coordinates — 1254/379.2/390×520 at 1920, 953.6/847.5/220×293.3 at 1440.
 
 - **`top: 50%` was derived from a grid that no longer exists, and the divider
   retraction went with it.** Both came from `.edu-grid`'s
