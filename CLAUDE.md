@@ -766,9 +766,61 @@ the leader crosses the boundary.
 
 ### §02 work — the index, a drifting field
 The lower half of § 02, beneath the project rows and a full-width hairline,
-labelled `INDEX · 17 TOOLS · 4 DOMAINS`. It is an index of the tools the rows
+labelled `— INDEX · 17 TOOLS · 4 DOMAINS`. It is an index of the tools the rows
 above were built with, which is why it sits under them and reads as apparatus
 rather than as a headline.
+
+**The label's counts are READ FROM THE DATA** (`TOOLS.length`,
+`CLUSTERS.length`), never written down. That is the only reason it is allowed to
+carry numbers at all: the standfirst deleted from this section (§ 9) hardcoded
+"three systems · seventeen tools" and would have lied the moment anything was
+added. A derived count cannot.
+
+**MOVED, NOT REBUILT.** Node positions, sizes, the drift algorithm, the physics,
+the four-quadrant arrangement, the readout rail, the evidence lines and the
+whole linkage / gold / keyboard pass are exactly as they were. It has been
+rebuilt three times and this was not a fourth.
+
+**The one structural change: the addressed node is not the index's own state.**
+It lives in § 02, because a project row's stack token can address a node too,
+and two entry points writing to two copies of "which node is active" is how
+they drift apart. `SkillsIndex` renders the selection and reports intent; it
+does not own the answer. `activeRef` — the loop's per-frame window onto that
+value — is still written on every render and read on every frame, unchanged.
+
+### §02 work — the bidirectional wiring
+One shared active-tool state, two entry points, and **neither has its own
+styling path**. A stack token and a dial write the same value, so the gold ring,
+the field dimming, the linkage draw and the readout are the rules that already
+existed.
+
+- **Direction A — stack token → index node.** Hover or focus on a project's
+  stack token addresses that tool's node exactly as hovering the dial does;
+  click pins it. Focus, not only hover: the tokens are in the tab order and a
+  keyboard must reach the same state. `pointerType === "mouse"` gates the hover
+  half, so a touch cannot strand it.
+- **Direction B — index node → project rows.** Rows carrying that tool take a
+  0.5px accent bracket in the left margin, drawn over 320ms `draw`; rows that do
+  not go to **opacity 0.45** over 260ms `micro`; and the matching token in every
+  row that has it takes the standard accent underline. Full revert on deselect.
+- **The bracket is a fixed 14px-arm, 48px-spine registration mark, not a
+  full-height rule.** Real crop marks stay the same size whatever the sheet
+  does — the same rule § 04's plate follows. It sits at `left: -20px`, in the
+  margin outside the content box, which clears the 24px section padding at 390
+  with room to spare so it can never widen the document. **Below 900px it does
+  not draw at all**: a bracket hanging into a 24px margin reads as a stray mark.
+  The dimming still applies there, because that is the half carrying the
+  information.
+- `pathLength="1"` normalised dash, and **both dash attributes come off on
+  `animationend`** along with the animation.
+- **Gold stays on exactly one node and never touches a project row.** Accent
+  carries the row marking. No fifth colour — the row separation is opacity.
+- **No new rAF.** Every rule here is a CSS transition or a keyframe on an
+  attribute React sets; the field's existing loop is untouched. The inventory
+  is still the three in § 6.
+- Reduced motion: the bracket appears at full extent with no draw and the rows
+  dim with no transition. **Dimming and the colour changes still apply** —
+  they are state, not motion, and removing them would remove information.
 
 **This is where the site's one axis break lives.** The rows above are a
 register; the field is the one non-linear composition on the page. That the two

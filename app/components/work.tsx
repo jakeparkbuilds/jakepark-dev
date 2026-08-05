@@ -1,15 +1,22 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   PROJECTS,
   TOOL_FOR_STACK,
   type Project,
   type ProjectLink,
 } from "../lib/projects";
+import { CLUSTERS, NODE_SEEDS, TOOLS } from "../lib/skills";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import SectionMark from "./section-mark";
+import SkillsIndex from "./skills-index";
+
+// Node id → its position in NODE_SEEDS, which is the index's own addressing.
+// Built once at module scope from the same array the field renders, so a stack
+// token and a dial can never disagree about which node they mean.
+const NODE_AT = new Map(NODE_SEEDS.map((s, i) => [s.tool.name, i]));
 
 // § 02 work — the project rows, on the drafting ground.
 //
@@ -85,8 +92,26 @@ const CORNERS = ["tl", "tr", "bl", "br"] as const;
 /** The full stack, below the claim. Entries the index carries are focusable
  *  controls; entries it does not are plain text. The header line's stack stays
  *  inert — it is a truncating one-liner, and an affordance that clips is not an
- *  affordance. */
-function StackTokens({ stack }: { stack: string[] }) {
+ *  affordance.
+ *
+ *  DIRECTION A of the wiring: hovering or focusing a token addresses its node
+ *  in the index below, through the SAME state and therefore the same code path
+ *  as clicking the dial itself. There is no second styling path — the node's
+ *  gold ring, the field's dimming, the linkage draw and the readout all come
+ *  from `active` and do not know or care which end set it. */
+function StackTokens({
+  stack,
+  activeTool,
+  onAddress,
+  onLeave,
+  onPin,
+}: {
+  stack: string[];
+  activeTool: string | null;
+  onAddress: (node: string) => void;
+  onLeave: (node: string) => void;
+  onPin: (node: string) => void;
+}) {
   return (
     <p className="proj-fullstack" data-reveal>
       {stack.map((s, i) => {
@@ -95,7 +120,30 @@ function StackTokens({ stack }: { stack: string[] }) {
           <span key={s}>
             {i > 0 && <span aria-hidden="true"> · </span>}
             {node ? (
-              <button type="button" className="proj-tool" data-tool={node}>
+              <button
+                type="button"
+                className="proj-tool"
+                data-tool={node}
+                // Underlined while its own node is addressed — the standard
+                // accent link treatment, which is what says "this word and that
+                // dial are the same thing".
+                data-on={activeTool === node ? "" : undefined}
+                aria-label={`${s} — show in the index`}
+                // Hover is for pointers that hover. A touch fires pointerenter
+                // and never the matching leave, which is exactly how a hover
+                // state gets stuck on a phone; the tap goes through onClick.
+                onPointerEnter={(e) => {
+                  if (e.pointerType === "mouse") onAddress(node);
+                }}
+                onPointerLeave={(e) => {
+                  if (e.pointerType === "mouse") onLeave(node);
+                }}
+                // Focus addresses too, not just hover — the tokens are in the
+                // tab order and a keyboard must reach the same state.
+                onFocus={() => onAddress(node)}
+                onBlur={() => onLeave(node)}
+                onClick={() => onPin(node)}
+              >
                 {s}
               </button>
             ) : (
@@ -108,12 +156,67 @@ function StackTokens({ stack }: { stack: string[] }) {
   );
 }
 
-function ProjectRow({ project }: { project: Project }) {
+/** DIRECTION B: a 0.5px accent bracket drawn in the row's left margin while one
+ *  of its tools is addressed. Fixed 14px arms on a 48px spine — a registration
+ *  mark, not a full-height rule: real crop marks stay the same size whatever
+ *  the sheet does, the same rule § 04's plate follows.
+ *
+ *  pathLength="1" normalises the dash so no measurement is needed, and BOTH
+ *  dash attributes come off on animationend. */
+function RowBracket() {
+  return (
+    <svg
+      className="proj-bracket"
+      width="14"
+      height="48"
+      viewBox="0 0 14 48"
+      aria-hidden="true"
+      onAnimationEnd={(e) => {
+        const el = e.target as SVGPathElement;
+        el.removeAttribute("stroke-dasharray");
+        el.removeAttribute("stroke-dashoffset");
+        el.setAttribute("data-drawn", "");
+      }}
+    >
+      <path
+        d="M14 0.25 L0.25 0.25 L0.25 47.75 L14 47.75"
+        fill="none"
+        pathLength={1}
+        strokeDasharray={1}
+        strokeDashoffset={1}
+      />
+    </svg>
+  );
+}
+
+function ProjectRow({
+  project,
+  activeTool,
+  matches,
+  selecting,
+  onAddress,
+  onLeave,
+  onPin,
+}: {
+  project: Project;
+  activeTool: string | null;
+  matches: boolean;
+  selecting: boolean;
+  onAddress: (node: string) => void;
+  onLeave: (node: string) => void;
+  onPin: (node: string) => void;
+}) {
   const { thumb, metrics } = project;
   return (
     // The id is the index's landing target: its readout links a tool to the
-    // rows it shipped in. Nothing in this section reads it.
-    <li className="proj-row" id={`project-${project.no}`}>
+    // rows it shipped in.
+    <li
+      className="proj-row"
+      id={`project-${project.no}`}
+      data-match={selecting && matches ? "" : undefined}
+      data-dim={selecting && !matches ? "" : undefined}
+    >
+      {selecting && matches && <RowBracket />}
       {/* The header line. Not a button — nothing here toggles, so an
           interactive role would advertise an affordance that does not exist. */}
       <div className="proj-head" data-reveal>
@@ -144,7 +247,13 @@ function ProjectRow({ project }: { project: Project }) {
             </dl>
           )}
 
-          <StackTokens stack={project.stack} />
+          <StackTokens
+            stack={project.stack}
+            activeTool={activeTool}
+            onAddress={onAddress}
+            onLeave={onLeave}
+            onPin={onPin}
+          />
 
           <ul className="proj-links" data-reveal>
             {project.links.map((link) => {
@@ -229,6 +338,55 @@ export default function Work({
   const reduced = useReducedMotion();
   const listRef = useRef<HTMLUListElement | null>(null);
   const headingId = `${id}-heading`;
+
+  // ── ONE shared active-tool state, two entry points.
+  //
+  // `hover` is transient and `pinned` survives the pointer leaving — that is
+  // the whole difference, and keeping them apart is what makes a pin hold: a
+  // single value would be cleared by the pointerleave that follows any click.
+  // Both a dial and a project's stack token write here, so the two can never
+  // disagree about which node is addressed.
+  const [hover, setHover] = useState<number | null>(null);
+  const [pinned, setPinned] = useState<number | null>(null);
+  const active = pinned ?? hover;
+  const activeTool = active === null ? null : NODE_SEEDS[active].tool.name;
+
+  const address = useCallback((i: number) => setHover(i), []);
+  const leave = useCallback(
+    (i: number) => setHover((v) => (v === i ? null : v)),
+    [],
+  );
+  const pin = useCallback((i: number) => {
+    setPinned((v) => (v === i ? null : i));
+    setHover(i);
+  }, []);
+  const clear = useCallback(() => {
+    setHover(null);
+    setPinned(null);
+  }, []);
+
+  // The same three, addressed by node id — what a stack token has.
+  const addressTool = useCallback(
+    (node: string) => {
+      const i = NODE_AT.get(node);
+      if (i !== undefined) address(i);
+    },
+    [address],
+  );
+  const leaveTool = useCallback(
+    (node: string) => {
+      const i = NODE_AT.get(node);
+      if (i !== undefined) leave(i);
+    },
+    [leave],
+  );
+  const pinTool = useCallback(
+    (node: string) => {
+      const i = NODE_AT.get(node);
+      if (i !== undefined) pin(i);
+    },
+    [pin],
+  );
 
   // Each row reveals once on entry and stays. The hidden start state is applied
   // by [data-motion="armed"] on the list, set here in a layout effect — the
@@ -357,11 +515,47 @@ export default function Work({
             <span className="proj-year">year</span>
           </div>
 
-          <ul className="proj-list" ref={listRef}>
+          <ul
+            className="proj-list"
+            ref={listRef}
+            data-selecting={activeTool !== null ? "" : undefined}
+          >
             {PROJECTS.map((p) => (
-              <ProjectRow key={p.no} project={p} />
+              <ProjectRow
+                key={p.no}
+                project={p}
+                activeTool={activeTool}
+                matches={
+                  activeTool !== null &&
+                  p.stack.some((s) => TOOL_FOR_STACK[s] === activeTool)
+                }
+                selecting={activeTool !== null}
+                onAddress={addressTool}
+                onLeave={leaveTool}
+                onPin={pinTool}
+              />
             ))}
           </ul>
+        </div>
+
+        {/* ── the index. Under the rows, never above them.
+            The label replaces the old section's h2: this is apparatus for the
+            work above, not a headline of its own. Its counts are READ FROM THE
+            DATA rather than written down, so unlike the standfirst that was
+            deleted from this section they cannot go stale. */}
+        <div className="work-index">
+          <div aria-hidden="true" className="work-index-rule" />
+          <p className="work-index-label font-mono">
+            — index · {TOOLS.length} tools · {CLUSTERS.length} domains
+          </p>
+          <SkillsIndex
+            active={active}
+            pinned={pinned}
+            onAddress={address}
+            onLeave={leave}
+            onPin={pin}
+            onClear={clear}
+          />
         </div>
       </div>
     </section>
