@@ -11,6 +11,12 @@ file seems to prevent a good solution, say so and ask — do not silently deviat
 look attractive from a cold start and have already been tried and rejected.
 Re-proposing them wastes a session.
 
+**The site is FIVE sections, and it was seven.** `01 hero · 02 work ·
+03 experience · 04 background · 05 connect`. projects + skills merged into
+§ 02 work; about + education merged into § 04 background; experience kept its
+number. Anything in this file that still reads as though there are seven is a
+bug in this file — say so and fix it. See § 5.
+
 ---
 
 ## 1. Stack
@@ -45,29 +51,41 @@ library, a text-splitting library, or any icon package. Ask first.
 paper    #F5F1E8   base surface
 ink      #1A1815   primary type, strong hairlines
 muted    #9B9382   decorative hairlines, frames, quiet rules
-accent   #22384F   ink blue — section marks, link underlines, § 05 linkage
+accent   #22384F   ink blue — section marks, link underlines, § 02 linkage
 body     #2E2A24   softened ink for body copy (same hue, not a 5th color)
 mark     #C8952E   warm ochre — the Georgetown star (hero map + its ghost on
-                   connect) AND § 05's active node ring + ticks. One at a time.
+                   connect) AND § 02's active node ring + ticks. One at a time.
+ruling   #C5CBD1   cool gray — the drafting ground's ruling. QUARANTINED.
 ```
+
+**`#C5CBD1` — drafting-ground ruling ONLY. Never on type, never on a hairline,
+never on a border, never on an interactive element, never outside the drafting
+ground. If it appears anywhere else in a diff, that diff is wrong.**
+
+It is a restoration, not an invention: it was in the original drafting-ground
+spec and never made it into this file. It is admitted rather than substituting
+`muted` #9B9382 because #9B9382 is a *warm* gray and `drafting` #EDEBE4 is
+explicitly the *cooler* ground — warm-gray ruling on a cool ground reads as dust
+rather than as blueprint, which would make the third register look like paper
+with a dirty overlay instead of a third register.
 
 Legibility variants: `#6B6455` for any mono text a user must read (nav labels,
 section markers, gutter annotations, captions, coursework). `#0A0908` for the
 cursor dot and active nav label — the two darkest objects on the page.
 
 Rules:
-- Accent is **section marks, link underlines, and § 05's co-occurrence linkage
+- Accent is **section marks, link underlines, and § 02's co-occurrence linkage
   hairlines** — nothing else. Still **~3% of any viewport** maximum. The linkage
   lines are 0.5px at 0.55 alpha and exist only while a node is active; they are
-  a wiring diagram drawn on demand, never a standing web (§ 5 / §05). Reaching
+  a wiring diagram drawn on demand, never a standing web (§ 5 / §02). Reaching
   for accent a third time in one section means the composition is wrong, not
   that it needs more accent.
 - `mark` #C8952E is the **filled Georgetown star** — the hero map and the connect
   section's ghost map, the same star at the same coordinates on the same
-  geometry, a bookend closing what the hero opened — **and § 05's active node's
+  geometry, a bookend closing what the hero opened — **and § 02's active node's
   ring stroke and tick marks.** Never more than one node at a time, and it
-  reverts to muted on deselect. § 05 is the only major section with no chromatic
-  event at all, and one node at ~0.2% of the viewport reads as an instrument
+  reverts to muted on deselect. § 02's index has no chromatic event of its own
+  otherwise, and one node at ~0.2% of the viewport reads as an instrument
   needle: the same semantic as the star, *this is the thing you are pointing
   at*. That is the whole of the widening. It does **not** become a
   general-purpose highlight colour, and nothing outside those three uses may
@@ -102,21 +120,19 @@ appears nowhere else on the site.
   no fourth.**
 
 ```
-paper     #F5F1E8   the default — every section not named below
+paper     #F5F1E8   § 01 hero, § 04 background, § 05 connect
 ink       #1A1815   § 03 experience ONLY — the inverted plate, paper type
-drafting  #EDEBE4   § 04 projects ONLY — cooler and one step darker than
-                    paper, carrying the blueprint ruling (§ 5 / §04)
+drafting  #EDEBE4   § 02 work ONLY — cooler and one step darker than paper,
+                    carrying the blueprint ruling (§ 5 / §02)
 ```
 
-  § 03 is the only inverted section and no other may become one. § 04 is the
+  § 03 is the only inverted section and no other may become one. § 02 is the
   only ruled one. Both are full-bleed horizontally, breaking the plate frame.
   A third register is the point — three sections, three grounds, no repetition
   — so do not give a fourth section a ground of its own to match them.
 
-  **`drafting` is specified but not built.** § 04 renders on paper through the
-  ordinary `SectionShell` and `#EDEBE4` appears nowhere in the codebase, so as
-  of now **two grounds exist**, not three. Read this block as the intent and
-  § 5 / §04 as the state.
+  Drafting moved from projects to work when the two merged. It is the same
+  ground on the same content; the section it belongs to is what changed.
 - **Never double-soften.** `body` #2E2A24 is already the softened ink. Applying
   an opacity utility on top of it is a bug — this caused a site-wide washed-out
   contrast problem that took a full pass to correct.
@@ -145,8 +161,8 @@ Rules:
   stays lowercase — section headings, nav labels, link text, captions.
 - Mono labels are uppercased via CSS `text-transform`, not in the source string.
 - No third family. No italic. No weights other than 400 and 500.
-- Mono is for labels and metadata **with one sanctioned exception**: § 07's email
-  monument sets Plex Mono at up to 58px. See § 5 / §07 — the address is data, and
+- Mono is for labels and metadata **with one sanctioned exception**: § 05's email
+  monument sets Plex Mono at up to 58px. See § 5 / §05 — the address is data, and
   that is the point. Nothing else may borrow it.
 - `text-wrap: pretty` on paragraphs, `text-wrap: balance` on headings.
 
@@ -167,7 +183,7 @@ Rules:
   half. It is the same drawing exposed for a lossy medium. Nothing that renders
   in a browser may take this number.
 - `border-radius: 0` on everything, with exactly two exceptions: `.cursor-dot`
-  uses `border-radius: 50%` because it is a literal circle, and § 05's field
+  uses `border-radius: 50%` because it is a literal circle, and § 02's field
   nodes are hairline `<circle>` elements — SVG geometry, not a rounded box. No
   other exceptions, and in particular no rounded rectangles anywhere.
 - **No box-shadows anywhere.** Cards are defined by rules and space. Nothing on
@@ -177,7 +193,7 @@ Rules:
 - Nav gutter: ~180px reserved on the right of every section. Collapses to 0
   below 900px. The connect section overrides this and centers on the full
   viewport.
-- Section markers are `02 / about` format. The `§` symbol was removed.
+- Section markers are `02 / work` format. The `§` symbol was removed.
 - `::selection` is accent #22384F at 0.18 alpha with color #0A0908. The browser
   default blue must never appear.
 
@@ -185,29 +201,34 @@ Rules:
 
 ## 5. Sections
 
-| § | section | status |
-|---|---|---|
-| 01 | hero (no number shown — it's the cover) | done |
-| 02 | about + portrait | done, copy rewrite pending |
-| 03 | experience | done — the inverted plate, entries arrive on scroll |
-| 04 | projects | done |
-| 05 | skills | done |
-| 06 | education | done |
-| 07 | connect | done |
+**There are FIVE sections. There were seven.** projects + skills merged into
+§ 02 work; about + education merged into § 04 background. Experience kept its
+number, which is why the ink ground and the cursor/ink-trail inversion keyed to
+`#experience` did not move.
 
-**Content still owed by Jake** before §03 can be built: a decision on how much
-prose each of the five roles gets. Never write placeholder copy. If content is
-missing, stop and ask.
+| § | section | ground | status |
+|---|---|---|---|
+| 01 | hero (no number shown — it's the cover) | paper | done |
+| 02 | work — project rows, then the tool index | drafting | done |
+| 03 | experience | ink | done — the inverted plate, entries arrive on scroll |
+| 04 | background — the route, with education at its stations | paper | done |
+| 05 | connect | paper | done |
 
-§04 is content-complete. Jake specified each row's links verbatim and **no repo
-URLs were among them** — every row carries exactly one link, `live ↗` on 01 and
-02 and `poster (pdf) ↗` on 03. The earlier note asking for GitHub URLs is
-withdrawn: their absence is now the specified state, not a gap. Row 03 has no
-repo and no deployment and is **not** to be padded with a disabled link — that
-asymmetry is honest, and it now applies to all three rows equally.
+Ground sequence, top to bottom: **paper → drafting → ink → paper → paper.**
 
-**§05 skills is the quality bar.** Match its level of composition when building
-§03.
+Because two former sections map onto each of § 02 and § 04, a bare number is no
+longer specific enough inside them. Say **§ 02's project rows** or **§ 02's
+index**, and **§ 04's about copy** or **§ 04's education stations**.
+
+§ 02's project rows are content-complete. Jake specified each row's links
+verbatim and **no repo URLs were among them** — every row carries exactly one
+link, `live ↗` on 01 and 02 and `poster (pdf) ↗` on 03. The earlier note asking
+for GitHub URLs is withdrawn: their absence is now the specified state, not a
+gap. Row 03 has no repo and no deployment and is **not** to be padded with a
+disabled link — that asymmetry is honest, and it now applies to all three rows
+equally.
+
+**§ 02's index is the quality bar.** Match its level of composition everywhere.
 
 ### §03 experience — the arrival
 Each of the five entries animates in as it is scrolled to: translateX 28
@@ -292,7 +313,7 @@ the top.
 - Inverts on its own midpoint like every other nav element. Not rendered below
   900px.
 
-### §07 — pizza rain
+### §05 connect — pizza rain
 70 hand-drawn slices fall across the viewport when the visitor reaches the bottom
 of the page, once per session, then the layer unmounts. A button appears
 afterwards to replay it. It is a joke and it is meant to read as one.
@@ -336,15 +357,15 @@ afterwards to replay it. It is a joke and it is meant to read as one.
   rate-limited either.
 - The trigger wears the site's own affordance vocabulary — hollow square, gap,
   mono label — **because** what it does is off-theme. The joke is better for
-  being announced in the same voice as everything else. It is 7px; § 06's photo
+  being announced in the same voice as everything else. It is 7px; § 04's photo
   reference is 12px, so they match in treatment, not in size.
 - Reduced motion never rains: the button is present from load and scatters ~20
   slices statically for 1.2s. The joke survives, the motion does not.
 
-### §02 about / §07 connect — the character reveal
+### §04 background / §05 connect — the character reveal
 Each character of a paragraph carries its own threshold along that paragraph's
-progress through the viewport, so reading the page is what inks it in. § 02's
-four gutter-annotated paragraphs (each its own window) and § 07's blurb. Nowhere
+progress through the viewport, so reading the page is what inks it in. § 04's
+four gutter-annotated paragraphs (each its own window) and § 05's blurb. Nowhere
 else — never a heading, a mono label, or the hero blurb.
 
 - **Colour, never opacity.** Unread is #C4BDB0 and read is body #2E2A24. Fading
@@ -364,11 +385,18 @@ else — never a heading, a mono label, or the hero blurb.
 - Reduced motion: the spans **render** at the read colour and nothing ever
   subscribes, so the paragraph is fully legible with no JS and no scroll
   linkage. The branch is in the effect, never in render — branching on a
-  client-only value during render is the § 05 hydration trap.
+  client-only value during render is the § 02 hydration trap.
 
-### §04 projects
-A register that hides nothing, vertically composed — §05 holds the site's one
-axis break. A column header that appears once (never repeats, never sticks),
+### §02 work — the project rows
+The upper half of § 02, above the index, and **the recruiter must reach a named,
+linked, shipped project within one scroll of the hero** — which is why the rows
+come first and the index goes underneath them. Never lead this section with
+seventeen circles.
+
+A register that hides nothing, **vertically composed**. The site's one axis
+break lives in the index below, not here; a register that alternated or stepped
+would make two rule-breaks in one section, and two read as a tic. A column
+header that appears once (never repeats, never sticks),
 then one project per 0.5px-ruled row on a 12-column grid: NO. / PROJECT / STACK
 / YEAR. **All three rows are fully open at all times.**
 
@@ -403,8 +431,9 @@ do not add a synthetic figure to a project that lacks a thumbnail.**
   differ and that is correct.
 - **The registration corners are what make a full-color rectangle belong to the
   page.** 0.5px ink, 14px arms, 8px outside the image's corners, never touching
-  it and never closing into a rectangle — the same vocabulary as § 06's plates
-  and § 02's portrait. They are the section's only hover gesture: they translate
+  it and never closing into a rectangle — the same vocabulary as § 04's
+  education plates and its Kyoto portrait. They are the section's only hover
+  gesture: they translate
   5px further out along their diagonals. **The image itself never moves, scales,
   lifts, tints, or gains an overlay** — that is hover-lift and § 8 bans it.
 - Row 03's poster is dense and illegible at thumbnail scale. **That is accepted
@@ -417,15 +446,13 @@ do not add a synthetic figure to a project that lacks a thumbnail.**
 - Row 03 has no live deployment and no repo. **Do not pad it, do not add a
   disabled link, and do not invent a GitHub URL** — that asymmetry is honest.
 
-**The drafting ground and the blueprint ruling described in § 2 were never
-built.** § 04 renders on paper through the ordinary `SectionShell`, and `#EDEBE4`
-appears nowhere in the codebase. § 2's "exactly three grounds" is therefore
-aspirational, not descriptive: **two grounds exist**, paper and § 03's ink.
-Building the third is an open decision, not a bug to be fixed in passing — and
-if it is ever built, note that a cooler ground under three native-color
-thumbnails is a different composition than the one § 2 was written against.
+**The drafting ground carries these rows, and that is a composition change, not
+just a fill.** Three native-color thumbnails on `#EDEBE4` under `#C5CBD1` ruling
+is a different picture than the same three on paper, which is what the register
+was originally composed against. Verify the thumbnails and their registration
+corners in situ; do not assume the paper-ground judgement carried over.
 
-### §07 connect — the composition
+### §05 connect — the composition
 **Three elements in the centre, and the EMAIL is the monument.** It holds the
 position and the weight the display headline used to, which is why the headline
 demotes to a 13px mono label above it. `you've reached the end` is deleted: the
@@ -454,7 +481,7 @@ always up for a conversation …      Bricolage 19/400, #2E2A24, one line ≥120
   page's largest type in the data face is the joke of the section landing
   straight.
 - **The email's size is the smaller of the specified size and what fits.**
-  `clamp(22px, 3.1vw, 42px)` is a viewport measure and § 07's content box is not
+  `clamp(22px, 3.1vw, 42px)` is a viewport measure and § 05's content box is not
   the viewport — below 1280px it also gives up 180px to the nav gutter. At the
   earlier `clamp(28px, 4.2vw, 58px)` the 1200 case asked for 50.4px, which laid
   the address out at 967px inside an 876px column; `nowrap` does not wrap that,
@@ -462,7 +489,7 @@ always up for a conversation …      Bricolage 19/400, #2E2A24, one line ≥120
   `min(clamp(...), 5.1cqi)`: 32 characters at 0.6em advance less
   0.01em tracking is 18.88em, so it fits at container/18.88 (5.30cqi), taken with
   a 4% margin. Where the spec fits it wins unchanged.
-- **§ 07 centres on the full viewport, so above 1280px nothing reserves the nav
+- **§ 05 centres on the full viewport, so above 1280px nothing reserves the nav
   column** — safe while the centre was a 720px text column, not safe with a 58px
   monument in it. Measured, the email's right edge landed 48px inside the nav at
   1280 and 18px at 1440. The centre block insets by the nav's width (a constant
@@ -491,7 +518,7 @@ arrangement needs its own markup. Stacked, the middots are **removed, not
 hidden**, and with them gone the three names fit 390px on one line, which is why
 the row stays `nowrap` all the way down and can never orphan a separator.
 
-Magnetism is confined to § 07's **centre block — the email and its label, and
+Magnetism is confined to § 05's **centre block — the email and its label, and
 nothing else on the page.** Each has its own independent field, and **strength
 is set by weight** — the heavier type moves less, so the block reads as having
 mass rather than as uniformly springy:
@@ -502,7 +529,7 @@ mass rather than as uniformly springy:
 | `LET'S CONNECT` | 4 | 140px |
 
 Position only: no scale, no colour, no rotation. Pointer-fine only, never under
-reduced motion, and § 07 only.
+reduced motion, and § 05 only.
 
 - **The footer is entirely excluded, and the social links were removed from it.**
   They carried divisor 5 / 150px and no longer do. The footer is the page's last
@@ -526,12 +553,12 @@ reduced motion, and § 07 only.
 **The type bands** are two full-bleed rows of outlined display type drifting
 against each other on a **continuous autoplay loop at 28px/s**, band 1 left to
 right and band 2 right to left. Set piece 6, and the site's only autoplaying
-motion. One rAF drives both, gated on § 07's intersection and on
+motion. One rAF drives both, gated on § 05's intersection and on
 `document.hidden`.
 
 - **Full bleed by cancelling the section's own padding**, never the usual
   `left: 50%; width: 100vw; margin-left: -50vw`. That idiom assumes the parent
-  is centred in the viewport and § 07's is not — it carries the 180px nav gutter
+  is centred in the viewport and § 05's is not — it carries the 180px nav gutter
   as padding-right below 1280px, which puts the content box centre 90px left of
   the viewport centre. Measured: the bands started at −90px and left 90px of the
   right edge bare at 1200, 1024 and 900.
@@ -610,7 +637,18 @@ sits **outside** the boundary in the paper to the left, connected by a 0.5px
 muted leader with at most one 90° elbow. No arrowhead, no dot, no knockout where
 the leader crosses the boundary.
 
-### §05 skills — the drifting field
+### §02 work — the index, a drifting field
+The lower half of § 02, beneath the project rows and a full-width hairline,
+labelled `INDEX · 17 TOOLS · 4 DOMAINS`. It is an index of the tools the rows
+above were built with, which is why it sits under them and reads as apparatus
+rather than as a headline.
+
+**This is where the site's one axis break lives.** The rows above are a
+register; the field is the one non-linear composition on the page. That the two
+now share a section makes the break internal to § 02 rather than a relationship
+between two sections — it is the same single break, not a new one, and § 02 does
+not get a second.
+
 A fixed **readout panel** (cols 1–4) and a **field of 17 dials** (cols 5–12,
 620px tall at ≥1440px), one per tool. Radius and mono size encode tier: primary
 r62/15px, secondary r44/12px @0.55, tertiary r32/11px @0.35.
@@ -775,7 +813,7 @@ algorithm or the four-quadrant layout changed, and none of it may.**
 
 - **Co-occurrence linkage.** Each tool carries `contexts: string[]` in
   `app/lib/skills.ts` — `my5`, `capitolcast`, `transit`, `coursework` — derived
-  from its own evidence line and from § 04's stacks, never invented. Two nodes
+  from its own evidence line and from § 02's stacks, never invented. Two nodes
   are linked iff they share one. On select, a 0.5px accent hairline at 0.55
   alpha runs from the addressed node's centre to every node it shipped with,
   drawn in 420ms `draw`, staggered 40ms **nearest-first by euclidean distance**.
@@ -806,13 +844,13 @@ algorithm or the four-quadrant layout changed, and none of it may.**
   their own `<g>`, a **child** of the element the drift loop writes transform to,
   so the two can never collide; that separation is structural and must stay.
 - **The readout takes a fourth line** — `appears in —` and the contexts' display
-  labels, with `my 5` and `capitolcast` linking to their § 04 rows (which is why
+  labels, with `my 5` and `capitolcast` linking to their § 02 rows (which is why
   `.proj-row` carries `id="project-NN"`). The transit API and coursework are not
   links: there is nothing on the page to land on. Lines wipe in at 380ms
   `reveal` staggered 50ms and leave on 180ms of opacity with no wipe — a
   reversed wipe would read as the pen un-drawing, which this vocabulary does not
   have. The card is held through the exit by a `shown`/`active` split, the same
-  pattern § 06's plate uses. **The block reserves 220px**, measured by focusing
+  pattern § 04's plate uses. **The block reserves 220px**, measured by focusing
   all 17 at 1920/1440/1360: the tallest is python's at 216px, the only node with
   three contexts.
 - **Interaction.** Hover selects and a **click PINS** — the selection survives
@@ -823,7 +861,7 @@ algorithm or the four-quadrant layout changed, and none of it may.**
   Every node is a real `<button>` with an accessible name; **arrow keys move
   focus by ANGLE-WEIGHTED distance** (candidates more than ~70° off-axis are not
   candidates), Enter/Space pins, Escape clears and returns focus to the field.
-  Focus draws **four accent registration corners**, the § 04 / § 06 motif — the
+  Focus draws **four accent registration corners**, the § 02 / § 04 motif — the
   browser default is suppressed only because a round outline on a dial read as a
   second ring.
 - **Reduced motion:** links appear at dashoffset 0 with no draw and no stagger,
@@ -832,7 +870,7 @@ algorithm or the four-quadrant layout changed, and none of it may.**
   under reduced motion**: skipping it left every line drawn from 0,0 to 0,0, the
   wiring silently missing for exactly the people the path serves.
 
-### §06 education
+### §04 background — the education stations
 The left side of both rows — crests, school names, degree lines, location lines,
 row heights, hairline rules — is **final**. Do not touch it.
 
@@ -1045,17 +1083,39 @@ touch. **One shared rAF loop** for the whole page exposing normalized scroll
 progress globally and per-section. Components subscribe; nothing runs its own
 loop; everything unsubscribes on unmount.
 
-**Persistent rAF is permitted in exactly three places — § 05's drifting field,
-the global margin trace, and § 07's type bands.** All three are gated on viewport
-intersection and on `document.hidden`, and all three are
-fully cancelled on exit, on `document.hidden`, and under reduced motion. The
-trace is on screen at essentially every scroll position, so its gate is instead
-`document.hidden` plus a 400ms idle after scrolling stops, at which point the
-loop cancels and the dashoffset is written once to its final value.
+**The rAF inventory — exactly three persistent loops, and this is the real
+list.** It previously named, in the seven-section numbering, "§ 05's drifting
+field, the global margin trace, and § 07's type bands" — the first and third of
+which are now § 02's index and § 05 connect's bands.
+**The margin trace does not exist** — it is named as set piece 3 and as
+the owner of § 03's spine, but no code implements it; the spine is static
+coloured grid items with no scroll-driven draw. The truth:
 
-**Everywhere else: zero persistent rAF loops and zero pending timers once the
-page settles.** The rule is absolute. Verify with a 5s Performance recording
-after settle, and a second one with § 05 scrolled out of view.
+| # | loop | file | gate |
+|---|---|---|---|
+| 1 | shared scroll controller (Lenis + every subscriber) | `app/lib/scroll-controller.ts` | starts on first subscriber, stops on last |
+| 2 | § 02's index — the drifting field | `app/components/skills.tsx` | viewport intersection + `document.hidden` |
+| 3 | § 05 connect's type bands | `app/components/type-bands.tsx` | viewport intersection + `document.hidden` |
+
+Loops 2 and 3 are fully cancelled on exit, on `document.hidden`, and under
+reduced motion.
+
+**Loop 1 is a KNOWN VIOLATION and it is tracked, not fixed.** `section-mark`
+registers every section permanently, so the last subscriber never leaves and the
+controller never stops: **~610 callbacks per 5s at rest**, with § 02 and § 05
+both off screen. The fix is to gate each `section-mark` subscription on viewport
+intersection the way loops 2 and 3 already are. **Do not do it during a
+restructure** — it is pre-existing and orthogonal, and fixing it mid-restructure
+makes every performance number un-attributable to the change that produced it.
+It is a post-restructure task.
+
+**Report the real inventory and the real at-rest callback count every pass. Do
+not report "three and clean" — that assertion is retired.** If a pass moves the
+at-rest count in either direction, report the delta.
+
+Everywhere else: zero persistent rAF loops and zero pending timers once the page
+settles. Verify with a 5s Performance recording after settle, and a second one
+with § 02 scrolled out of view.
 
 ---
 
@@ -1072,8 +1132,17 @@ from offscreen or scales up from nothing.
 draw    cubic-bezier(0.22, 1, 0.36, 1)   700–1400ms
 reveal  cubic-bezier(0.33, 1, 0.68, 1)   520ms
 micro   cubic-bezier(0.4, 0, 0.2, 1)     140–180ms
-settle  cubic-bezier(0.12, 0.9, 0.08, 1) 1500ms — the glyph roll only
+settle  cubic-bezier(0.16, 1, 0.3, 1)    520ms — every settling gesture
+roll    cubic-bezier(0.12, 0.9, 0.08, 1) 1500ms — the hero glyph roll ONLY
 ```
+
+**`settle` names one curve site-wide, and it is (0.16, 1, 0.3, 1).** The name
+previously pointed at the glyph roll's (0.12, 0.9, 0.08, 1) while § 02's tick
+rotation used (0.16, 1, 0.3, 1) unnamed — two curves under one name, which is
+how a "use settle" instruction silently produces the wrong gesture. The glyph
+roll's curve is now `roll` and belongs to nothing else. In code the constant was
+already `ROLL_EASE` (`app/lib/roll.ts`), so this renames a spec entry, not an
+identifier.
 
 Animate only `transform`, `opacity`, `stroke-dashoffset`, `clip-path`. Reveals
 travel **max 14px**. Stagger 34ms, capped at 8 items.
@@ -1082,11 +1151,11 @@ travel **max 14px**. Stagger 34ms, capped at 8 items.
 animating numbers, marquee, hover-lift with shadow, scroll-jacking, card flips,
 magnetic buttons.
 
-**Magnetism is confined to § 07's centre block** — the email monument and the
+**Magnetism is confined to § 05's centre block** — the email monument and the
 `LET'S CONNECT` label above it, both text rather than links. Not the footer, not
 the social links, nowhere else on the site.
 
-**Marquee is banned as decorative background.** § 07 connect's counter-scrolling
+**Marquee is banned as decorative background.** § 05 connect's counter-scrolling
 type bands are exempt: **they run a continuous autoplay loop.** This is a
 deliberate exception to the marquee ban — the bands are set in outlined display
 type as hairline drawing and carry real content. **No other autoplaying motion
@@ -1108,11 +1177,19 @@ same-character roll described above, and only on the hero display type.
 The cap was 3, then 5. It is now **6**, and this is the roster — there is no
 seventh without removing one of these first.
 
-**§ 04's generated figures were set piece 2 and they are gone**, deleted with the
-accordion when the register took real thumbnails. The roster is now **five of
-six**, and the free slot is not an invitation: it exists because a piece was
-removed, and a seventh idea still has to argue for itself against the cap. Do
-not restore the figures to fill it (§ 9).
+**§ 02's generated figures were set piece 2 and they are gone**, deleted with the
+accordion when the register took real thumbnails. Do not restore them to fill a
+slot (§ 9).
+
+**Set piece 3, the margin trace, was never built either** — see § 6's rAF
+inventory. It is kept on the roster as a specified-but-unbuilt piece rather than
+quietly deleted, because § 03's spine is described as a widening of it and that
+description has to keep something to refer to. **The drafting ground's ruling
+(§ 2, § 5 / §02) is the newest piece and it IS built.**
+
+Counting only what exists: **five of six occupied.** The free slot is not an
+invitation — it exists because a piece was removed, and a seventh idea still has
+to argue for itself against the cap.
 
 1. **Hero / loader** — the DC map draws itself on a paper field, then travels to
    its hero position as the page arrives. One continuous event; the loader *is*
@@ -1120,13 +1197,16 @@ not restore the figures to fill it (§ 9).
 2. **Experience spine** — the segmented 6px bar, which is now a widening of the
    margin trace rather than its own line (see below).
 3. **The margin trace** — one continuous 0.5px path down the left gutter of the
-   whole page, advanced by scroll. § 6.
+   whole page, advanced by scroll. § 6. **Specified, never built.**
 4. **The connect replay** — the visitor's own ink strokes, replayed into the
-   final section. § 5 / § 06 connect.
+   final section. § 5 / § 05 connect.
 5. **The connect type bands** — two full-bleed rows of outlined display type
-   counter-scrolling against each other, driven by scroll position only.
+   counter-scrolling against each other, on a continuous autoplay loop.
+6. **The drafting ruling** — § 02's ground rules itself in as the section is
+   reached: one `<rect>` filled with an SVG `<pattern>`, uncovered by a
+   `clip-path` wipe. § 5 / §02.
 
-The §05 field is deliberately NOT a set piece: it has no entrance, draws
+The §02 field is deliberately NOT a set piece: it has no entrance, draws
 nothing, and asserts nothing by arriving. It is a standing state, not an event,
 which is why it does not count against the cap.
 
@@ -1180,7 +1260,7 @@ Never produce these, even if asked indirectly:
 - Glassmorphism, backdrop-blur, frosted panels
 - Glow, neon, bloom, colored shadows
 - Floating particles, blobs, aurora, star fields — banned as **decorative
-  background**. § 05's field is exempt: every element is a labeled data object
+  background**. § 02's field is exempt: every element is a labeled data object
   carrying content, nothing is ambient, and there is no background layer. The
   test is whether removing an element loses information. If it does not, it is a
   particle and it is banned.
@@ -1190,7 +1270,7 @@ Never produce these, even if asked indirectly:
 - Animated stat counters
 - Emoji, 3D icons, icon fonts, logo packs. Links are text.
 
-**One exception exists: the § 07 pizza rain easter egg** renders a full-colour
+**One exception exists: the § 05 pizza rain easter egg** renders a full-colour
 pizza slice — `public/pizza.png`, a supplied illustration. It is a deliberate
 joke, it is user-triggered after its first run, and its colours are quarantined
 to that one element. No other illustration or off-palette colour exists anywhere
@@ -1205,9 +1285,9 @@ introduce an image on this precedent.
 This replaced a hand-authored inline SVG slice. The SVG is not coming back; if
 the asset ever needs changing, change the file.
 
-**§ 04's three project thumbnails are the other exception**, and they are a
+**§ 02's three project thumbnails are the other exception**, and they are a
 different kind: not an illustration but photographic evidence of the work, shown
-at native color inside registration corners (§ 5 / §04, § 12). Between them,
+at native color inside registration corners (§ 5 / §02, § 12). Between them,
 § 03's brand logos and the pizza, every pixel of off-palette color on this site
 is accounted for by an explicit, contained exception. There is no general
 licence, and a fourth needs its own argument.
@@ -1230,8 +1310,11 @@ licence, and a fourth needs its own argument.
   dot. Do not add a ring, halo, outline, label, blend mode, or magnetic snap.
 - **Skills took the site's one axis break** when it was a stepped spine. It is
   now the drifting field, which breaks the grid in a different way but is still
-  the site's one non-linear composition. §04 projects therefore stays
-  vertically composed. One rule-break reads as intentional; two read as a tic.
+  the site's one non-linear composition. Since the merge it lives inside § 02
+  work as the index, so the rule that used to hold between two sections now
+  holds *within* one: **§ 02's project rows stay vertically composed** and the
+  break belongs to the index below them. One rule-break reads as intentional;
+  two read as a tic.
 - **The stepped-spine skills section was deleted and rebuilt as the field.**
   The spine, the four stations, the ticks and the min-height logic are gone. Do
   not reintroduce them or adapt the field back toward them.
@@ -1293,8 +1376,8 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
   and the delta on every build, with remaining headroom stated.
   **THIS CEILING IS CURRENTLY VIOLATED AND HAS BEEN FOR SOME TIME.** Measured
   over the nine JS chunks `/` actually requests from a production `next start`:
-  **228.1KB gzipped, 78KB over.** It is not § 04's doing — the same measurement
-  against the commit before the § 04 rebuild is **230.0KB**, so that pass took
+  **228.1KB gzipped, 78KB over.** It is not the project register's doing — the
+  same measurement against the commit before that rebuild is **230.0KB**, so it took
   1.9KB *off*. Nothing has been reporting this figure, which is how it drifted
   this far; the number above is the first one on record. Framework and runtime
   dominate it, so closing the gap is a dependency-level question (Lenis,
@@ -1309,39 +1392,43 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
   Either the earlier pass counted a chunk this method does not see or it
   measured a different set; the method above is the one now on record, and the
   two numbers must not be mixed. Same method, same session: 189.6 at `f2a6905`,
-  **189.8** after the § 04 image pass, **190.9** after the § 05 linkage pass —
+  **189.8** after the project-thumbnail image pass, **190.9** after the index's
+  co-occurrence linkage pass —
   **+1.3KB across the whole session**. The ceiling is still breached by ~40KB on
   this method, framework and runtime still dominate, and it is still not
   something a section pass can fix.
 - LCP < 1.8s on 4G, CLS < 0.05, Lighthouse ≥ 95 all four
 - 60fps under 6× CPU throttle through a full page scroll
-- Zero persistent rAF loops and zero pending timers once the page settles —
-  except the two sanctioned loops, § 05's field and the margin trace, each
-  gated and fully cancelled as described in § 6 Scroll
-- **THIS RULE IS CURRENTLY VIOLATED, and the violation predates the connect
-  motion pass.** Measured at rest with § 05 and § 07 both off screen: **606 rAF
-  callbacks in 5 seconds**, byte-identical before and after the magnet, the
+- **Three persistent rAF loops, enumerated in § 6 Scroll** — the shared scroll
+  controller, § 02's index field, § 05's type bands. Zero pending timers once
+  the page settles. **Report the real inventory and the real at-rest callback
+  count every pass; "three and clean" is a retired assertion.**
+- **THE AT-REST COUNT IS A KNOWN VIOLATION and it is tracked, not fixed.**
+  Measured at rest with § 02 and § 05 both off screen: **606 rAF callbacks in 5
+  seconds** (re-measured **617** a session later; treat ~610 as the figure and
+  the delta as the signal). Byte-identical before and after the magnet, the
   character reveal and the type bands were added — those three add subscribers
   to the shared loop and no loop of their own. The cause is structural: the
   shared scroll controller starts its loop on the first subscriber and stops
   only when the last one leaves, and `section-mark` registers **every** section
   permanently, so the loop is alive from mount to unload. The fix is to gate
-  each section-mark subscription on viewport intersection the way § 05 and the
-  bands already are; it was not done here because section-mark is shared by
-  every section on the page and this pass was scoped to § 02 and § 07. Do not
-  claim this budget line is met until that gate exists.
+  each section-mark subscription on viewport intersection the way the field and
+  the bands already are. **It is a post-restructure task and must not be done
+  during the restructure** — it is orthogonal, and fixing it mid-restructure
+  makes every performance number un-attributable. Do not claim this budget line
+  is met until that gate exists.
 - anime.js imported modularly, never the whole bundle
 - Raster images now number **seven** — the about-section portrait, one photo per
-  education row, `pizza.png` for § 07's easter egg, and **three project
-  thumbnails** in § 04. Everything else is SVG or type. `pizza.png` is 31KB, is
+  education row, `pizza.png` for § 05's easter egg, and **three project
+  thumbnails** in § 02. Everything else is SVG or type. `pizza.png` is 31KB, is
   requested once and on demand by the rain, and is not part of any section's
   load.
   **The project thumbnails display at their native colors** — two dark UI
-  screenshots and one research poster. Their color is quarantined to § 04's
+  screenshots and one research poster. Their color is quarantined to § 02's
   thumbnail frames and appears nowhere else. This is a third quarantine
-  alongside § 03's brand logos and § 07's pizza, and like both of those it is a
+  alongside § 03's brand logos and § 05's pizza, and like both of those it is a
   containment rule, not a licence: no other section may introduce color on this
-  precedent, and nothing outside a thumbnail frame in § 04 may carry it.
+  precedent, and nothing outside a thumbnail frame in § 02 may carry it.
   **The count is about section content.** `app/icon.png` and the OG/Twitter
   cards are page metadata, not composition: no section renders them, they cost
   no route JS, and the card is generated per deploy rather than authored. They
