@@ -1118,26 +1118,41 @@ re-derive this — it has been measured twice.
   name's own ascent. Measured: that grew the ≥1600px rows from 260px to 265px.
   At `height: 0` the row heights are byte-identical with and without the print.
 - **the plate** — the full photograph. There is exactly **one** for the whole
-  section, rendered by Education inside `.edu-grid` rather than inside either
-  trigger, which is what makes "both rows stage it to the same coordinates"
-  structural rather than two numbers kept in agreement. `position: absolute`
-  against the grid — never fixed, never computed from scroll — with `top: 50%`
-  (the equal-height grid puts the divider there) and `right: 0` (the content
-  edge). Absolutely positioned children are out of flow, so it never becomes a
-  grid item, reserves no space, contributes **0** to CLS, and cannot move a row
-  height. Four crop marks, 0.5px ink, 14px arms, vertices 8px diagonally outside
-  the corners, arms running back along the edges — never touching the photo,
-  never closing into a rectangle. Real crop marks stay small whatever the sheet
-  size, so they do **not** scale with the plate. Caption on one line beneath the
-  bottom-left mark. No frame, no fill, no border box, no radius, no shadow, no
-  filter, no grayscale.
-- **Only the divider between the two rows retracts**, from its RIGHT end
-  (`transform-origin: left`), stopping ≥48px clear of the plate's left crop
-  mark. The rules above the Georgetown row never change length in any state.
-  The scale is derived from the plate's measured width — reading `--plate-w`
-  via `getPropertyValue` returns the unresolved `min(72vw, 300px)` token below
-  1360px and `parseFloat` makes it NaN, which left the retraction silently
-  holding its previous value.
+  section, rendered by the section rather than inside either trigger, which is
+  what makes "both stations stage it to the same coordinates" structural rather
+  than two numbers kept in agreement. `position: absolute` — never fixed, never
+  computed from scroll — against **a wrapper that contains exactly the two
+  stations carrying a school, and nothing else.** Absolutely positioned children
+  are out of flow, so it never becomes a grid item, reserves no space,
+  contributes **0** to CLS, and cannot move a row height. Four crop marks, 0.5px
+  ink, 14px arms, vertices 8px diagonally outside the corners, arms running back
+  along the edges — never touching the photo, never closing into a rectangle.
+  Real crop marks stay small whatever the sheet size, so they do **not** scale
+  with the plate. Caption on one line beneath the bottom-left mark. No frame, no
+  fill, no border box, no radius, no shadow, no filter, no grayscale.
+
+  **The wrapper is what keeps the plate off the Kyoto portrait, and that is
+  structural, not a number.** § 04 carries two photo mechanisms — the portrait,
+  which is always visible and lives in station 01's aside, and this plate, which
+  is staged. The portrait is outside the wrapper, so no value of `top` can put
+  the plate over it. Do not anchor the plate to the section, to the route, or to
+  a station: to the section or the route and it can reach the portrait; to a
+  station and the two stations stage to different coordinates, which is the one
+  property this design exists to guarantee.
+
+- **`top: 50%` was derived from a grid that no longer exists, and the divider
+  retraction went with it.** Both came from `.edu-grid`'s
+  `grid-template-rows: repeat(N, 1fr)`, which forced the two education rows to
+  equal height (measured 259/259 at 1920, 316/316 at 1440) and so put the
+  divider between them at exactly 50%. A four-station route has no such grid, no
+  equal heights, and **no divider between two rows to retract**. Deleted with
+  it: `setDividerScale()`, the `--edu-divider-scale` custom property, and the
+  `html.edu-staged .edu-row + .edu-row::before` rule. `setDividerScale()` would
+  not have failed loudly — it early-returns on `rows.length < 2` and would
+  simply have stopped setting the property, which is the same silent failure its
+  own comment records having been fixed once already. If the plate should ever
+  move with the addressed station, that is a new proposal against "both stations
+  stage to the same coordinates", not a behaviour to restore.
 - A pointer press focuses the trigger **before** it clicks it, so focus must not
   open the plate when the focus came from a pointer — otherwise one tap toggles
   twice and nothing appears.
@@ -1153,13 +1168,18 @@ re-derive this — it has been measured twice.
   closed, open on the next frame, and hold the photo for the full exit before
   dropping it. Switching rows waits out the exit before mounting the incoming
   photo, so two are never visible at once.
-- **At ≥1360px the plate is anchored to the content's right edge and sized so
-  its left edge never reaches the body column** — measured clearance 41px
-  (1360) to 308px (1920). It covers the coursework, never type being read, and
-  *that* is what makes hover-to-open safe there. Below 1360px the coursework is
-  already a full-width row under the body, leaving no clear space at any width,
-  so the plate centres as a lightbox and opens on **click**, not hover. Tie the
-  breakpoint to that layout change, not to a number.
+- **At ≥1440px the plate is anchored to the content's right edge and sized so
+  its left edge never reaches the body column.** It covers the coursework, never
+  type being read, and *that* is what makes hover-to-open safe there. Below
+  1440px the coursework is already a full-width row under the body, leaving no
+  clear space at any width, so the plate stays right-anchored as a lightbox and
+  opens on **click**, not hover. **Tie the breakpoint to that layout change, not
+  to a number** — and re-derive the number whenever the row's tracks change.
+  **It was 1360px and the merge moved it**, because the station's 140px meta
+  column and the route's 16px spine indent both come out of the row's width: the
+  beside-coursework track first clears the smallest plate's footprint (220px
+  plate + 8px crop-mark offset + 24px clear) at **1436px**, and 1440 is the
+  first breakpoint already in the file above it.
 - The print is the **only** pointer target. The plate is `pointer-events: none`,
   so it can never steal or trap a hover. Hovering the row or the coursework
   still does only what it already did.

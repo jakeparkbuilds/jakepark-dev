@@ -448,8 +448,10 @@
                          Absolutely positioned inside a zero-height anchor, so
                          it adds NOTHING to the line box: the row's height is
                          identical with and without it. Verified, not assumed.
-       .edu-plate        the plate — position: fixed, up to 500×667. Reserves no
-                         space, contributes 0 to CLS, cannot move the row.
+       .edu-plate        the plate — position: ABSOLUTE, up to 500×667. Never
+                         fixed: this line said `fixed` for as long as the rule
+                         said `absolute`. Reserves no space, contributes 0 to
+                         CLS, cannot move the row.
 
      No frame, no border box, no radius, no shadow, no filter. The plate sits
      directly on paper and the four crop marks are the only structure. */
