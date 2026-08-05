@@ -53,8 +53,8 @@ ink      #1A1815   primary type, strong hairlines
 muted    #9B9382   decorative hairlines, frames, quiet rules
 accent   #22384F   ink blue — section marks, link underlines, § 02 linkage
 body     #2E2A24   softened ink for body copy (same hue, not a 5th color)
-mark     #C8952E   warm ochre — the Georgetown star (hero map + its ghost on
-                   connect) AND § 02's active node ring + ticks. One at a time.
+mark     #C8952E   warm ochre — the Georgetown star on the hero map, AND
+                   § 02's active node ring + ticks. One node at a time.
 ruling   #C5CBD1   cool gray — the drafting ground's ruling. QUARANTINED.
 ```
 
@@ -80,10 +80,12 @@ Rules:
   a wiring diagram drawn on demand, never a standing web (§ 5 / §02). Reaching
   for accent a third time in one section means the composition is wrong, not
   that it needs more accent.
-- `mark` #C8952E is the **filled Georgetown star** — the hero map and the connect
-  section's ghost map, the same star at the same coordinates on the same
-  geometry, a bookend closing what the hero opened — **and § 02's active node's
-  ring stroke and tick marks.** Never more than one node at a time, and it
+- `mark` #C8952E is the **filled Georgetown star** on the hero map — **and
+  § 02's active node's ring stroke and tick marks.** Two uses, not three: the
+  "ghost map on connect" this rule used to name as the star's bookend **does not
+  exist and never did**. § 05 connect renders a label, an email, a blurb, the
+  type bands and a footer, and no map. Do not write the bookend argument back in
+  without building the ghost map first. Never more than one node at a time, and it
   reverts to muted on deselect. § 02's index has no chromatic event of its own
   otherwise, and one node at ~0.2% of the viewport reads as an instrument
   needle: the same semantic as the star, *this is the thing you are pointing
@@ -127,7 +129,8 @@ drafting  #EDEBE4   § 02 work ONLY — cooler and one step darker than paper,
 ```
 
   § 03 is the only inverted section and no other may become one. § 02 is the
-  only ruled one. Both are full-bleed horizontally, breaking the plate frame.
+  only ruled one. Both are full-bleed horizontally, running edge to edge past
+  every other section's `section-pad` measure.
   A third register is the point — three sections, three grounds, no repetition
   — so do not give a fourth section a ground of its own to match them.
 
@@ -188,8 +191,12 @@ Rules:
   other exceptions, and in particular no rounded rectangles anywhere.
 - **No box-shadows anywhere.** Cards are defined by rules and space. Nothing on
   this site is enclosed by its own complete border.
-- Grain: SVG fractalNoise, `opacity: 0.05`, `mix-blend-mode: multiply`,
-  `pointer-events: none`. One instance, fixed to the page, not per-section.
+- **There is no grain layer.** This file described one — SVG fractalNoise at
+  `opacity: 0.05`, `mix-blend-mode: multiply`, one instance fixed to the page —
+  as though it existed. It does not: `app/layout.tsx` says so in a comment, and
+  nothing renders a noise texture anywhere. The description is struck. Adding
+  grain is a new proposal and has to argue for itself, including against the
+  drafting ground's 32px lattice, which a fine noise field can moiré against.
 - Nav gutter: ~180px reserved on the right of every section. Collapses to 0
   below 900px. The connect section overrides this and centers on the full
   viewport.
@@ -266,8 +273,25 @@ first sight. Do not restore the once-only behaviour.
   once-only rule. It existed because an entry scrolled past could otherwise
   strand at opacity 0 forever; now anything off screen is simply armed, and
   arrives whenever it is next scrolled to. Nothing can strand.
-- **The spine is not part of this.** Its segments belong to the margin trace and
-  keep their own scroll-driven draw; nothing here touches `[data-role]`.
+- **The spine is not part of this.** It does not animate at all — see below.
+  Nothing in the arrival touches `[data-role]`.
+
+**The spine, on its own terms.** A 6px bar (4px below 900px) running the full
+height of the entry list, segmented one segment per employer, each segment
+carrying that role's colour from the § 2 role palette. It is the one place on
+the site a rule carries colour and the one rule that is not a hairline.
+
+It is **static**. Each segment is a `<span data-role>` that is a grid item in
+the same grid row as its entry, so a segment's height *is* its entry's height —
+matched by construction, with no measurement, no scroll subscription and no
+draw. The 40px between entries is padding INSIDE each row rather than a row gap,
+because a gap would show as a break and the spine must be continuous.
+
+This previously read "its segments belong to the margin trace and keep their own
+scroll-driven draw." There is no margin trace and there is no draw; the sentence
+described a built thing in terms of an unbuilt one, which is exactly how the rAF
+fiction survived four rounds of review. If the spine should animate, that is a
+new proposal to argue for, not a behaviour to restore.
 
 ### The nav — inversion, per element
 The nav is fixed and passes over § 03's ink plate, where its ink labels collapse
@@ -1013,7 +1037,7 @@ Dragging draws a 0.5px ink stroke that fades over ~3.2s. Click drops a 2px ink
 dot that fades over 1.4s.
 
 - The canvas is portalled to `document.body` and must **not** descend from the
-  Lenis wrapper, the grain layer, or anything with transform / filter /
+  Lenis wrapper or anything with transform / filter /
   will-change / contain. Any of those break `position: fixed` and the ink draws
   offset from the pointer.
 - Draw from `clientX` / `clientY` only. Never pageX/pageY, never add scrollY,
@@ -1084,12 +1108,9 @@ progress globally and per-section. Components subscribe; nothing runs its own
 loop; everything unsubscribes on unmount.
 
 **The rAF inventory — exactly three persistent loops, and this is the real
-list.** It previously named, in the seven-section numbering, "§ 05's drifting
-field, the global margin trace, and § 07's type bands" — the first and third of
-which are now § 02's index and § 05 connect's bands.
-**The margin trace does not exist** — it is named as set piece 3 and as
-the owner of § 03's spine, but no code implements it; the spine is static
-coloured grid items with no scroll-driven draw. The truth:
+list.** It previously named "the global margin trace" as one of the three. No
+code ever implemented a margin trace; it has been struck from § 7's roster and
+from § 03's spine, which is static. The truth:
 
 | # | loop | file | gate |
 |---|---|---|---|
@@ -1174,37 +1195,27 @@ Only deliberate ink residue may lag.
 same-character roll described above, and only on the hero display type.
 
 ### Set pieces — max 6
-The cap was 3, then 5. It is now **6**, and this is the roster — there is no
-seventh without removing one of these first.
-
-**§ 02's generated figures were set piece 2 and they are gone**, deleted with the
-accordion when the register took real thumbnails. Do not restore them to fill a
-slot (§ 9).
-
-**Set piece 3, the margin trace, was never built either** — see § 6's rAF
-inventory. It is kept on the roster as a specified-but-unbuilt piece rather than
-quietly deleted, because § 03's spine is described as a widening of it and that
-description has to keep something to refer to. **The drafting ground's ruling
-(§ 2, § 5 / §02) is the newest piece and it IS built.**
-
-Counting only what exists: **five of six occupied.** The free slot is not an
-invitation — it exists because a piece was removed, and a seventh idea still has
-to argue for itself against the cap.
+The cap was 3, then 5. It is now **6**. **Every entry on this roster is built.**
+Nothing is listed here as an intention, and nothing may be — a roster that mixes
+what exists with what was once wanted is read as descriptive and is how the rAF
+fiction survived four rounds of review.
 
 1. **Hero / loader** — the DC map draws itself on a paper field, then travels to
    its hero position as the page arrives. One continuous event; the loader *is*
-   this set piece, not a fourth.
-2. **Experience spine** — the segmented 6px bar, which is now a widening of the
-   margin trace rather than its own line (see below).
-3. **The margin trace** — one continuous 0.5px path down the left gutter of the
-   whole page, advanced by scroll. § 6. **Specified, never built.**
-4. **The connect replay** — the visitor's own ink strokes, replayed into the
-   final section. § 5 / § 05 connect.
-5. **The connect type bands** — two full-bleed rows of outlined display type
+   this set piece, not a second.
+2. **Experience spine** — a 6px bar (4px below 900px) segmented one segment per
+   employer, each carrying that role's colour. Static, sized by the grid.
+   § 5 / §03.
+3. **The connect type bands** — two full-bleed rows of outlined display type
    counter-scrolling against each other, on a continuous autoplay loop.
-6. **The drafting ruling** — § 02's ground rules itself in as the section is
+4. **The drafting ruling** — § 02's ground rules itself in as the section is
    reached: one `<rect>` filled with an SVG `<pattern>`, uncovered by a
    `clip-path` wipe. § 5 / §02.
+
+**Four of six occupied.** The two free slots are not an invitation: they are
+what is left after § 02's generated figures were deleted (§ 9) and after two
+entries that had never been built were struck. A seventh idea still argues for
+itself against the cap, and a new piece has to ship to take a slot.
 
 The §02 field is deliberately NOT a set piece: it has no entrance, draws
 nothing, and asserts nothing by arriving. It is a standing state, not an event,
@@ -1353,7 +1364,13 @@ personally, and borrowing from it already caused one revert.
 - Hero: `min-height: 100svh` (svh, not vh)
 - Below 900px: nav hides, nav gutter goes to 0, cursor and ink systems do not
   mount, reserved drawing zones move **below** text rather than beside it
-- Below 640px: plate frame inset drops to 16px, mono labels to 11px / 0.16em
+- Below 640px: mono labels drop to 11px / 0.16em
+
+**There is no plate frame.** This file described one, and § 10 gave it a 16px
+inset below 640px. `tailwind.config.ts` still carries the unused
+`frame-desktop: 40px` / `frame-mobile: 16px` spacing tokens it would have used;
+nothing references them. Section measure comes from `section-pad`
+(`clamp(24px, 6vw, 96px)`) and nothing else. Struck.
 
 Mobile is not an afterthought — assume half of recruiter traffic is a phone.
 

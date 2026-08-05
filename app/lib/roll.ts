@@ -20,7 +20,8 @@
 // into place. The curve front-loads almost all the distance into the first ~25%
 // of the time and spends the remaining 75% on the last sliver. The extreme
 // asymmetry IS the effect — a "smoother" curve reads as a flip. See CLAUDE.md
-// § 7 (`settle`).
+// § 7 (`roll`) — this curve is the hero glyph roll's alone. `settle` is a
+// different curve, (0.16, 1, 0.3, 1), and the two were once one name.
 export const ROLL_MS = 1500;
 export const ROLL_EASE = "cubic-bezier(0.12, 0.9, 0.08, 1)";
 
