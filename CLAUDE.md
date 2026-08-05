@@ -411,6 +411,65 @@ else — never a heading, a mono label, or the hero blurb.
   linkage. The branch is in the effect, never in render — branching on a
   client-only value during render is the § 02 hydration trap.
 
+### §02 work — the drafting ground
+The site's third register, and the ground the whole of § 02 sits on.
+`app/components/drafting-ground.tsx` + `.dg-*` in globals.css. Two parts, and
+only one of them animates.
+
+**The ground** — a flat `drafting` #EDEBE4 fill, full-bleed to the section's own
+box and **hard-edged**. No fade, no feather, no transition band against the
+grounds above and below. It is `position: absolute; inset: 0` on a
+`position: relative` section, which *is* the full bleed — never
+`left: 50%; width: 100vw`, which would have to reason about the scrollbar.
+
+**The ruling** — a 32px lattice in `ruling` #C5CBD1, minor at 0.45 and every
+fifth line (160px) at 0.85, **inset to the section CONTENT box, not full-bleed**,
+with four 0.5px muted registration corners (14px arms) at that box's corners.
+The ground bleeds and the ruling does not: that difference is what makes the
+ruling read as drawn on a sheet rather than as wallpaper.
+
+- **One `<rect>` filled with a `<pattern>`, not ~185 drawn lines.** The spec
+  word was "self-drawing" and the literal reading is a `stroke-dashoffset` draw
+  per rule — roughly 185 animated elements at 1920 × 4000. This is a deliberate,
+  recorded deviation: the lattice is a pattern painted onto a single rect and
+  the drawing is a `clip-path` wipe over that rect. One property, one element,
+  900ms `draw`. **The visual spec is unchanged.**
+- **The pattern is built from `<rect>`s, never `<line>`s.** A 1px stroke is
+  centred on its coordinate, straddles two device pixels, and renders as two
+  half-covered columns — grey, soft, and inconsistent across the tile boundary.
+  A 1px-wide filled rect at an integer x covers exactly one device pixel. This
+  is the whole reason the lattice is crisp; measured, every rule is a single
+  solid device-pixel column at dpr 1, 1.5, 2 and 3.
+- **The tile is 160 × 160 — five 32px cells — so the major rule is the tile's
+  own leading edge.** The "every fifth line is heavier" rhythm is structural and
+  cannot drift out of phase, because it is the same grid, not a second one.
+- **The origin is the content box's top-left, ROUNDED.** `--dg-inset` is
+  `round(clamp(24px, 6vw, 96px), 1px)` with the bare clamp as the fallback:
+  `section-pad` resolves to 86.4px at 1440, and a fractional origin puts every
+  rule on a half pixel. Measured integral at 1920/1440/1024/900/768/390.
+- **The ruling scrolls with its section.** Never fixed, never parallaxed —
+  measured, the plate's offset from the section's top is 0.00px at every scroll
+  position.
+- **THE OBSERVER WATCHES THE GROUND, NEVER THE PLATE.** `clip-path` is part of
+  what an IntersectionObserver measures, so an armed plate — clipped to zero
+  height — reports `intersectionRatio: 0, isIntersecting: false` at every scroll
+  position forever, and the arming suppresses the callback that would undo it.
+  Measured before the fix: rect top 164px in a 900px viewport, 1232px tall,
+  ratio 0.000, ruling permanently invisible. The ground is the same box and is
+  never clipped. **Any future clip-path reveal on this site has this hazard.**
+- The hidden start state is armed from the client, never the CSS default — the
+  same contract § 02's rows and thumbnails follow. No JS, failed JS or reduced
+  motion renders the ruling at full extent. No rAF, no timer; the observer
+  disconnects on its own first crossing.
+- **Non-integer device pixel ratios and non-100% browser zoom resample the
+  ruling and nothing can prevent it.** Measured: dpr 1 / 1.5 / 2 / 3 and zoom
+  100% are single-luminance solid rules; dpr 1.25 and zoom 80/90/110/125/150%
+  spread a rule across two device pixels at mixed luminance. This is what any
+  1px line does at a fractional scale. **What matters is that it does not
+  CHANGE while scrolling** — measured across 12 sub-pixel scroll positions at
+  dpr 1 and dpr 2: identical rule count, identical widths, one luminance set.
+  No crawl, no shimmer, no weight alternation.
+
 ### §02 work — the project rows
 The upper half of § 02, above the index, and **the recruiter must reach a named,
 linked, shipped project within one scroll of the hero** — which is why the rows

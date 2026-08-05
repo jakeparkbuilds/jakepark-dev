@@ -25,6 +25,12 @@ const config: Config = {
       // The hero's star predates this token and still carries the raw hex; the
       // two values must stay identical.
       mark: "#C8952E",
+      // § 02 work's ground, and the ruling drawn on it. QUARANTINED: `ruling`
+      // is the drafting ground's lattice and nothing else — never type, never a
+      // hairline, never a border, never an interactive element, never outside
+      // the drafting ground (CLAUDE.md § 2).
+      drafting: "#EDEBE4",
+      ruling: "#C5CBD1",
       // Darkest marks on the page: the cursor dot and the active nav label.
       "near-black": "#0A0908",
       // The map coordinate readout only — deliberately its own value, not

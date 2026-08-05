@@ -2768,3 +2768,133 @@
     }
   }
 }
+
+/* ── the drafting ground — § 02 work's ground ────────────────────────────────
+   See app/components/drafting-ground.tsx for why the lattice is one <rect>
+   filled with a <pattern> and not ~185 drawn lines, and why the pattern is
+   built from <rect>s rather than <line>s. */
+@layer components {
+  /* A section that carries the ground: the ground is an absolutely positioned
+     child, so the section needs to be its containing block and its own content
+     needs to sit above it. */
+  .has-drafting {
+    position: relative;
+    isolation: isolate;
+  }
+  .has-drafting > *:not(.dg) {
+    position: relative;
+    z-index: 1;
+  }
+
+  .dg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    /* Full-bleed and HARD-EDGED. The section is already viewport-width, so
+       inset: 0 is the full bleed — no `left: 50%; width: 100vw` trick, which
+       would also have to reason about the scrollbar. No fade, no feather, no
+       transition band: the ground either is or is not. */
+    background: theme("colors.drafting");
+    pointer-events: none;
+    overflow: hidden;
+    /* The ruling colour, switchable so the two candidates can be compared in
+       situ. #C5CBD1 is the specified value and is quarantined to this file's
+       .dg-minor / .dg-major and nothing else (CLAUDE.md § 2). */
+    --dg-ruling: theme("colors.ruling");
+    /* section-pad's own value. Rounded to a whole pixel: at 1440 the clamp
+       resolves to 86.4px, and a fractional origin puts every rule on a half
+       pixel — the lattice then resamples against its own mask on every scroll
+       frame. The unrounded clamp is the fallback for engines without round(). */
+    --dg-inset: clamp(24px, 6vw, 96px);
+    --dg-inset: round(clamp(24px, 6vw, 96px), 1px);
+  }
+
+  .dg[data-variant="warm"] {
+    --dg-ruling: theme("colors.muted");
+  }
+
+  /* The plate — the section CONTENT box, which is what the ruling and the
+     registration corners are anchored to. Deliberately NOT full-bleed: the
+     ground bleeds, the ruling does not, and the difference is what makes the
+     ruling read as drawn on a sheet rather than as wallpaper. */
+  .dg-plate {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--dg-inset);
+    right: calc(var(--dg-inset) + var(--nav-gutter));
+  }
+
+  .dg-rules {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .dg-minor {
+    fill: var(--dg-ruling);
+    fill-opacity: 0.45;
+  }
+
+  .dg-major {
+    fill: var(--dg-ruling);
+    fill-opacity: 0.85;
+  }
+
+  .dg-reg {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-color: theme("colors.muted");
+    border-style: solid;
+    border-width: 0;
+  }
+  .dg-reg[data-c="tl"] {
+    top: 0;
+    left: 0;
+    border-top-width: 0.5px;
+    border-left-width: 0.5px;
+  }
+  .dg-reg[data-c="tr"] {
+    top: 0;
+    right: 0;
+    border-top-width: 0.5px;
+    border-right-width: 0.5px;
+  }
+  .dg-reg[data-c="bl"] {
+    bottom: 0;
+    left: 0;
+    border-bottom-width: 0.5px;
+    border-left-width: 0.5px;
+  }
+  .dg-reg[data-c="br"] {
+    bottom: 0;
+    right: 0;
+    border-bottom-width: 0.5px;
+    border-right-width: 0.5px;
+  }
+
+  /* The wipe. Armed by the component, never the CSS default — with no JS, a
+     failed effect or reduced motion the ruling is simply there. One property,
+     one element: the plate carries the clip and everything inside it (ruling
+     and all four corners) is uncovered by the same pass. */
+  .dg-plate[data-armed] {
+    clip-path: inset(0 0 100% 0);
+  }
+  .dg-plate[data-armed][data-drawn] {
+    clip-path: inset(0 0 0 0);
+    transition: clip-path 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Belt and braces — the component never arms under reduced motion, so this
+       can only ever be a no-op. It exists because "the ruling is invisible for
+       exactly the people the reduced-motion path serves" is the failure this
+       site has already shipped once, in the index's linkage. */
+    .dg-plate[data-armed],
+    .dg-plate[data-armed][data-drawn] {
+      clip-path: none;
+      transition: none;
+    }
+  }
+}
