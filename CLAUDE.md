@@ -150,7 +150,6 @@ drafting  #EDEBE4   § 02 work ONLY — cooler and one step darker than paper,
 | token | family | size | weight | line-height | tracking |
 |---|---|---|---|---|---|
 | display | Bricolage | 138px | 400 | 0.90 | -0.03em |
-| h1 | Bricolage | 64px | 500 | 1.05 | -0.02em |
 | h2 | Bricolage | 40px | 500 | 1.10 | -0.015em |
 | body | Bricolage | 21px (hero) / 19px | 400 | 1.55 / 1.58 | 0 |
 | small | Bricolage | 15px | 400 | 1.45 | 0 |
@@ -168,6 +167,9 @@ Rules:
   monument sets Plex Mono at up to 58px. See § 5 / §05 — the address is data, and
   that is the point. Nothing else may borrow it.
 - `text-wrap: pretty` on paragraphs, `text-wrap: balance` on headings.
+- **There is no `h1` type token.** The table used to carry one at 64px/500 and
+  nothing has ever rendered it: the page's single `<h1>` is the hero name, set
+  in `display`. The token is deleted from `tailwind.config.ts` with the row.
 
 ---
 
@@ -1426,10 +1428,9 @@ personally, and borrowing from it already caused one revert.
 - Below 640px: mono labels drop to 11px / 0.16em
 
 **There is no plate frame.** This file described one, and § 10 gave it a 16px
-inset below 640px. `tailwind.config.ts` still carries the unused
-`frame-desktop: 40px` / `frame-mobile: 16px` spacing tokens it would have used;
-nothing references them. Section measure comes from `section-pad`
-(`clamp(24px, 6vw, 96px)`) and nothing else. Struck.
+inset below 640px. Its `frame-desktop` / `frame-mobile` spacing tokens have been
+deleted from `tailwind.config.ts` along with the description. Section measure
+comes from `section-pad` (`clamp(24px, 6vw, 96px)`) and nothing else.
 
 Mobile is not an afterthought — assume half of recruiter traffic is a phone.
 
@@ -1441,6 +1442,14 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
   is a 1px accent outline with 2px offset — not a browser default, not removed.
 - All external links: `target="_blank" rel="noopener noreferrer"`.
 - Any text a user must read uses `#6B6455` minimum, ideally `#2E2A24`.
+- **4.92:1 — `#6B6455` on `drafting` #EDEBE4 — is the site's contrast floor.
+  Nothing may be introduced below it.** Any new colour pairing is measured
+  against this number, **not** against the paper-ground values, which are all
+  0.1–1.0 points more generous (`#6B6455` is 5.21:1 on paper). The floor is
+  accepted rather than fixed: it passes AA at 4.5:1 at every size including the
+  11px mono labels, and darkening the token or adding a second one would
+  collapse a mono/body hierarchy that is doing real work, which costs more than
+  0.29 points buys.
 - One `<h1>`. Sections as `<section>` with `aria-labelledby`.
 - Decorative SVG gets `aria-hidden`; meaningful SVG gets a `<title>`.
 
@@ -1448,31 +1457,34 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
 
 ## 12. Performance budget
 
-- **Total route JS < 150KB gzipped — hard ceiling.** Report the gzipped figure
-  and the delta on every build, with remaining headroom stated.
-  **THIS CEILING IS CURRENTLY VIOLATED AND HAS BEEN FOR SOME TIME.** Measured
-  over the nine JS chunks `/` actually requests from a production `next start`:
-  **228.1KB gzipped, 78KB over.** It is not the project register's doing — the
-  same measurement against the commit before that rebuild is **230.0KB**, so it took
-  1.9KB *off*. Nothing has been reporting this figure, which is how it drifted
-  this far; the number above is the first one on record. Framework and runtime
-  dominate it, so closing the gap is a dependency-level question (Lenis,
-  anime.js, the React/Next baseline), not something a section pass can fix.
-  **Do not claim this budget line is met**, and do not treat a section's small
-  delta as headroom.
+- **Route JS is 190.9KB gzipped over 8 chunks at `712239f`** — measured in
+  Phase 1 of the restructure, production `next start`, gzipping every `.js` the
+  `/` route requests across a full page scroll. That is the method; do not mix
+  figures taken any other way.
 
-  **The 228.1KB figure above does not reproduce, and the discrepancy is
-  unresolved.** Measured again — production `next start`, gzipping every `.js`
-  the `/` route requests across a full page scroll — the same commit the 228.1
-  was taken at (`f2a6905`) comes out at **189.6KB over EIGHT chunks, not nine**.
-  Either the earlier pass counted a chunk this method does not see or it
-  measured a different set; the method above is the one now on record, and the
-  two numbers must not be mixed. Same method, same session: 189.6 at `f2a6905`,
-  **189.8** after the project-thumbnail image pass, **190.9** after the index's
-  co-occurrence linkage pass —
-  **+1.3KB across the whole session**. The ceiling is still breached by ~40KB on
-  this method, framework and runtime still dominate, and it is still not
-  something a section pass can fix.
+  **This exceeds the 150KB target by 41KB. The target stands as a goal to work
+  back toward; IT IS NOT A GATE.** It was written as a "hard ceiling" and has
+  never once held, which meant every verification block for months was asserting
+  against a number already 41KB out — the same failure mode as the margin trace,
+  and it is corrected the same way. Framework and runtime dominate the figure,
+  so closing the gap is a dependency-level question (Lenis, anime.js, the
+  React/Next baseline), not something a section pass can fix.
+
+  **Report the DELTA from the last measured value on every build, and flag any
+  single phase adding more than 5KB.** Do not attempt to reduce the total during
+  the restructure — it is a post-restructure task, alongside the scroll
+  controller's at-rest loop.
+
+  Recorded history on this method: 189.6 at `f2a6905`, 189.8 after the
+  project-thumbnail image pass, **190.9** after the index's co-occurrence
+  linkage pass, 190.9 after the drafting ground (which nothing on `/` imports).
+
+  **An older figure of 228.1KB over NINE chunks is on record and does not
+  reproduce** — re-measuring the same commit gives 189.6 over eight.
+  *Hypothesis, untested:* chunk count on `/` is sensitive to how many routes
+  exist in the app — adding the scratch route alone moved `/` from 8 chunks to 9
+  and +0.4KB — so the 9-chunk reading may have been taken when another route was
+  present. **Do not chase this.** It is logged so nobody re-derives it.
 - LCP < 1.8s on 4G, CLS < 0.05, Lighthouse ≥ 95 all four
 - 60fps under 6× CPU throttle through a full page scroll
 - **Three persistent rAF loops, enumerated in § 6 Scroll** — the shared scroll

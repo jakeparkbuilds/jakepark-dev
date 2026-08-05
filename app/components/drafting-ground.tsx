@@ -47,13 +47,7 @@ import { useReducedMotion } from "../lib/use-reduced-motion";
 const MINORS = [32, 64, 96, 128];
 const CORNERS = ["tl", "tr", "bl", "br"] as const;
 
-export default function DraftingGround({
-  /** "cool" is #C5CBD1, the specified ruling. "warm" is #9B9382 — the muted
-      token — and exists only so the two can be compared in situ. */
-  variant = "cool",
-}: {
-  variant?: "cool" | "warm";
-}) {
+export default function DraftingGround() {
   const reduced = useReducedMotion();
   const groundRef = useRef<HTMLDivElement | null>(null);
   const plateRef = useRef<HTMLDivElement | null>(null);
@@ -100,7 +94,7 @@ export default function DraftingGround({
   }, [reduced]);
 
   return (
-    <div className="dg" data-variant={variant} aria-hidden="true" ref={groundRef}>
+    <div className="dg" aria-hidden="true" ref={groundRef}>
       <div className="dg-plate" ref={plateRef}>
         <svg className="dg-rules" preserveAspectRatio="none" focusable="false">
           <defs>

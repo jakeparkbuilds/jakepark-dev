@@ -166,16 +166,10 @@ function Furniture() {
   );
 }
 
-function Panel({
-  variant,
-  title,
-}: {
-  variant: "cool" | "warm";
-  title: string;
-}) {
+function Panel({ title }: { title: string }) {
   return (
-    <section className="has-drafting section-pad py-section-y" data-scratch={variant}>
-      <DraftingGround variant={variant} />
+    <section className="has-drafting section-pad py-section-y" data-scratch="ground">
+      <DraftingGround />
       <p className="mb-10 font-mono text-mono-label uppercase text-label">{title}</p>
       <Furniture />
     </section>
@@ -192,10 +186,9 @@ export default function ScratchDrafting() {
         </p>
       </section>
 
-      <Panel variant="warm" title="variant b — ruling #9B9382 · 0.45 / 0.85" />
-      {/* Variant A sits last so the boundary that matters — the specified
-          cool ruling terminating against #1A1815 — is the one on screen. */}
-      <Panel variant="cool" title="variant a — ruling #C5CBD1 · 0.45 / 0.85" />
+      {/* One ruling colour. The #9B9382 control this page carried alongside it
+          in Phase 1 is deleted — see globals.css .dg. */}
+      <Panel title="drafting ground — ruling #C5CBD1 · 0.45 / 0.85" />
 
       {/* ink below, so the drafting → ink boundary is on screen. This is the
           one that matters: cool-gray ruling terminating against #1A1815. */}

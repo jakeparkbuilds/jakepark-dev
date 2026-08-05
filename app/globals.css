@@ -2797,9 +2797,12 @@
     background: theme("colors.drafting");
     pointer-events: none;
     overflow: hidden;
-    /* The ruling colour, switchable so the two candidates can be compared in
-       situ. #C5CBD1 is the specified value and is quarantined to this file's
-       .dg-minor / .dg-major and nothing else (CLAUDE.md § 2). */
+    /* #C5CBD1, quarantined to .dg-minor / .dg-major and nothing else
+       (CLAUDE.md § 2). There is one ruling colour. A warm #9B9382 control was
+       built and measured against it in Phase 1 and is deleted: on a cooler
+       ground the warm value shares its hex with the site's decorative type,
+       so the lattice and the mono-micro captions stopped being separable, and
+       under a dark thumbnail it read as a stain rather than as a sheet. */
     --dg-ruling: theme("colors.ruling");
     /* section-pad's own value. Rounded to a whole pixel: at 1440 the clamp
        resolves to 86.4px, and a fractional origin puts every rule on a half
@@ -2807,10 +2810,6 @@
        frame. The unrounded clamp is the fallback for engines without round(). */
     --dg-inset: clamp(24px, 6vw, 96px);
     --dg-inset: round(clamp(24px, 6vw, 96px), 1px);
-  }
-
-  .dg[data-variant="warm"] {
-    --dg-ruling: theme("colors.muted");
   }
 
   /* The plate — the section CONTENT box, which is what the ruling and the

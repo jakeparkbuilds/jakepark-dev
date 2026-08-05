@@ -32,6 +32,7 @@ const config: Config = {
       drafting: "#EDEBE4",
       ruling: "#C5CBD1",
       // Darkest marks on the page: the cursor dot and the active nav label.
+      // Consumed through theme() in globals.css, not as a utility class.
       "near-black": "#0A0908",
       // The map coordinate readout only — deliberately its own value, not
       // reused elsewhere (see docs/motion-spec.md cursor contrast pass).
@@ -46,7 +47,6 @@ const config: Config = {
         "clamp(56px, 9vw, 138px)",
         { lineHeight: "0.90", letterSpacing: "-0.03em", fontWeight: "400" },
       ],
-      h1: ["64px", { lineHeight: "1.05", letterSpacing: "-0.02em", fontWeight: "500" }],
       h2: ["40px", { lineHeight: "1.10", letterSpacing: "-0.015em", fontWeight: "500" }],
       body: ["19px", { lineHeight: "1.58", letterSpacing: "0", fontWeight: "400" }],
       small: ["15px", { lineHeight: "1.45", letterSpacing: "0", fontWeight: "400" }],
@@ -75,8 +75,6 @@ const config: Config = {
       spacing: {
         section: "clamp(24px, 6vw, 96px)",
         "section-y": "clamp(72px, 8vh, 120px)",
-        "frame-desktop": "40px",
-        "frame-mobile": "16px",
       },
       height: {
         svh: "100svh",
