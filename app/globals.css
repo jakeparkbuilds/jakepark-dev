@@ -206,6 +206,17 @@
     background: theme("colors.ink");
   }
 
+  /* The station is a focus stop only where it has coursework to reveal. The
+     ring frames the whole station, which is what it opens, and it uses the
+     site's focus treatment rather than the browser default (§ 11). */
+  .bg-station:focus-visible {
+    outline: 1px solid theme("colors.accent");
+    outline-offset: 2px;
+  }
+  .bg-station:focus:not(:focus-visible) {
+    outline: none;
+  }
+
   .bg-meta {
     grid-area: meta;
   }

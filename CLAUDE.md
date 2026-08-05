@@ -1100,6 +1100,17 @@ route with stops, not a stack of blocks.
   feedback. Do not add a tick gesture.
 - The spine stops above `elsewhere`. It is not a station.
 
+**A station with coursework is a focus stop, and it must be a NAMED GROUP.**
+The tab stop is what lets a sighted keyboard user open the coursework at all —
+tabbing to the PHOTO button instead opens the plate, which suppresses the
+coursework. A bare focusable `div` has no role, so a screen reader announces its
+entire subtree: measured, station 02 read out as
+`"02alexandria38.8048°n77.0469°w Thomas Jefferson High Schoo…"`. With
+`role="group"` and `aria-labelledby` on the place name it announces
+**"ALEXANDRIA, group"** and the contents are read normally. Stations without a
+list get no tab stop. The ring is the site's 1px accent at 2px offset, framing
+the whole station, which is what focusing it opens.
+
 **The station's tracks, and where every number comes from.** `140px · 24 · 620 ·
 32 · 1fr` inside a box inset 16px by the spine. At 1440 that is 1087.2 − 16 −
 140 − 24 − 620 − 32 = **255.2px of aside**, which is what sizes the plate and

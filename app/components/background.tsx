@@ -166,11 +166,24 @@ function StationRow({
   const { place, coords, beat, school } = station;
   const no = String(index + 1).padStart(2, "0");
 
+  const placeId = `bg-station-${no}`;
+
   return (
     // The focus stop exists only where there is something to reveal: the
-    // coursework opens on :focus-within, so a keyboard reaches it without a
-    // pointer. Stations with no list get no tab stop.
-    <div className="bg-station" tabIndex={school ? 0 : undefined}>
+    // coursework opens on :focus-within, so a sighted keyboard user reaches it
+    // without a pointer. Stations with no list get no tab stop.
+    //
+    // It must be a NAMED group. A bare focusable div has no role, so a screen
+    // reader announces its whole subtree — measured, the station read out as
+    // "02alexandria38.8048°n77.0469°w Thomas Jefferson High Schoo...". `group`
+    // with aria-labelledby on the place name announces "alexandria, group" and
+    // leaves the contents to be read normally.
+    <div
+      className="bg-station"
+      {...(school
+        ? { tabIndex: 0, role: "group" as const, "aria-labelledby": placeId }
+        : {})}
+    >
       {/* The station's mark on the spine. 12px of ink crossing a 0.5px muted
           rule, centred on it by the route's own indent — so the tick never has
           to know where the spine is in page coordinates. */}
@@ -178,7 +191,9 @@ function StationRow({
 
       <div className="bg-meta">
         <p className="bg-index">{no}</p>
-        <p className="bg-place">{place}</p>
+        <p className="bg-place" id={placeId}>
+          {place}
+        </p>
         {coords && (
           <p className="bg-coords">
             {coords[0]}
