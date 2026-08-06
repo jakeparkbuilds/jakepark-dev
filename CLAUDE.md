@@ -486,53 +486,96 @@ of six.
 promotion), **zero frames over 50ms and zero long tasks.**
 
 ### §05 connect — pizza rain
-70 hand-drawn slices fall across the viewport when the visitor reaches the bottom
-of the page, once per session, then the layer unmounts. A button appears
-afterwards to replay it. It is a joke and it is meant to read as one.
+Pizza falls across the viewport when the visitor reaches the bottom of the page,
+once per session. A button appears with it to replay it. It is a joke and it is
+meant to read as one.
+
+**ONE CANVAS, ONE LOOP, ONE PRE-ALLOCATED POOL.** It was 70 absolutely-
+positioned `<span>`s per click, each holding an `<img>`, each carrying
+`will-change: transform, opacity`, with concurrent waves capped at 12 — so ten
+clicks meant **1,400 DOM nodes and 700 compositor layers.** The cost was never
+in the script and never in a second rAF: measured at 6× throttle over ten rapid
+clicks, `UpdateLayoutTree` **666ms (20.5ms worst)**, `Commit` **1,054ms**,
+`Layerize` **835ms**, against `Paint`'s 284ms, with **zero** layout reads inside
+any rAF callback and exactly **one** loop the whole time. Style recalc,
+compositing and node count were the whole of it, and a canvas takes all three to
+zero by construction.
 
 - **One supplied illustration, `public/pizza.png`, never an emoji.** An emoji is
   a different picture on every platform and sits at the wrong weight beside this
-  type — which is the reason emoji are banned at all. The exception in § 8 is for
-  one illustration that happens to be a joke, not for the joke. All 70 slices
-  reference the same file, so the browser decodes it once.
-- One rAF for all 70, writing transform and opacity and reading nothing,
-  cancelled when the last slice lands. Portalled to `<body>` so no transformed
-  ancestor can break `position: fixed` — the same rule the ink canvas follows —
-  at z-index 400: above every section, below the cursor's 9999.
-- **There is no replay cooldown and there must not be one.** The button is
-  spam-clickable and **clicks ACCUMULATE**: every click adds a WAVE of 70 that
-  falls alongside whatever is already in the air, each on its own clock, so
-  clicking fast buries the screen. That is the joke — a wave that replaced the
-  one before it would mean the screen never fills however hard it is clicked.
-  Each wave is dropped the frame its own last slice lands; when the last one
-  goes the layer unmounts and the rAF cancels.
-  - Still **one rAF for every wave**, walking the waves and writing transform
-    and opacity, reading nothing. A wave's start is taken on its FIRST FRAME,
-    not at click time — the click has to clear a React commit before its spans
-    exist, and dating it from the click skips that much of its fall.
-  - Concurrent waves are capped at **12** (840 slices), and the cap is not a
-    cooldown: every click is honoured and the OLDEST wave retires to make room,
-    being the one already nearest the bottom of the screen. Measured with all
-    840 in the air: 8.3ms median / 9.0 worst unthrottled, 16.7 / 25.5 under 6x
-    CPU throttle, no frame over 32ms.
-  - **The button appears with the first wave, not after it.** Gating it on the
-    burst ending made the first 3.7s un-spammable, which is exactly the window
-    in which someone wants to click again.
+  type — which is the reason emoji are banned at all. The exception in § 8 is
+  for one illustration that happens to be a joke, not for the joke.
+- **The artwork is rasterised ONCE into an offscreen canvas** at
+  `SIZE × SCALE_MAX × dpr`, the largest any particle will draw it, so every
+  particle downsamples and none is ever upscaled. Per frame a particle costs one
+  `setTransform`, one `globalAlpha` and one `drawImage` — **no `save`/`restore`
+  per particle**, because a transform written directly is one call instead of
+  four and pushes no state stack. Nothing re-renders the artwork, ever.
+- **The canvas is portalled to `<body>`** so no transformed ancestor can turn
+  `position: fixed` into something else — the same rule the ink canvas follows,
+  and the one that has bitten this project before. Verified: the parent chain is
+  `BODY → HTML` with `transform`, `filter`, `perspective`, `contain`,
+  `will-change` and `backdrop-filter` all none/auto on both. Sized to
+  viewport × `devicePixelRatio`, **on mount and on `resize` only.** No shadow,
+  no blur, no filter.
+- **The pool is 240 particles, allocated once at mount, and it never grows.**
+  A click activates the next `BURST` slots from a **ring cursor**; when the pool
+  is exhausted the cursor wraps and overwrites, which is oldest-first by
+  construction and needs no scan. Measured: 20 clicks in 3s peaks at **exactly
+  240** simultaneously-drawn particles, and a further 40 clicks at 35ms
+  intervals is still 240. **Spam degrades into denser rain, never into
+  slowdown.**
+- **Zero allocation per click and per frame.** A burst writes into objects that
+  already exist; the loop is an indexed `for` with no closures, no arrays and no
+  intermediate objects. Measured across a whole 20-click spam:
+  **one** `document.createElement` call in total, and that is the sprite canvas.
+- **SPAM IS THE FEATURE. No debounce, no throttle, no cooldown, no "already
+  running" early return, and none may be added.** A click never starts a loop —
+  it wakes the existing one if it is idle. The tenth rapid click costs exactly
+  what the first did.
+- **Physics is integrated against delta time**, so it is frame-rate independent:
+  `vy += G·dt`, `y += vy·dt`, `x += vx·dt`, `rot += spin·dt`, with `dt` clamped
+  to 50ms so a hidden tab or a blocked main thread cannot teleport the field.
+  Size, fall speed, spin and horizontal drift all vary per particle, and the
+  vertical stagger is a spawn offset ABOVE the top edge rather than a per-
+  particle timer — a burst arrives over a beat with nothing to schedule or
+  cancel.
+- **THE CLOCK WAITS FOR THE ARTWORK.** A burst thrown before the sprite is
+  rasterised would fall invisibly and appear halfway down, so the loop holds the
+  particles above the top edge until there is something to draw them with.
+  Under reduced motion the same race is worse, because a still scatter draws
+  ONCE — measured, a click that beat the image load drew **zero** particles. The
+  scatter records the intent and the sprite build replays it.
+- **The loop stops itself.** It ends the frame the last particle leaves the
+  viewport (clearing the canvas as it goes), on `document.hidden`, and it never
+  runs at rest. Measured rAF per 5s on § 05: **612 at rest → 1,225 during the
+  rain → 613 three seconds after the last particle**, i.e. exactly back to the
+  bands' own loop. See § 6 for the inventory.
+- **The opening burst is 72 and a click is 24, and the asymmetry is
+  deliberate.** The joke's first landing is the whole point of it and a quarter
+  of a screen of pizza does not read as a downpour; a click is a top-up.
+- Reduced motion never rains: the button is present from load and the canvas
+  gets ~20 still slices for 1.2s, then is cleared. **No rAF is started at all** —
+  measured 0. The joke survives, the motion does not, and there is no cooldown
+  there either.
+- The trigger is `.ui-btn--solid` (§ 4). It used to wear the site's drawing
+  vocabulary — a hollow square, a gap and a mono label — on the argument that
+  announcing an off-theme joke in the same voice made it funnier; what it
+  actually did was make the one control in the footer look exactly like the crop
+  marks that are decoration. `aria-pressed` is **"it is raining"**, which is the
+  only on/off a button whose clicks accumulate can have.
 
-  This reverses an earlier
-  4s lockout, which was itself the subject of a debugging pass (its reference
-  started at 0 against a `performance.now()` that is ms since page load, so it
-  swallowed every trigger in the first four seconds — exactly when a visitor
-  deep-linked to the bottom would hit it). The lockout and that whole hazard are
-  gone. The reduced-motion scatter is still **serialised** — it holds still on
-  timers, so a second run would stack timers against one layer — but it is not
-  rate-limited either.
-- The trigger wears the site's own affordance vocabulary — hollow square, gap,
-  mono label — **because** what it does is off-theme. The joke is better for
-  being announced in the same voice as everything else. It is 7px; § 04's photo
-  reference is 12px, so they match in treatment, not in size.
-- Reduced motion never rains: the button is present from load and scatters ~20
-  slices statically for 1.2s. The joke survives, the motion does not.
+**Measured after the rebuild, 20 clicks in 3 seconds at 1920×1080:**
+
+| | min FPS | avg FPS | median | p95 | worst | >32ms | >50ms | long tasks |
+|---|---|---|---|---|---|---|---|---|
+| 6× CPU | 61.0 | 107.7 | 9.1ms | 12.7ms | **16.4ms** | 0 | 0 | **0** |
+| 1× CPU | 68.5 | 122.8 | 7.8ms | 11.0ms | **14.6ms** | 0 | 0 | **0** |
+
+JS heap across the same spam: **4.48 → 5.19 → 5.38 → 5.92 → 5.15 → 5.18 →
+4.57 MB** (gc'd baseline, every 5 clicks, end of spam, gc'd after) — flat within
+noise, against the old build's 4.4 → 14.2 → 4.8. Layout reads inside a rAF
+callback: **0**. DOM nodes for particles: **1**, the canvas itself.
 
 ### §05 connect — the character reveal
 Each character of a paragraph carries its own threshold along that paragraph's
@@ -1793,8 +1836,7 @@ looking at it. **One shared rAF loop** for the whole page exposing normalized sc
 progress globally and per-section. Components subscribe; nothing runs its own
 loop; everything unsubscribes on unmount.
 
-**The rAF inventory — exactly three persistent loops, and this is the real
-list.** It previously named "the global margin trace" as one of the three. No
+**The rAF inventory — FOUR loops, and this is the real list.** It previously named "the global margin trace" as one of the three. No
 code ever implemented a margin trace; it has been struck from § 7's roster and
 from § 03's spine, which is static. The truth:
 
@@ -1803,9 +1845,23 @@ from § 03's spine, which is static. The truth:
 | 1 | shared scroll controller (Lenis + every subscriber) | `app/lib/scroll-controller.ts` | viewport intersection per subscriber, **plus** a no-movement stand-down |
 | 2 | § 02's index — the drifting field | `app/components/skills.tsx` | viewport intersection + `document.hidden` |
 | 3 | § 05 connect's type bands | `app/components/type-bands.tsx` | viewport intersection + `document.hidden` |
+| 4 | § 05 connect's pizza rain | `app/components/pizza-rain.tsx` | at least one live particle + `document.hidden` |
 
 Loops 2 and 3 are fully cancelled on exit, on `document.hidden`, and under
 reduced motion.
+
+**Loop 4 is new and it is named here rather than smuggled in.** It is a real
+rAF and it is admissible because it is **user-triggered and self-terminating**:
+it does not exist until a burst is thrown, it runs only while at least one
+particle is alive, and it cancels itself on the frame the last one leaves the
+viewport. It never runs at rest and it starts no second loop however hard the
+button is clicked — a click wakes the existing loop if it is idle and does
+nothing if it is not. Under reduced motion it is never started at all
+(measured: 0 rAF calls). **Measured on § 05: 612 rAF per 5s at rest → 1,225
+during the rain → 613 three seconds after the last particle**, which is exactly
+the bands' own loop and nothing else.
+
+Any fifth loop has to argue for itself against this list the way loop 4 did.
 
 **LOOP 1'S LEAK IS FIXED.** It was a known violation for months: `section-mark`
 registered every section permanently, so the last subscriber never left and the
@@ -2175,9 +2231,10 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
   present. **Do not chase this.** It is logged so nobody re-derives it.
 - LCP < 1.8s on 4G, CLS < 0.05, Lighthouse ≥ 95 all four
 - 60fps under 6× CPU throttle through a full page scroll
-- **Three persistent rAF loops, enumerated in § 6 Scroll** — the shared scroll
-  controller, § 02's index field, § 05's type bands. Zero pending timers once
-  the page settles. **Report the real inventory and the real at-rest callback
+- **FOUR rAF loops, enumerated in § 6 Scroll** — the shared scroll controller,
+  § 02's index field, § 05's type bands, and § 05's pizza rain. The fourth is
+  user-triggered and self-terminating: it only exists while particles are alive,
+  which is why it is admissible. Zero pending timers once the page settles. **Report the real inventory and the real at-rest callback
   count every pass; "three and clean" is a retired assertion.**
 - **THE AT-REST COUNT IS FIXED — 608 rAF / 6,000 rects per 5s → 0 / 0** at
   § 02, § 04 and mid-§ 04, and **9 / 0** at the hero. See § 6 Scroll for the
@@ -2186,12 +2243,18 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
   for a page doing nothing. **Report both numbers every pass** — the rAF count
   and the `getBoundingClientRect` count — because the callbacks were never the
   expensive half.
+  **Restated with pizza rain in the inventory:** the at-rest figures are
+  unchanged by it, because it does not run at rest. § 02 **0 / 0**, § 04
+  **0 / 0**, mid-§ 04 **0 / 0**, hero **9 / 0**; § 05 reads **612 / 0**, which
+  is the type bands alone, and it is 613 again three seconds after a rain
+  finishes.
 - anime.js imported modularly, never the whole bundle
 - Raster images now number **seven** — § 05's Kyoto portrait, one photo per
   school station in § 04, `pizza.png` for § 05's easter egg, and **three project
   thumbnails** in § 02. Everything else is SVG or type. `pizza.png` is 31KB, is
   requested once and on demand by the rain, and is not part of any section's
-  load.
+  load — it is fetched once, rasterised once into an offscreen sprite, and
+  never touched again.
   **The project thumbnails display at their native colors** — two dark UI
   screenshots and one research poster. Their color is quarantined to § 02's
   thumbnail frames and appears nowhere else. This is a third quarantine

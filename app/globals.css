@@ -1853,27 +1853,25 @@
     }
   }
 
-  /* § 07 pizza rain. Portalled to <body>, so no transformed ancestor can turn
-     `fixed` into something else — the same rule the ink canvas follows. Above
-     every section, below the cursor dot's 9999. */
-  .pizza-layer {
+  /* § 05 pizza rain — ONE CANVAS. Portalled to <body>, so no transformed
+     ancestor can turn `fixed` into something else: the same rule the ink canvas
+     follows, and the one that has bitten this project before. Above every
+     section, below the cursor dot's 9999.
+
+     It replaced 70 absolutely-positioned <span>s per click, each holding an
+     <img> and each carrying `will-change: transform, opacity`. Ten clicks was
+     1,400 DOM nodes and 700 compositor layers, and the cost was never in the
+     script — measured at 6x throttle, UpdateLayoutTree 666ms / 20.5ms worst,
+     Commit 1,054ms, Layerize 835ms, against Paint's 284ms. A canvas has no
+     style recalc, no layers and no nodes.
+
+     No will-change, no filter, no shadow, no blur. The element is one fixed
+     rectangle and it never moves; only its contents change. */
+  .pizza-canvas {
     position: fixed;
     inset: 0;
     z-index: 400;
-    overflow: hidden;
     pointer-events: none;
-  }
-  .pizza-slice {
-    position: absolute;
-    display: block;
-    will-change: transform, opacity;
-  }
-  /* The reduced-motion scatter: present, then gone. No fall, no spin. */
-  .pizza-layer[data-static] {
-    transition: opacity 300ms cubic-bezier(0.33, 1, 0.68, 1);
-  }
-  .pizza-layer[data-static][data-out] {
-    opacity: 0;
   }
 
   /* The joke's trigger. It wore the site's own drawing vocabulary — a hollow

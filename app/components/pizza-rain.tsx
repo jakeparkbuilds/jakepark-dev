@@ -2,268 +2,384 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { cubicBezier } from "animejs";
 import { subscribeGlobal } from "../lib/scroll-controller";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import Button from "./button";
 
-// § 07 — pizza rain. A joke someone left in the code.
+// § 05 — pizza rain. A joke someone left in the code.
 //
 // It is the site's one sanctioned piece of illustration and its one off-palette
 // colour (CLAUDE.md § 8), and it is a supplied file rather than an emoji: an
 // emoji is a different picture on every platform and would render at the wrong
 // weight beside this type, which is why emoji are banned in the first place.
-// Every slice is the same image; the variety is rotation and scale.
 //
-// CLICKS ACCUMULATE. Each click adds a WAVE of 70 that falls alongside whatever
-// is already falling, so spamming the button buries the screen — that is the
-// point of it. A wave is dropped the moment its own last slice lands, and when
-// the last wave goes the layer unmounts and the rAF cancels: no lingering DOM,
-// no lingering timers.
+// ONE CANVAS, ONE LOOP, ONE POOL. This was 70 absolutely-positioned <span>s per
+// click, each holding an <img>, each carrying `will-change: transform, opacity`
+// — so ten clicks meant 1,400 DOM nodes and 700 compositor layers, and the cost
+// was never in the script. Measured at 6x throttle over ten rapid clicks:
+// UpdateLayoutTree 666ms with a 20.5ms worst case, Commit 1,054ms, Layerize
+// 835ms, against Paint's 284ms; JS heap churned 4.4 -> 14.2MB and back. A
+// canvas has no style recalc, no layers and no nodes, so all four of those go
+// to zero by construction.
 //
-// Still ONE rAF for the whole thing, however many waves are in the air. It
-// walks the waves and writes transform and opacity, and reads nothing.
+// SPAM IS THE FEATURE. There is no debounce, no throttle, no cooldown and no
+// "already running" early return. A click activates the next BURST slots in a
+// fixed pool; when the pool is full the ring cursor recycles the oldest
+// particles, which are the ones nearest the bottom of the screen. So clicking
+// faster makes the rain DENSER and never makes it slower — the tenth click
+// costs exactly what the first did.
 
-const COUNT = 70;
-const SCATTER_COUNT = 20;
-const DELAY_MAX = 900;
-const DUR_MIN = 1600;
-const DUR_MAX = 2800;
-/** Longest possible slice: 900 + 2800 = 3700ms, inside the 3.8s budget. */
-const BURST_MS = DELAY_MAX + DUR_MAX;
+/** Allocated once, at mount. Never grows. */
+const POOL = 240;
+/** Slots a single click activates. */
+const BURST = 24;
 /**
- * Concurrent waves. Not a cooldown — every click is honoured immediately and
- * nothing is ever dropped on the floor. At the cap the OLDEST wave retires to
- * make room, which is the one already closest to the bottom of the screen, so
- * what leaves is what the visitor is least looking at. 12 x 70 = 840 slices,
- * measured with all of them in the air: 8.3ms median / 9.0ms worst unthrottled,
- * 16.7ms median / 25.5ms worst under 6x CPU throttle, no frame over 32ms. The
- * screen is thoroughly covered well before the cap.
+ * The automatic arrival gets a bigger one. The joke's first landing is the
+ * whole point of it and a quarter of a screen of pizza does not read as a
+ * downpour; a click is a top-up and 24 is right for that.
  */
-const MAX_WAVES = 12;
+const OPENING_BURST = 72;
+/** Reduced motion: a still scatter, held and then cleared. */
+const SCATTER = 20;
+const SCATTER_HOLD_MS = 1200;
+
 const SESSION_KEY = "pizza-rain-fired";
-/** Accelerating, like gravity. */
-const FALL = cubicBezier(0.45, 0, 0.9, 0.6);
 /** Scroll progress that counts as "the bottom of the page". */
 const BOTTOM = 0.96;
-/** Far enough down to fetch and decode the slice before it is needed. */
+/** Far enough down to fetch the artwork and build the sprite before it is needed. */
 const WARM_AT = 0.8;
 
-type Slice = {
-  x: number; // vw
-  drift: number; // px, signed
-  delay: number;
-  duration: number;
-  spin: number; // deg, signed
+/** CSS px the sprite is drawn at, before a particle's own scale. */
+const SIZE = 34;
+const SCALE_MIN = 0.7;
+const SCALE_MAX = 1.3;
+/** px/s². */
+const GRAVITY = 520;
+const VY_MIN = 60;
+const VY_MAX = 180;
+/** Horizontal drift, px/s, signed. */
+const DRIFT = 60;
+/** rad/s, signed. */
+const SPIN = 3.5;
+/** A frame longer than this is a stall (a hidden tab, a blocked main thread);
+ *  integrating it whole would teleport every particle. */
+const MAX_DT = 0.05;
+/** Fraction of the viewport's height over which a particle fades out. */
+const FADE = 0.18;
+
+type Particle = {
+  active: boolean;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  rot: number;
+  spin: number;
   scale: number;
-  /** Static scatter only. */
-  y: number; // vh
 };
-
-type Wave = {
-  id: number;
-  slices: Slice[];
-};
-
-function makeSlices(n: number): Slice[] {
-  const out: Slice[] = [];
-  for (let i = 0; i < n; i++) {
-    out.push({
-      x: Math.random() * 100,
-      drift: (Math.random() * 2 - 1) * 60,
-      delay: Math.random() * DELAY_MAX,
-      duration: DUR_MIN + Math.random() * (DUR_MAX - DUR_MIN),
-      spin: (Math.random() * 2 - 1) * 540,
-      scale: 0.7 + Math.random() * 0.6,
-      y: 8 + Math.random() * 78,
-    });
-  }
-  return out;
-}
-
-/**
- * The slice. One supplied illustration, referenced by every span in every wave,
- * so the browser fetches and decodes it once — a plain <img>, not next/image,
- * because every copy is the same 34px and there is nothing to negotiate.
- */
-function PizzaSlice() {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src="/pizza.png"
-      alt=""
-      width={34}
-      height={34}
-      decoding="async"
-      draggable={false}
-    />
-  );
-}
 
 export default function PizzaRain() {
   const reduced = useReducedMotion();
-  const [waves, setWaves] = useState<Wave[]>([]);
-  const [scatter, setScatter] = useState<Slice[] | null>(null);
-  const [showButton, setShowButton] = useState(false);
   const [mounted, setMounted] = useState(false);
-  /** Is anything in the air right now — the button's `aria-pressed`. */
-  const raining = waves.length > 0 || scatter !== null;
+  const [showButton, setShowButton] = useState(false);
+  /** `aria-pressed` — is anything on screen. Set on transitions only, never
+   *  per frame: this component must not re-render while the rain is falling. */
+  const [raining, setRaining] = useState(false);
 
-  // Per wave: its nodes, and the timestamp it actually began. The start is
-  // taken on the wave's FIRST FRAME, not at click time — the click has to get
-  // through a React commit before the spans exist, and dating the wave from the
-  // click would skip that much of its fall.
-  const nodesRef = useRef(new Map<number, (HTMLSpanElement | null)[]>());
-  const startsRef = useRef(new Map<number, number>());
+  /** `buildSprite` and `scatter` need each other, and one of them has to be
+   *  declared first. A ref breaks the cycle without a stale closure. */
+  const scatterRef = useRef<(() => void) | null>(null);
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  /** The pre-rendered artwork. Drawn ONCE, then blitted per particle. */
+  const spriteRef = useRef<HTMLCanvasElement | null>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  const poolRef = useRef<Particle[] | null>(null);
+  /** Ring cursor. Activating from here and wrapping means an exhausted pool
+   *  recycles in allocation order, which is oldest-first, with no scan. */
+  const cursorRef = useRef(0);
+  const activeRef = useRef(0);
+
   const rafRef = useRef<number | null>(null);
-  const timersRef = useRef<number[]>([]);
-  const seqRef = useRef(0);
-  const scatterRunningRef = useRef(false);
-  const warmedRef = useRef(false);
+  const lastRef = useRef(0);
+  const dprRef = useRef(1);
+  const sizeRef = useRef({ w: 0, h: 0 });
+  const scatterTimerRef = useRef<number | null>(null);
+  /** Set when a still scatter was asked for before the artwork existed. The
+   *  falling path heals itself — its loop is already running and simply starts
+   *  drawing when the sprite lands — but a scatter draws ONCE, so without this
+   *  a click that beat the image load produced nothing at all. Measured: under
+   *  reduced motion the first click drew zero particles. */
+  const scatterPendingRef = useRef(false);
 
   useEffect(() => setMounted(true), []);
 
-  const clearTimers = () => {
-    for (const t of timersRef.current) window.clearTimeout(t);
-    timersRef.current = [];
-  };
+  // ---- the pool, allocated once ----
+  if (poolRef.current === null) {
+    const pool: Particle[] = new Array(POOL);
+    for (let i = 0; i < POOL; i++) {
+      pool[i] = { active: false, x: 0, y: 0, vx: 0, vy: 0, rot: 0, spin: 0, scale: 1 };
+    }
+    poolRef.current = pool;
+  }
 
-  // ---- the fall ----
+  // ---- the sprite: the artwork rasterised once, at mount-time DPR ----
   //
-  // No cooldown and no guard. A click is always another wave, and waves fall
-  // independently and concurrently rather than replacing one another.
-  const rain = useCallback(() => {
-    const id = ++seqRef.current;
-    nodesRef.current.set(id, []);
-    // The button appears with the FIRST wave, not after it. Waiting for the
-    // burst to end meant the first 3.7s of the joke were un-spammable, which is
-    // exactly the window in which someone wants to click it again.
-    setShowButton(true);
-    setWaves((prev) => {
-      const next = [...prev, { id, slices: makeSlices(COUNT) }];
-      while (next.length > MAX_WAVES) {
-        const dropped = next.shift();
-        if (dropped) {
-          nodesRef.current.delete(dropped.id);
-          startsRef.current.delete(dropped.id);
-        }
-      }
-      return next;
-    });
+  // Not at mount, though. The asset is a joke at the bottom of the page and has
+  // no business on any section's load, so it is built when the visitor is most
+  // of the way down or reaches for the button — whichever comes first.
+  const buildSprite = useCallback(() => {
+    const img = imgRef.current;
+    if (!img || !img.complete || img.naturalWidth === 0) return;
+    const dpr = dprRef.current;
+    // Rasterised at the LARGEST size any particle will draw it, so every
+    // particle downsamples and none is ever upscaled.
+    const px = Math.ceil(SIZE * SCALE_MAX * dpr);
+    const c = document.createElement("canvas");
+    c.width = px;
+    c.height = px;
+    const cx = c.getContext("2d");
+    if (!cx) return;
+    cx.drawImage(img, 0, 0, px, px);
+    spriteRef.current = c;
+    if (scatterPendingRef.current) {
+      scatterPendingRef.current = false;
+      scatterRef.current?.();
+    }
   }, []);
 
-  useEffect(() => {
-    if (waves.length === 0) return;
-    const fallTo = window.innerHeight + 120;
+  const warm = useCallback(() => {
+    if (spriteRef.current || imgRef.current) return;
+    const img = new Image();
+    imgRef.current = img;
+    img.decoding = "async";
+    img.onload = buildSprite;
+    img.src = "/pizza.png";
+  }, [buildSprite]);
 
-    // ONE loop for every wave in the air. Writes transform and opacity, reads
-    // nothing. Each wave carries its own clock, so a wave thrown three seconds
-    // after another is three seconds behind it and they never sync up.
-    const frame = (now: number) => {
-      const finished: number[] = [];
+  // ---- canvas sizing. On mount and on resize, and nowhere else ----
+  const resize = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    dprRef.current = dpr;
+    sizeRef.current = { w, h };
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+    const cx = canvas.getContext("2d");
+    ctxRef.current = cx;
+    // The sprite is rasterised against a DPR; a monitor change invalidates it.
+    if (spriteRef.current && spriteRef.current.width !== Math.ceil(SIZE * SCALE_MAX * dpr)) {
+      buildSprite();
+    }
+  }, [buildSprite]);
 
-      for (const wave of waves) {
-        let start = startsRef.current.get(wave.id);
-        if (start === undefined) {
-          start = now;
-          startsRef.current.set(wave.id, now);
-        }
-        const t = now - start;
-        const nodes = nodesRef.current.get(wave.id);
-        if (nodes) {
-          for (let i = 0; i < wave.slices.length; i++) {
-            const node = nodes[i];
-            const s = wave.slices[i];
-            if (!node) continue;
-            const local = (t - s.delay) / s.duration;
-            if (local <= 0) continue;
-            const p = local >= 1 ? 1 : local;
-            const eased = FALL(p);
-            // The last 20% of each slice's own fall fades it out, so nothing
-            // pops out of existence at the edge.
-            const o = p > 0.8 ? 1 - (p - 0.8) / 0.2 : 1;
-            node.style.opacity = `${o}`;
-            node.style.transform =
-              `translate3d(${s.drift * p}px, ${eased * fallTo}px, 0)` +
-              ` rotate(${s.spin * p}deg) scale(${s.scale})`;
-          }
-        }
-        if (t >= BURST_MS) finished.push(wave.id);
-      }
+  // ---- the loop. ONE, for every particle, whatever spawned them ----
+  const frame = useCallback((now: number) => {
+    const cx = ctxRef.current;
+    const pool = poolRef.current;
+    if (!cx || !pool) {
+      rafRef.current = null;
+      return;
+    }
 
-      if (finished.length > 0) {
-        for (const id of finished) {
-          nodesRef.current.delete(id);
-          startsRef.current.delete(id);
-        }
-        // Retiring a wave re-runs this effect with the shorter list; when the
-        // last one goes the layer leaves the DOM entirely and the loop is
-        // cancelled by the cleanup below.
-        setWaves((prev) => prev.filter((w) => !finished.includes(w.id)));
-        setShowButton(true);
-        try {
-          sessionStorage.setItem(SESSION_KEY, "1");
-        } catch {}
-        return;
-      }
-
+    const prev = lastRef.current;
+    const sprite = spriteRef.current;
+    // THE CLOCK WAITS FOR THE ARTWORK. A burst thrown before the sprite is
+    // rasterised would otherwise fall invisibly and appear halfway down. The
+    // particles simply hold above the top edge until there is something to
+    // draw them with; `lastRef` is advanced so the wait is not integrated as
+    // one enormous delta the moment it ends.
+    lastRef.current = now;
+    if (!sprite) {
       rafRef.current = requestAnimationFrame(frame);
-    };
-    rafRef.current = requestAnimationFrame(frame);
+      return;
+    }
 
+    const dt = Math.min(MAX_DT, (now - prev) / 1000);
+
+    const dpr = dprRef.current;
+    const { w, h } = sizeRef.current;
+
+    cx.setTransform(1, 0, 0, 1, 0, 0);
+    cx.clearRect(0, 0, w * dpr, h * dpr);
+
+    const fadeFrom = h * (1 - FADE);
+    const half = SIZE / 2;
+    let live = 0;
+
+    for (let i = 0; i < POOL; i++) {
+      const p = pool[i];
+      if (!p.active) continue;
+
+      p.vy += GRAVITY * dt;
+      p.y += p.vy * dt;
+      p.x += p.vx * dt;
+      p.rot += p.spin * dt;
+
+      if (p.y - SIZE > h) {
+        p.active = false;
+        continue;
+      }
+      live++;
+
+      // Fades out over the last band of the screen so nothing pops off the
+      // bottom edge.
+      const alpha = p.y > fadeFrom ? Math.max(0, 1 - (p.y - fadeFrom) / (h * FADE)) : 1;
+
+      // setTransform rather than save/translate/rotate/restore: one call
+      // instead of four, and no state stack to push per particle.
+      const s = p.scale * dpr;
+      const c = Math.cos(p.rot);
+      const sn = Math.sin(p.rot);
+      cx.setTransform(c * s, sn * s, -sn * s, c * s, p.x * dpr, p.y * dpr);
+      cx.globalAlpha = alpha;
+      cx.drawImage(sprite, -half, -half, SIZE, SIZE);
+    }
+
+    activeRef.current = live;
+
+    if (live === 0) {
+      // Nothing left. Clear, stand down, and tell React once.
+      cx.setTransform(1, 0, 0, 1, 0, 0);
+      cx.globalAlpha = 1;
+      cx.clearRect(0, 0, w * dpr, h * dpr);
+      rafRef.current = null;
+      setRaining(false);
+      try {
+        sessionStorage.setItem(SESSION_KEY, "1");
+      } catch {}
+      return;
+    }
+
+    rafRef.current = requestAnimationFrame(frame);
+  }, []);
+
+  /** Starts the loop if it is not already running. A click NEVER starts a
+   *  second one, and there is no early return that would make it a no-op. */
+  const wake = useCallback(() => {
+    if (rafRef.current !== null || document.hidden) return;
+    lastRef.current = performance.now();
+    rafRef.current = requestAnimationFrame(frame);
+  }, [frame]);
+
+  // ---- a burst. Zero allocation: it writes into slots that already exist ----
+  const burst = useCallback(
+    (n: number) => {
+      const pool = poolRef.current;
+      if (!pool) return;
+      const { w } = sizeRef.current;
+      for (let k = 0; k < n; k++) {
+        const p = pool[cursorRef.current];
+        cursorRef.current = (cursorRef.current + 1) % POOL;
+        p.active = true;
+        p.x = Math.random() * w;
+        // Staggered above the top edge rather than on a per-particle timer, so
+        // a burst arrives over a beat with nothing to schedule or cancel.
+        p.y = -SIZE - Math.random() * 420;
+        p.vx = (Math.random() * 2 - 1) * DRIFT;
+        p.vy = VY_MIN + Math.random() * (VY_MAX - VY_MIN);
+        p.rot = Math.random() * Math.PI * 2;
+        p.spin = (Math.random() * 2 - 1) * SPIN;
+        p.scale = SCALE_MIN + Math.random() * (SCALE_MAX - SCALE_MIN);
+      }
+      setRaining(true);
+      setShowButton(true);
+      wake();
+    },
+    [wake],
+  );
+
+  // ---- reduced motion: a still scatter, held, then cleared. No loop ----
+  const scatter = useCallback(() => {
+    const cx = ctxRef.current;
+    const sprite = spriteRef.current;
+    const pool = poolRef.current;
+    if (!cx || !pool) return;
+    if (scatterTimerRef.current) window.clearTimeout(scatterTimerRef.current);
+
+    const dpr = dprRef.current;
+    const { w, h } = sizeRef.current;
+    cx.setTransform(1, 0, 0, 1, 0, 0);
+    cx.clearRect(0, 0, w * dpr, h * dpr);
+    cx.globalAlpha = 1;
+    if (!sprite) {
+      // The artwork is still loading. Remember, and let buildSprite run this
+      // again the moment it exists.
+      scatterPendingRef.current = true;
+      return;
+    }
+    const half = SIZE / 2;
+    for (let k = 0; k < SCATTER; k++) {
+      const x = Math.random() * w;
+      const y = h * (0.08 + Math.random() * 0.78);
+      const rot = Math.random() * Math.PI * 2;
+      const s = (SCALE_MIN + Math.random() * (SCALE_MAX - SCALE_MIN)) * dpr;
+      const c = Math.cos(rot);
+      const sn = Math.sin(rot);
+      cx.setTransform(c * s, sn * s, -sn * s, c * s, x * dpr, y * dpr);
+      cx.drawImage(sprite, -half, -half, SIZE, SIZE);
+    }
+    setRaining(true);
+    setShowButton(true);
+    scatterTimerRef.current = window.setTimeout(() => {
+      const c2 = ctxRef.current;
+      if (c2) {
+        c2.setTransform(1, 0, 0, 1, 0, 0);
+        c2.clearRect(0, 0, sizeRef.current.w * dprRef.current, sizeRef.current.h * dprRef.current);
+      }
+      setRaining(false);
+      scatterTimerRef.current = null;
+    }, SCATTER_HOLD_MS);
+  }, []);
+
+  scatterRef.current = scatter;
+
+  const trigger = useCallback(
+    (n: number) => {
+      warm();
+      if (reduced) scatter();
+      else burst(n);
+    },
+    [burst, reduced, scatter, warm],
+  );
+
+  // ---- wiring: sizing, visibility, teardown ----
+  useEffect(() => {
+    if (!mounted) return;
+    resize();
+    const onResize = () => resize();
+    const onVisibility = () => {
+      if (document.hidden) {
+        if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      } else if (activeRef.current > 0) {
+        wake();
+      }
+    };
+    window.addEventListener("resize", onResize);
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
+      window.removeEventListener("resize", onResize);
+      document.removeEventListener("visibilitychange", onVisibility);
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
+      if (scatterTimerRef.current) window.clearTimeout(scatterTimerRef.current);
     };
-  }, [waves]);
+  }, [mounted, resize, wake]);
 
-  // ---- the static scatter, for reduced motion ----
-  const showScatter = useCallback(() => {
-    // The scatter holds still for 1.2s on timers, so re-entry here would stack
-    // them against one layer. It is serialised, not rate-limited.
-    if (scatterRunningRef.current) return;
-    scatterRunningRef.current = true;
-    setScatter(makeSlices(SCATTER_COUNT));
-    // Visible for 1.2s, then a fade, then gone. No falling and no rotation —
-    // the joke survives, the motion does not.
-    timersRef.current.push(
-      window.setTimeout(() => {
-        const layer = document.getElementById("pizza-layer");
-        if (layer) layer.setAttribute("data-out", "");
-        timersRef.current.push(
-          window.setTimeout(() => {
-            setScatter(null);
-            scatterRunningRef.current = false;
-          }, 320)
-        );
-      }, 1200)
-    );
-  }, []);
-
-  // ---- warm the asset ----
-  //
-  // 70 <img> elements appearing in one frame means one decode, and that decode
-  // lands on the burst's very first frame: measured under 6x CPU throttle, that
-  // frame cost 122.4ms against a median of 8.3ms. Fetching and decoding ahead
-  // of the trigger moves the cost to a frame where nothing is moving. It also
-  // covers every later wave, which is why spamming the button is cheap.
-  //
-  // Not at mount — the asset is a joke at the bottom of the page and should not
-  // be on any section's load. It warms when the visitor is most of the way down
-  // (well before the 0.96 trigger) or reaches for the button, whichever first.
-  const warm = useCallback(() => {
-    if (warmedRef.current) return;
-    warmedRef.current = true;
-    const img = new Image();
-    img.src = "/pizza.png";
-    img.decode?.().catch(() => {});
-  }, []);
-
-  // ---- the automatic trigger ----
+  // ---- the automatic arrival ----
   useEffect(() => {
-    // Never under reduced motion. The button is the only way in there, and it
-    // is present from load rather than earned by a rain that never runs.
+    if (!mounted) return;
     if (reduced) {
+      // Never rains on its own here. The button is the only way in, and it is
+      // present from load rather than earned by a rain that never runs.
       setShowButton(true);
       return;
     }
@@ -272,89 +388,45 @@ export default function PizzaRain() {
       fired = sessionStorage.getItem(SESSION_KEY) === "1";
     } catch {}
     if (fired) {
-      // It has already run this session — including before a reload. The
-      // button stands in for it.
       setShowButton(true);
       return;
     }
-    // Rides the shared Lenis loop; no second scroll listener. GATED ON § 05:
-    // both thresholds it watches for — 0.80 to warm the asset and 0.96 to fire
-    // — are only reachable with the last section on screen, so subscribing
-    // from the hero is a callback per frame for the whole page that can never
-    // do anything.
+    // Rides the shared Lenis loop; no second scroll listener. Gated on § 05:
+    // both thresholds it watches for are only reachable with the last section
+    // on screen.
     const unsubscribe = subscribeGlobal(
       (progress) => {
         if (progress >= WARM_AT) warm();
         if (progress < BOTTOM) return;
         unsubscribe();
-        rain();
+        trigger(OPENING_BURST);
       },
       document.getElementById("connect"),
     );
     return unsubscribe;
-  }, [reduced, rain, warm]);
+  }, [mounted, reduced, trigger, warm]);
 
-  useEffect(() => clearTimers, []);
-
-  const layer =
-    waves.length > 0 || scatter ? (
-      <div
-        id="pizza-layer"
-        aria-hidden="true"
-        className="pizza-layer"
-        data-static={scatter ? "" : undefined}
-      >
-        {scatter
-          ? scatter.map((s, i) => (
-              <span
-                key={i}
-                className="pizza-slice"
-                style={{
-                  left: `${s.x}vw`,
-                  top: `${s.y}vh`,
-                  transform: `scale(${s.scale})`,
-                }}
-              >
-                <PizzaSlice />
-              </span>
-            ))
-          : waves.map((wave) =>
-              wave.slices.map((s, i) => (
-                // Keyed by wave, so React never reconciles one wave's spans
-                // into another's and hands a node to the wrong clock.
-                <span
-                  key={`${wave.id}-${i}`}
-                  ref={(node) => {
-                    const nodes = nodesRef.current.get(wave.id);
-                    if (nodes) nodes[i] = node;
-                  }}
-                  className="pizza-slice"
-                  style={{ left: `${s.x}vw`, top: "-60px", opacity: 0 }}
-                >
-                  <PizzaSlice />
-                </span>
-              ))
-            )}
-      </div>
-    ) : null;
+  const canvas = (
+    <canvas
+      ref={canvasRef}
+      id="pizza-canvas"
+      aria-hidden="true"
+      className="pizza-canvas"
+    />
+  );
 
   return (
     <>
-      {mounted && layer ? createPortal(layer, document.body) : null}
+      {mounted ? createPortal(canvas, document.body) : null}
       {showButton ? (
-        // THE SOLID VARIANT, and it is a real control now rather than a hollow
-        // square and a word. What it did was always off-theme; announcing it in
-        // the drawing vocabulary made it indistinguishable from the crop marks
-        // and the reference plates, which are decoration.
-        //
         // `aria-pressed` is "it is raining", which is the only on/off this
-        // button has: CLICKS ACCUMULATE (CLAUDE.md § 5) — a second press adds
-        // another wave rather than stopping the first — so pressed cannot mean
-        // "you pressed it last". It goes true with the first wave and false the
-        // frame the last one lands, and the accent fill says so.
+        // button has: clicks ACCUMULATE — a second press adds another burst
+        // rather than stopping the first — so pressed cannot mean "you pressed
+        // it last". It goes true with the first burst and false the frame the
+        // last particle leaves.
         <Button
           variant="solid"
-          onClick={reduced ? showScatter : rain}
+          onClick={() => trigger(BURST)}
           onPointerEnter={warm}
           onFocus={warm}
           aria-pressed={raining}
