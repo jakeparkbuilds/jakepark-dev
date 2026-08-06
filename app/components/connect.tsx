@@ -1,4 +1,4 @@
-import Image from "next/image";
+import KyotoPlate from "./kyoto-plate";
 import Magnet from "./magnet";
 import PizzaRain from "./pizza-rain";
 import RevealText from "./reveal-text";
@@ -38,36 +38,8 @@ export default function Connect({ id }: { id: string }) {
           column of dead space is what this replaced. */}
       <div className="connect-stage">
         <div className="connect-columns">
-          {/* The Kyoto portrait, moved here from § 04's coda. Same registration
-              corners it has always had, and still NOT a trigger — no hover
-              response, because a plate that opens is a different object. */}
-          <figure className="connect-portrait">
-            <span className="cn-plate">
-              <Image
-                src="/portrait.jpg"
-                alt="Jake Park"
-                // 4284x5712, NOT the 5712x4284 the raw pixel matrix reports.
-                // The file carries an EXIF rotation, so `sips` reads it
-                // landscape while every browser and next/image's own pipeline
-                // render it portrait. Declaring the raw matrix reserved
-                // 480x360 for an image that arrived 480x640 — a 280px shift
-                // under the caption every time it loaded in view.
-                width={4284}
-                height={5712}
-                // 72, not 90 — the heaviest optimized raster on the page.
-                quality={72}
-                sizes="(min-width: 1600px) 320px, (min-width: 1440px) 280px, (min-width: 900px) 240px, 92vw"
-                className="cn-portrait-img saturate-[.85]"
-              />
-              <span aria-hidden="true" className="cn-plate-reg" data-c="tl" />
-              <span aria-hidden="true" className="cn-plate-reg" data-c="tr" />
-              <span aria-hidden="true" className="cn-plate-reg" data-c="bl" />
-              <span aria-hidden="true" className="cn-plate-reg" data-c="br" />
-            </span>
-            <figcaption className="cn-portrait-cap font-mono">
-              kyoto, japan · 2025
-            </figcaption>
-          </figure>
+          {/* The Kyoto print — and it turns over. See kyoto-plate.tsx. */}
+          <KyotoPlate />
 
           <div className="connect-center">
             <p className="connect-label font-mono">

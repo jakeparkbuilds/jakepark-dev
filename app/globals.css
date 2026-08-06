@@ -1270,23 +1270,41 @@
      agreement. That only works because § 05 reserves the nav gutter again (see
      Connect): with it zeroed, "the content edge" is 104px inside the nav. */
   .connect-columns {
+    /* THE GUTTER IS 32px AND IT IS DERIVED, not chosen. It is the text block's
+       own largest internal step — the 32px between LET'S CONNECT and the email
+       — so the gap BETWEEN the columns is the same measure as the gaps inside
+       one of them, and the pair reads as one object with a consistent internal
+       rhythm. It replaced clamp(28px, 3.4vw, 56px), which opened to 56px at
+       1920 and left the print stranded at the left margin. */
+    --cn-gutter: 32px;
     display: grid;
     width: 100%;
     grid-template-columns: minmax(0, 1fr);
-    gap: clamp(28px, 3.4vw, 56px);
+    gap: var(--cn-gutter);
     align-items: center;
     justify-items: start;
   }
+  /* THE PRINT IS 40% OF THE CONTENT WIDTH, CAPPED BY THE VIEWPORT'S HEIGHT.
+     Both halves are load-bearing and the cap is not a preference:
+
+     § 05 fills exactly one viewport (below), so the print has to fit the stage
+     — measured 586px of usable stage at a 900px viewport and 740.6 at 1080 —
+     less the ~30px foot row that carries the caption and the turn mark. At 4:5
+     a print 40% of the content width is 774px tall at 1920 and 614 at 1600,
+     which overflows a 900px viewport by 218 and 58 respectively. 47svh is the
+     tallest that clears it with the foot row: 423px wide / 529 tall at 900,
+     518 / 648 at 1080.
+
+     So 40% is what binds up to ~1440 and the height is what binds above it.
+     Measured share of the content width: 39.5% at 1440, 34.4% at 1600, 27.3%
+     at 1920, and 40% flat at every width below 1440. The alternative is § 05
+     scrolling, which is a locked rule. */
   @media (min-width: 900px) {
     .connect-columns {
-      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-columns: min(40%, 47svh) minmax(0, 1fr);
     }
   }
 
-  /* Sized against the text block beside it, not against the column it sits in:
-     a photograph that fills a half-viewport track is the composition, and this
-     one is meant to balance three lines of type. Measured heights are in
-     CLAUDE.md § 5 / §05. */
   .connect-portrait {
     width: 100%;
     max-width: 300px;
@@ -1294,20 +1312,21 @@
   }
   @media (min-width: 900px) {
     .connect-portrait {
-      width: 240px;
       max-width: none;
     }
   }
-  @media (min-width: 1440px) {
-    .connect-portrait {
-      width: 280px;
-    }
+
+  /* The MOUNT. It holds the registration corners, it carries the perspective,
+     and it does not turn. It also sets the plate's box: the print is 4:5 and
+     everything inside it is absolutely positioned against this. */
+  .cn-print {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    perspective: 2400px;
   }
-  @media (min-width: 1600px) {
-    .connect-portrait {
-      width: 320px;
-    }
-  }
+
   /* 4:5, cropped in the FRAME and never in /public. The file is 3:4, so this
      takes 6.25% of its height — 3.1% off each end at object-position 50% 50%.
      Both subjects survive it with room: measured on the rendered (EXIF-rotated)
@@ -1315,22 +1334,232 @@
   .cn-portrait-img {
     display: block;
     width: 100%;
-    height: auto;
-    aspect-ratio: 4 / 5;
+    height: 100%;
     object-fit: cover;
     object-position: 50% 50%;
   }
-  /* #6B6455, not muted. It names a place and a year — it is a caption a reader
-     reads, so § 11's floor applies. It is also the same value .edu-plate-caption
-     already uses, so the site's two photo captions now match. */
-  .cn-portrait-cap {
+
+  /* ── § 07 connect — the print turns over ──────────────────────────────────
+     A PHOTOGRAPHIC PRINT BEING TURNED, not a flip card. The back of a print is
+     where you write what is on it, so the seven interests live there.
+
+     NEAR-ORTHOGRAPHIC. `perspective: 2400px` against a plate 296–423px wide is
+     5.7–8.1x the plate's own width, so the far edge foreshortens a few percent
+     rather than lunging at the viewer — a plate rotating in a technical
+     drawing. A short perspective is exactly what makes this read as a stock
+     component, and it is the single value most responsible for whether this
+     belongs to the site.
+
+     THE BUTTON IS A TRANSPARENT OVERLAY, NOT THE PLATE'S PARENT. A <ul> inside
+     a <button> is invalid content and the browser drops the entire list out of
+     the accessibility tree — measured, the back face exposed nothing. So the
+     rotating element is a sibling and the button sits on top of it, which also
+     keeps the button, the corners and the focus brackets out of the rotation. */
+  .cn-turn-btn {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: none;
+  }
+  .cn-turn {
+    position: absolute;
+    inset: 0;
+    display: block;
+    transform-style: preserve-3d;
+    /* `settle`, and the same curve back — never the enter reversed, because a
+       turn IS its own reverse. */
+    transition: transform 760ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .cn-print[data-turned] .cn-turn {
+    transform: rotateY(180deg);
+  }
+  .cn-face {
+    position: absolute;
+    inset: 0;
+    display: block;
+    overflow: hidden;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+  .cn-face-back {
+    transform: rotateY(180deg);
+    /* The reverse of a print is a bounded object. A paper face with no edge on
+       a paper page is a hole, not a back — this is the § 4 exception and the
+       argument for it is in CLAUDE.md. 0.5px, ink, like every other hairline. */
+    border: 0.5px solid theme("colors.ink");
+    background: theme("colors.paper");
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    container-type: inline-size;
+  }
+  /* Optically centred: the block is centred on both axes and then lifted 2% of
+     the plate, because a block sitting on the true centre reads low. */
+  .cn-back-list {
+    margin: 0 0 4%;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    /* Sized to FILL the plate, in container units so it tracks the print at
+       every width. The first pass ran 3.2cqi / 2.4 and the writing covered 44%
+       of the plate's height and 40% of its width — at that fill the back read
+       as an empty rectangle with a caption stuck on it, which is exactly the
+       "missing image" failure. At 4.4cqi / 2.5 the seven lines cover a measured
+       62% of the height and 53–62% of the width at every width, and the face
+       reads as a surface someone wrote on. */
+    font-size: clamp(12px, 4.4cqi, 22px);
+    font-weight: 400;
+    line-height: 2.5;
+    color: #6b6455;
+  }
+
+  /* Focus: four accent registration brackets, radius 0, the § 02 / § 04 motif.
+     Inside the plate's edge so they never collide with the mount's ink corners,
+     and siblings of the rotating element so they do not turn either. */
+  .cn-turn-btn:focus-visible {
+    outline: none;
+  }
+  .cn-focus {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .cn-turn-btn:focus-visible .cn-focus {
+    opacity: 1;
+  }
+  .cn-focus[data-c="tl"] {
+    top: 6px;
+    left: 6px;
+    border-top: 0.5px solid theme("colors.accent");
+    border-left: 0.5px solid theme("colors.accent");
+  }
+  .cn-focus[data-c="tr"] {
+    top: 6px;
+    right: 6px;
+    border-top: 0.5px solid theme("colors.accent");
+    border-right: 0.5px solid theme("colors.accent");
+  }
+  .cn-focus[data-c="bl"] {
+    bottom: 6px;
+    left: 6px;
+    border-bottom: 0.5px solid theme("colors.accent");
+    border-left: 0.5px solid theme("colors.accent");
+  }
+  .cn-focus[data-c="br"] {
+    bottom: 6px;
+    right: 6px;
+    border-bottom: 0.5px solid theme("colors.accent");
+    border-right: 0.5px solid theme("colors.accent");
+  }
+
+  /* The two mono elements bracket the plate rather than stacking. */
+  .cn-print-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
     margin-top: 16px;
+  }
+  /* Both faces in ONE grid cell, so the row reserves the taller of the two and
+     nothing shifts when the caption swaps. */
+  .cn-cap {
+    display: inline-grid;
+    margin: 0;
     font-size: 11px;
     font-weight: 400;
     line-height: 1;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: #6b6455;
+  }
+  /* THE SWAP IS HIDDEN BY THE GEOMETRY — no fade, no wipe. It fires at the
+     instant the plate is edge-on, and that instant is NOT half the duration:
+     `settle` is (0.16, 1, 0.3, 1), which is heavily front-loaded, so the
+     rotation passes 90deg at progress y = 0.5, which solves to x = 0.10156 of
+     the timeline — 77ms of 760, not 380. A 0s transition on that delay is an
+     instantaneous swap at exactly that moment, in both directions, with no JS
+     timer and no rAF. */
+  .cn-cap-face {
+    grid-area: 1 / 1;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0s linear 77ms,
+      visibility 0s linear 77ms;
+  }
+  .cn-cap[data-face="front"] .cn-cap-front,
+  .cn-cap[data-face="back"] .cn-cap-back {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* § 04's reference mark, reused exactly — 12px hollow ink square, 0.5px muted
+     leader across a 14px gap, 13px mono label. It is DECORATIVE: the plate is
+     the button, so this is not a second tab stop, and it fills solid when the
+     plate is addressed, the same gesture □—PHOTO makes.
+     The label is #6B6455, not muted: it is a word a reader must read, and § 11
+     does not allow #9B9382 to carry type. That is also what □—PHOTO does — the
+     muted value there is the LEADER, not the word. */
+  .cn-turn-ref {
+    display: flex;
+    align-items: center;
+    flex: none;
+    white-space: nowrap;
+  }
+  .cn-turn-ref-square {
+    width: 12px;
+    height: 12px;
+    flex: none;
+    border: 1px solid theme("colors.ink");
+    background: transparent;
+    transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .cn-turn-ref-leader {
+    width: 14px;
+    height: 0.5px;
+    flex: none;
+    background: theme("colors.muted");
+  }
+  .cn-turn-ref-label {
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #6b6455;
+    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .connect-portrait:has(.cn-turn-btn:hover) .cn-turn-ref-square,
+  .connect-portrait:has(.cn-turn-btn:focus-visible) .cn-turn-ref-square,
+  .connect-portrait:has(.cn-print[data-turned]) .cn-turn-ref-square {
+    background-color: theme("colors.ink");
+  }
+  .connect-portrait:has(.cn-turn-btn:hover) .cn-turn-ref-label,
+  .connect-portrait:has(.cn-turn-btn:focus-visible) .cn-turn-ref-label,
+  .connect-portrait:has(.cn-print[data-turned]) .cn-turn-ref-label {
+    color: theme("colors.ink");
+  }
+
+  /* Reduced motion: the faces swap instantly, with the caption. The state is
+     still fully reachable — hover, tap, click and Enter/Space all still work,
+     only the rotation is dropped. */
+  @media (prefers-reduced-motion: reduce) {
+    .cn-turn {
+      transition: none;
+    }
+    .cn-cap-face {
+      transition: none;
+    }
+    .cn-turn-ref-square,
+    .cn-turn-ref-label {
+      transition: none;
+    }
   }
 
   /* ── § 07 connect — the text column ───────────────────────────────────────
@@ -1590,12 +1819,12 @@
      thumbnails, so the site's raster images read as one family. The photo
      itself is untouched: no border, no shadow, no radius, no filter, and the
      marks sit outside its corners without closing into a rectangle.
-     Deliberately NOT interactive — § 04's plate extends its corners because it
-     is a trigger; this one is not, and must not imply it is. */
-  .cn-plate {
-    position: relative;
-    display: block;
-  }
+     THEY BELONG TO THE MOUNT, NOT TO THE PRINT. They are children of
+     `.cn-print` and siblings of the rotating element, so the plate turns inside
+     them and they never move. A corner that rotated with it would mirror
+     itself at 180deg and the print would stop being a print. They also do not
+     extend on hover the way § 04's trigger corners do — the plate itself is the
+     affordance here, and the corners are the page, not the control. */
   .cn-plate-reg {
     position: absolute;
     width: 14px;

@@ -190,7 +190,14 @@ Rules:
   nodes are hairline `<circle>` elements — SVG geometry, not a rounded box. No
   other exceptions, and in particular no rounded rectangles anywhere.
 - **No box-shadows anywhere.** Cards are defined by rules and space. Nothing on
-  this site is enclosed by its own complete border.
+  this site is enclosed by its own complete border — **with exactly one
+  exception, § 05's print reverse.** A 0.5px ink rectangle closes around the
+  back face of the Kyoto print. It is not a card border: it is the EDGE OF A
+  SHEET OF PAPER, and it exists because a paper face on a paper page with no
+  edge is a hole rather than a back. The front face is a photograph and has a
+  hard edge by definition; the reverse needs one to read as the same object.
+  Nothing else may close a border on the strength of this, and the box-shadow
+  ban is not touched by it — the print's depth comes from the rotation alone.
 - **There is no grain layer.** This file described one — SVG fractalNoise at
   `opacity: 0.05`, `mix-blend-mode: multiply`, one instance fixed to the page —
   as though it existed. It does not: `app/layout.tsx` says so in a comment, and
@@ -221,7 +228,7 @@ number, which is why the ink ground and the cursor/ink-trail inversion keyed to
 | 02 | work — project rows, then the tool index | paper | done |
 | 03 | experience | ink | done — the inverted plate, entries arrive on scroll |
 | 04 | background — three stations and the schools, and nothing else | paper | done |
-| 05 | connect — the Kyoto portrait, then the email; bands; footer | paper | done |
+| 05 | connect — the Kyoto print (it turns), the email; bands; footer | paper | done |
 
 Ground sequence, top to bottom: **paper → paper → ink → paper → paper.**
 § 03 is the only section that is not paper.
@@ -352,6 +359,115 @@ the top.
   applies here too, and setting 28 directly measures 40.
 - Inverts on its own midpoint like every other nav element. Not rendered below
   900px.
+
+### §05 connect — the print turns over
+**IT IS A PHOTOGRAPHIC PRINT BEING TURNED OVER, NOT A FLIP CARD.** The back of a
+print is where you write what is on it, so the seven interests deleted from § 04
+live there. Everything below follows from that framing; built as a generic CSS
+flip card it stops belonging to this site.
+
+- **THE REGISTRATION CORNERS DO NOT TURN.** They belong to the MOUNT, not to the
+  print. They are children of `.cn-print` and siblings of the rotating element,
+  so the plate turns *inside* them and they hold still. A corner that rotated
+  with the plate would mirror itself at 180° and the illusion would die. They
+  also do not extend on hover the way § 04's trigger corners do — here the plate
+  itself is the affordance and the corners are the page, not the control.
+- **NEAR-ORTHOGRAPHIC PROJECTION. `perspective: 2400px`, on `.cn-print`.**
+  Against a plate 296–423px wide that is 5.7–8.1× the plate's own width, so the
+  far edge foreshortens a few percent instead of lunging at the viewer — a plate
+  rotating in a technical drawing. A short perspective is the single value most
+  responsible for making this read as a stock component. Do not lower it.
+- **rotateY 0 → 180deg, 760ms, `settle` (0.16, 1, 0.3, 1), the same curve back.**
+  A turn IS its own reverse, so this is the one gesture on the site that is
+  allowed to run the enter backwards. 760ms is longer than `settle`'s usual
+  520ms because the travel is a half revolution, not a settle.
+- `transform-style: preserve-3d` on the wrapper, `backface-visibility: hidden`
+  on both faces, back face pre-rotated 180°. **Transform only: no box-shadow at
+  any point in the turn, no border-radius, no lighting, no gradient on the edge,
+  no scale.** Depth is the rotation and nothing else. Verified at every width —
+  computed `box-shadow: none`, `border-radius: 0px`, corner `transform: none`.
+- **CSS owns the transform. There is no JS tween and no rAF** — the inventory
+  stays at the three in § 6. React holds two booleans and writes one attribute.
+
+**THE BUTTON IS A TRANSPARENT OVERLAY, NOT THE PLATE'S PARENT, and this is an
+accessibility fix, not a style choice.** A `<ul>` inside a `<button>` is invalid
+content and the browser drops the entire list out of the accessibility tree —
+measured, the back face exposed *nothing at all*. The rotating element is
+therefore a sibling and the button sits on top of it at `z-index: 2`, which also
+keeps the button, the mount corners and the focus brackets out of the rotation.
+
+**THE CAPTION SWAP IS HIDDEN BY THE GEOMETRY** — no fade, no wipe. It fires at
+the instant the plate is edge-on and invisible, and **that instant is NOT half
+the duration**: `settle` is heavily front-loaded, so the rotation passes 90° at
+progress y = 0.5, which solves to **x = 0.10156 of the timeline — 77ms of 760,
+not 380.** A `0s` transition on a `77ms` delay is an instantaneous swap at
+exactly that moment, in both directions, with no JS timer and no rAF. Measured
+rotation at the captured midpoint: **86.7–89.6°** at every width. Both captions
+sit in ONE grid cell, so the row reserves the taller of the two and nothing
+shifts. Under reduced motion the delay is 0.
+
+- front: `KYOTO, JAPAN · 2025` · back: `INTERESTS`
+
+**The affordance is § 04's reference mark, reused exactly**: a 12px hollow ink
+square at 1px, a 0.5px `#9B9382` leader across a 14px gap, and the word in 13px
+mono at 0.20em. It sits **beneath the plate at the RIGHT end of the foot row,
+opposite the caption, so the two mono elements bracket the plate** rather than
+stacking. It fills solid and the word goes to ink when the plate is hovered,
+focused or turned — the same gesture `□—PHOTO` makes.
+- **The label is `#6B6455`, not `#9B9382`.** That is what "the same as
+  `□—PHOTO`" actually means: the muted value in that motif is the LEADER, not
+  the word, and § 11 does not allow `#9B9382` to carry type a reader must read.
+- It is **decorative and `aria-hidden`** — the plate is the button, so this is
+  not a second tab stop. Clicking the photograph is the gesture; the mark names
+  it.
+
+**The back face.** Paper `#F5F1E8` inside the 0.5px ink edge (§ 4's one
+exception). The seven interests, mono, `#6B6455`, one per line, left-aligned,
+`line-height: 2.5`, the block optically centred — centred on both axes and then
+lifted 4% of the plate, because a block on the true centre reads low. No label,
+no bullets, no dots. It is a real `<ul>`/`<li>` and reads as a `list` of seven
+`listitem`s in the accessibility tree.
+- **THE FILL IS WHAT MAKES IT READ AS A BACK RATHER THAN AS A MISSING IMAGE, and
+  it was measured as a bug first.** At `3.2cqi / 2.4` the writing covered 44% of
+  the plate's height and 40% of its width, and the face read as an empty
+  rectangle with a caption stuck on it. At **`clamp(12px, 4.4cqi, 22px)` /
+  2.5** it covers a measured **61–69% of the height and 55–62% of the width at
+  every width**, and it reads as a surface someone wrote on. `cqi`, not `vw`:
+  the type has to track the print, which is height-capped at wide viewports.
+  If this ever reads thin again the fix is the fill, never a new colour.
+
+**Interaction.**
+- Hover turns it, `pointerleave` turns it back. **Click PINS**, click again
+  unpins. `turned = pinned || hovered`, so clicking while hovering unpins but
+  leaves it turned until the pointer goes — the only reading that does not fight
+  the hover.
+- **Hover is set only for `pointerType === "mouse"`.** A touch fires
+  `pointerenter` and never the matching leave, which is exactly how a hover
+  state gets stuck on a phone; a tap goes through `click` and toggles `pinned`
+  instead. Verified at 390 with a touch context: tap → true, tap → false, tap
+  elsewhere → false, tap → true. No stuck state.
+- Keyboard: a real `<button>` named **"turn over — interests"**, Enter/Space
+  toggles, `aria-pressed` reflects the state. **Focus draws four 0.5px accent
+  registration brackets inside the plate's edge, radius 0** — the § 02 / § 04
+  motif, and the browser default is suppressed only because an outline around a
+  photograph reads as a second frame. They are on the button, so they do not
+  turn.
+- **Both faces are always in the DOM; the hidden one is `aria-hidden` AND
+  `inert`**, so neither a screen reader nor the tab order ever reaches it.
+  Verified in both states: front exposes the image only, back exposes the list
+  only, and the tab order is unchanged either way.
+- **Reduced motion: no rotation.** The faces and the caption swap instantly on
+  hover, tap, click and Enter/Space. Verified — `transition-duration: 0s`,
+  caption delay 0s, state fully reachable.
+
+**It is NOT a set piece and must not be counted as one.** Like § 02's field, it
+has no entrance and asserts nothing by arriving: it is a control's state, driven
+by the visitor, not an event the page performs. The roster in § 7 stays at three
+of six.
+
+**Measured, 6× CPU throttle, ten full turns out and back:** 2181 frames, median
+**8.3ms**, p95 9.2ms, worst 42.2ms (one frame, the first turn's layer
+promotion), **zero frames over 50ms and zero long tasks.**
 
 ### §05 connect — pizza rain
 70 hand-drawn slices fall across the viewport when the visitor reaches the bottom
@@ -589,21 +705,36 @@ deleted: the bands and the end of the page already say that, and a label
 announcing it was a fourth thing competing for one centre.
 
 ```
-[ Kyoto portrait ]     LET'S CONNECT                   mono, 13px / 0.24em / #6B6455
+[ Kyoto print    ]     LET'S CONNECT                   mono, 13px / 0.24em / #6B6455
 [ 4:5, in its    ]             ↕ 32px
-[ crop marks     ]     jp2282 [at] georgetown [dot] edu   Plex Mono 500, ink, -0.01em
+[ mount corners  ]     jp2282 [at] georgetown [dot] edu   Plex Mono 500, ink, -0.01em
 KYOTO, JAPAN · 2025            ↕ 28px
-                       always up for a conversation …  Bricolage 19/400, #2E2A24
+              □—TURN   always up for a conversation …  Bricolage 19/400, #2E2A24
 ```
 
 **Nothing is centred any more, and nothing may go back to being centred.** Three
 centred blocks stacked in a column of dead space is what this replaced.
 
-- **The grid is `auto minmax(0, 1fr)`** at ≥900px. The portrait track takes
-  exactly the figure's capped width and the text track takes everything else, so
-  **the text column's right edge lands on the section's content edge by
-  construction** — measured Δ 0.00px at 1920/1600/1280/1024/900/768/390 and
-  −0.01 at 1440. There is no number to keep in agreement.
+- **The grid is `min(40%, 47svh) minmax(0, 1fr)`** at ≥900px, with a **32px**
+  gutter. The text track takes whatever the print does not, so **the text
+  column's right edge lands on the section's content edge by construction** —
+  measured Δ 0.00px at 1920/1600/1280/1024/900/768/390 and −0.01 at 1440. There
+  is no number to keep in agreement.
+- **THE GUTTER IS 32px AND IT IS DERIVED, not chosen.** It is the text block's
+  own largest internal step — the 32px between `LET'S CONNECT` and the email —
+  so the gap BETWEEN the columns is the same measure as the gaps INSIDE one of
+  them and the pair reads as one object. It replaced `clamp(28px, 3.4vw, 56px)`,
+  which opened to 56px at 1920 and left the print stranded at the left margin.
+- **THE PRINT IS 40% OF THE CONTENT WIDTH, CAPPED BY THE VIEWPORT'S HEIGHT, and
+  the cap is not a preference.** § 05 fills exactly one viewport, so the print
+  has to fit the stage: measured **586px** of usable stage at a 900px viewport
+  and **740.6** at 1080, less the ~30px foot row. At 4:5 a print 40% of the
+  content width is **774px** tall at 1920 and 614 at 1600 — overflowing a 900px
+  viewport by 218 and 58. **47svh** is the tallest that clears it: 423 × 529 at
+  a 900px viewport, 518 × 648 at 1080. So 40% binds up to ~1440 and the height
+  binds above it. Measured share of the content width: **39.5% at 1440, 34.4% at
+  1600, 27.3% at 1920**, and a flat 40% at every width below 1440. The only way
+  to hold 40% at 1920 is to let § 05 scroll, which is a locked rule.
 - **§ 05 RESERVES THE NAV GUTTER AGAIN.** It used to zero `--nav-gutter` above
   1280px and centre a text column on the full viewport, and the centre block
   then insetted 104 + 24px symmetrically to dodge the nav. Both are deleted:
@@ -611,28 +742,30 @@ centred blocks stacked in a column of dead space is what this replaced.
   without the gutter it is 104px inside the nav. The visible consequence is that
   the footer's rule and coordinates end 180px further left at ≥1280 than they
   did.
-- **The portrait is 4:5, cropped in the FRAME and never in `/public`.** The file
-  is 3:4, so `object-fit: cover` at `object-position: 50% 50%` takes 6.25% of
-  its height, 3.1% off each end. Both subjects survive with room — measured on
-  the rendered (EXIF-rotated) image, the face sits 57.5% down and the pagoda's
-  spire 10.9% down. Widths 240 / 280 (≥1440) / 320 (≥1600), and 100% capped at
-  300 below 900px. **It is not a trigger** — no hover response, because a plate
-  that opens is a different object and this must not suggest it is one.
+- **The print is 4:5, cropped in the FRAME and never in `/public`.** The file is
+  3:4, so `object-fit: cover` at `object-position: 50% 50%` takes 6.25% of its
+  height, 3.1% off each end. Both subjects survive with room — measured on the
+  rendered (EXIF-rotated) image, the face sits 57.5% down and the pagoda's spire
+  10.9% down. Below 900px it is 100% capped at 300.
+- **It IS a trigger now** — it turns over. See `### §05 connect — the print
+  turns over` below. That reverses the note that used to sit here.
 - **Its caption is `#6B6455`, not muted.** It names a place and a year, so it is
   a caption a reader reads and § 11's floor applies. That is also the value
   `.edu-plate-caption` uses, so the site's two photo captions now match and
   **nothing on the site sets type in `#9B9382` any more.**
-- **The portrait is taller than the text block and that is expected**; the ask
-  is that it not dominate. Measured figure height against the text block:
-  427 / 143 = **2.98×** at 1920 and 1600, 377 / 143 = 2.63 at 1440, 327 / 142 =
-  2.30 at 1280, 327 / 196 = 1.67 at 1024. A photograph beside three lines of
-  type cannot be shorter than they are without becoming a thumbnail.
-- **The text column is wider than its ink at 1920 and that is inherent.** The
-  ink measures 988px in a 1152px column, so it stops 560px short of the content
-  edge; at 1440 it stops 146px short. Left-aligning short content in a wide box
-  is what puts the air on the outside, and the alternative — right-anchoring the
-  block to the content edge — moves the same air into the middle and breaks
-  "the two read as one unit". Do not fix this by centring anything.
+- **The print is much taller than the text block and that is the composition.**
+  Measured figure height (image + foot row) against the text block: 564 / 143 =
+  **3.94×** at 1920, 1600 and 1440; 509 / 182 = 2.80 at 1280; 396 / 196 = 2.02
+  at 1024; 341 / 190 = 1.80 at 900. A photograph beside three lines of type
+  cannot be shorter than they are without becoming a thumbnail, and the ask was
+  that it be substantial rather than balanced line-for-line.
+- **The text column is still wider than its ink at 1920.** The ink ends at 1163
+  against a 1644 content edge — **481px** short, down from 560 before the
+  rebalance. At 1440 it ends 20px short, which is as tight as it gets. Left-
+  aligning short content in a wide box is what puts the air on the outside; the
+  two remaining levers are the print's height cap and the email's 34px ceiling,
+  and both are there for reasons written down above. Do not fix it by centring
+  anything.
 
 - The `mailto:` href carries the **real address**; the bracket notation is
   display only, with `[at]` and `[dot]` in #6B6455 so they read as annotation
@@ -1180,9 +1313,10 @@ an `interests` marker, seven items on a single middot-separated mono line, and
 the Kyoto portrait, under a trailing hairline. All of it is deleted: the label,
 the seven strings, the `.bg-elsewhere` / `.bg-interests` / `.bg-marker` styling
 and the trailing rule. **The portrait is not deleted, it MOVED** — it is § 05
-connect's left column now (§ 5 / §05). Nothing about Jake's interests appears
-anywhere on the site, and `interests` may not be described as a block that
-exists or might return.
+connect's left column now (§ 5 / §05). **The seven interests are not deleted
+either — they came back on the BACK OF THAT PRINT** (§ 5 / §05). What is gone
+from § 04 is the block: there is no marker, no list and no trailing hairline
+here, and none may return.
 
 **NOTHING REPLACED THE PROSE.** There is no standfirst, no transitional line and
 no caption standing in for a deleted sentence, and none may be added. A station
@@ -1556,6 +1690,8 @@ draw    cubic-bezier(0.22, 1, 0.36, 1)   700–1400ms
 reveal  cubic-bezier(0.33, 1, 0.68, 1)   520ms
 micro   cubic-bezier(0.4, 0, 0.2, 1)     140–180ms
 settle  cubic-bezier(0.16, 1, 0.3, 1)    520ms — every settling gesture
+                                           760ms for § 05's print turn, which
+                                           travels half a revolution
 roll    cubic-bezier(0.12, 0.9, 0.08, 1) 1500ms — the hero glyph roll ONLY
 ```
 
@@ -1680,6 +1816,11 @@ Never produce these, even if asked indirectly:
 - Proficiency bars, percentages-as-progress, star ratings, dots-out-of-five
 - Animated stat counters
 - Emoji, 3D icons, icon fonts, logo packs. Links are text.
+- Flip cards. **§ 05's Kyoto print is not one and the distinction is the whole
+  design** — it is a print turning inside a fixed mount under a near-orthographic
+  projection, corners held still, no shadow, radius or lighting at any point in
+  the turn. See § 5 / §05. A card flip with a short perspective and a drop
+  shadow is exactly what is banned here.
 
 **One exception exists: the § 05 pizza rain easter egg** renders a full-colour
 pizza slice — `public/pizza.png`, a supplied illustration. It is a deliberate
@@ -1792,6 +1933,11 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
 
 - Every interactive element reachable and visible on keyboard focus. Focus ring
   is a 1px accent outline with 2px offset — not a browser default, not removed.
+  **Two elements substitute four accent registration brackets for it**: § 02's
+  field nodes (a round outline on a dial read as a second ring) and § 05's Kyoto
+  print (an outline around a photograph reads as a second frame). Both are
+  0.5px `#22384F`, radius 0, and both are more visible than the default, not
+  less. Nothing else may opt out.
 - All external links: `target="_blank" rel="noopener noreferrer"`.
 - Any text a user must read uses `#6B6455` minimum, ideally `#2E2A24`.
 - **5.21:1 — `#6B6455` on paper #F5F1E8 — is the site's contrast floor.
