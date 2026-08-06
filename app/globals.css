@@ -1130,13 +1130,6 @@
     }
   }
 
-  /* ── § 02 about — the Kyoto portrait's crop marks ─────────────────────────
-     The same registration language as the two § 06 plates, so the site's three
-     raster images read as one family. The photo itself is untouched: no border,
-     no shadow, no radius, no filter, and the marks sit outside its corners
-     without closing into a rectangle. Deliberately NOT interactive — the
-     education plates extend their corners on hover because they are triggers;
-     this one is not, and must not imply it is. */
   /* § 07 — the counter-scrolling type bands.
 
      Full-bleed: the bands break the plate frame and run edge to edge, so they
@@ -1268,33 +1261,90 @@
     border-top: 0.5px solid theme("colors.muted");
   }
 
-  /* ── § 07 connect — the centre ────────────────────────────────────────────
+  /* ── § 07 connect — the two columns ───────────────────────────────────────
+     The portrait on the left, the block that used to be centred left-aligned
+     beside it, both vertically centred so they read as one unit. The portrait
+     track is `auto`, so it takes exactly the figure's capped width and the text
+     track takes everything else — which lands the text's right edge on the
+     section's content edge by construction, with no number to keep in
+     agreement. That only works because § 05 reserves the nav gutter again (see
+     Connect): with it zeroed, "the content edge" is 104px inside the nav. */
+  .connect-columns {
+    display: grid;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(28px, 3.4vw, 56px);
+    align-items: center;
+    justify-items: start;
+  }
+  @media (min-width: 900px) {
+    .connect-columns {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+  }
+
+  /* Sized against the text block beside it, not against the column it sits in:
+     a photograph that fills a half-viewport track is the composition, and this
+     one is meant to balance three lines of type. Measured heights are in
+     CLAUDE.md § 5 / §05. */
+  .connect-portrait {
+    width: 100%;
+    max-width: 300px;
+    margin: 0;
+  }
+  @media (min-width: 900px) {
+    .connect-portrait {
+      width: 240px;
+      max-width: none;
+    }
+  }
+  @media (min-width: 1440px) {
+    .connect-portrait {
+      width: 280px;
+    }
+  }
+  @media (min-width: 1600px) {
+    .connect-portrait {
+      width: 320px;
+    }
+  }
+  /* 4:5, cropped in the FRAME and never in /public. The file is 3:4, so this
+     takes 6.25% of its height — 3.1% off each end at object-position 50% 50%.
+     Both subjects survive it with room: measured on the rendered (EXIF-rotated)
+     image, the face sits 57.5% down and the pagoda's spire 10.9% down. */
+  .cn-portrait-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    object-position: 50% 50%;
+  }
+  /* #6B6455, not muted. It names a place and a year — it is a caption a reader
+     reads, so § 11's floor applies. It is also the same value .edu-plate-caption
+     already uses, so the site's two photo captions now match. */
+  .cn-portrait-cap {
+    margin-top: 16px;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #6b6455;
+  }
+
+  /* ── § 07 connect — the text column ───────────────────────────────────────
      Three elements. The EMAIL is the monument: it takes the position and the
      weight the display headline used to hold, which is why the headline demotes
-     to a mono label sitting above it. */
+     to a mono label sitting above it. LEFT-ALIGNED — it was centred while it
+     was the whole section, and beside a portrait a centred block reads as
+     floating rather than as the other half of a pair. */
   .connect-center {
     display: flex;
     width: 100%;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
-    /* The container the email sizes itself against — see .connect-email. */
-    container-type: inline-size;
-  }
-  /* § 07 centres on the FULL viewport (§ 4), so above 1280px nothing reserves
-     the nav column — which was safe while the centre was a 720px text column
-     and is not now that a 58px monument sits in it. Measured: the email's right
-     edge landed 48px inside the nav at 1280 and 18px inside it at 1440.
-
-     The block therefore insets by the nav's own width (a constant 104px) plus
-     24px of clearance, SYMMETRICALLY, so it stays centred on the viewport
-     rather than being pushed off-centre by a one-sided gutter. Because
-     .connect-center is also the email's sizing container, the monument shrinks
-     to match automatically. */
-  @media (min-width: 1280px) {
-    .connect-center {
-      max-width: calc(100% - 256px);
-    }
+    align-items: flex-start;
+    text-align: left;
   }
   .connect-label {
     font-size: 13px;
@@ -1308,44 +1358,63 @@
     margin-top: 32px;
     line-height: 1;
   }
-  /* THE SIZE IS THE SMALLER OF THE SPEC AND WHAT FITS. The specified
-     clamp(28px, 4.2vw, 58px) is a viewport measure, and § 07's content box is
-     not the viewport: below 1280px it also gives up 180px to the nav gutter.
-     At 1200 the spec asks for 50.4px, which lays this address out at 967px
-     inside an 876px column — nowrap would not wrap it, it would push a
-     horizontal scrollbar onto the document instead.
+  /* IT WRAPS, AND THE CEILING CAME DOWN. The address is 32 characters at Plex
+     Mono's 0.6em advance less 0.01em of tracking — 18.88em — so at the old 42px
+     ceiling it laid out 793px wide, which does not fit a text column beside a
+     portrait. 34px puts it at 642px, still by a long way the largest thing in
+     the section (the blurb is 19px), and the 2.6vw term takes it down from
+     1308px so a narrow column gets a smaller monument rather than more lines.
 
-     5.1cqi is the fitting size: the address is 32 characters at Plex Mono's
-     0.6em advance less 0.01em of tracking, so it occupies 18.88em and fits when
-     font-size <= container / 18.88 (5.30cqi), taken with a 4% margin. Where the
-     spec fits it wins unchanged; where it does not, the fit does. */
+     The old ceiling also carried a `min(..., 5.1cqi)` FITTING term and a
+     container-type on the parent, both of which are gone. They existed because
+     the address was `white-space: nowrap`: a size that did not fit could not
+     wrap, so it pushed a horizontal scrollbar onto the document instead. It
+     wraps now, at the spaces the bracket notation already put in the string, so
+     overflow is no longer a possible failure and the size does not have to
+     defend against it. Longest single segment is `[at] georgetown` at 9em —
+     216px at the 24px floor, inside a 366px content box at 390. */
   .connect-email {
-    position: relative;
     display: inline-block;
     font-weight: 500;
-    font-size: min(clamp(22px, 3.1vw, 42px), 5.1cqi);
-    line-height: 1.05;
+    font-size: clamp(24px, 2.6vw, 34px);
+    line-height: 1.18;
     letter-spacing: -0.01em;
     color: theme("colors.ink");
-    white-space: nowrap;
     text-decoration: none;
+    /* There is exactly ONE space either side of each bracket group, but Plex
+       Mono is monospaced, so each is a full 0.6em advance — 20px at 34px type —
+       and the pair reads as a double space. This used to sit on
+       .connect-email-br, which owned both spaces; the spaces are between the
+       nowrap segments now, because that is the only place a break opportunity
+       can live, so the pull-back moves up to the element that contains them.
+       word-spacing touches spaces only — the address's own letterfit stays
+       monospaced, which is the point of setting it in the data face. */
+    word-spacing: -0.22em;
+    /* Belt and braces against a break inside a word: the segments are nowrap,
+       and nothing may hyphenate. */
+    overflow-wrap: normal;
+    hyphens: none;
   }
-  /* Annotation, not address.
-
-     There is exactly ONE space either side of each bracket group, but Plex Mono
-     is monospaced, so each of those spaces is a full 0.6em advance — 25px at
-     42px type — and the pair reads as a double space. word-spacing pulls the
-     two spaces inside this element back without touching the address's own
-     letterfit, which must stay monospaced to read as data. */
+  /* One nowrap unit. The line may only break BETWEEN these. */
+  .ce-seg {
+    position: relative;
+    white-space: nowrap;
+  }
+  /* Annotation, not address. */
   .connect-email-br {
     color: #6b6455;
-    word-spacing: -0.22em;
   }
   /* Drawn left to right on arrival, retracted right to left on leave — never
      the enter played backwards. Switching transform-origin with the state is
      what buys the second direction: the origin applies instantly, the scale is
-     what animates. */
-  .connect-email::after {
+     what animates.
+
+     PER SEGMENT, not per address: one rule on the whole anchor would draw a
+     single bar under the last line of a wrapped address and leave the lines
+     above it bare. The segments are the line fragments, so an underline per
+     segment is an underline per line. They share one transition, so a wrapped
+     address still draws as one gesture. */
+  .ce-seg::after {
     content: "";
     position: absolute;
     left: 0;
@@ -1357,8 +1426,8 @@
     transform-origin: right;
     transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .connect-email:hover::after,
-  .connect-email:focus-visible::after {
+  .connect-email:hover .ce-seg::after,
+  .connect-email:focus-visible .ce-seg::after {
     transform: scaleX(1);
     transform-origin: left;
     transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -1369,15 +1438,18 @@
     line-height: 1.58;
     color: theme("colors.body");
   }
-  /* One line where there is room for one; allowed to break below 1200px. */
-  @media (min-width: 1200px) {
+  /* One line where there is room for one. 1280, not 1200: the text column is
+     the section minus the portrait and the gap now, and the blurb measures
+     551px against a 660px column at 1200 but only 542px at 1024 — nowrap there
+     would overflow rather than break. */
+  @media (min-width: 1280px) {
     .connect-blurb {
       white-space: nowrap;
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .connect-email::after,
-    .connect-email:hover::after {
+    .ce-seg::after,
+    .connect-email:hover .ce-seg::after {
       transition: none;
     }
   }
@@ -1513,35 +1585,42 @@
     }
   }
 
-  .about-plate {
+  /* ── § 07 connect — the Kyoto portrait's crop marks ───────────────────────
+     The same registration language as § 04's staged plate and § 02's project
+     thumbnails, so the site's raster images read as one family. The photo
+     itself is untouched: no border, no shadow, no radius, no filter, and the
+     marks sit outside its corners without closing into a rectangle.
+     Deliberately NOT interactive — § 04's plate extends its corners because it
+     is a trigger; this one is not, and must not imply it is. */
+  .cn-plate {
     position: relative;
     display: block;
   }
-  .about-plate-reg {
+  .cn-plate-reg {
     position: absolute;
     width: 14px;
     height: 14px;
     pointer-events: none;
   }
-  .about-plate-reg[data-c="tl"] {
+  .cn-plate-reg[data-c="tl"] {
     top: -8px;
     left: -8px;
     border-top: 0.5px solid theme("colors.ink");
     border-left: 0.5px solid theme("colors.ink");
   }
-  .about-plate-reg[data-c="tr"] {
+  .cn-plate-reg[data-c="tr"] {
     top: -8px;
     right: -8px;
     border-top: 0.5px solid theme("colors.ink");
     border-right: 0.5px solid theme("colors.ink");
   }
-  .about-plate-reg[data-c="bl"] {
+  .cn-plate-reg[data-c="bl"] {
     bottom: -8px;
     left: -8px;
     border-bottom: 0.5px solid theme("colors.ink");
     border-left: 0.5px solid theme("colors.ink");
   }
-  .about-plate-reg[data-c="br"] {
+  .cn-plate-reg[data-c="br"] {
     bottom: -8px;
     right: -8px;
     border-bottom: 0.5px solid theme("colors.ink");
@@ -1550,24 +1629,24 @@
   /* Below 900px the section padding drops toward 24px, so the marks pull in to
      stay clear of the viewport edge and the text column. */
   @media (max-width: 899.98px) {
-    .about-plate-reg {
+    .cn-plate-reg {
       width: 10px;
       height: 10px;
     }
-    .about-plate-reg[data-c="tl"],
-    .about-plate-reg[data-c="tr"] {
+    .cn-plate-reg[data-c="tl"],
+    .cn-plate-reg[data-c="tr"] {
       top: -6px;
     }
-    .about-plate-reg[data-c="bl"],
-    .about-plate-reg[data-c="br"] {
+    .cn-plate-reg[data-c="bl"],
+    .cn-plate-reg[data-c="br"] {
       bottom: -6px;
     }
-    .about-plate-reg[data-c="tl"],
-    .about-plate-reg[data-c="bl"] {
+    .cn-plate-reg[data-c="tl"],
+    .cn-plate-reg[data-c="bl"] {
       left: -6px;
     }
-    .about-plate-reg[data-c="tr"],
-    .about-plate-reg[data-c="br"] {
+    .cn-plate-reg[data-c="tr"],
+    .cn-plate-reg[data-c="br"] {
       right: -6px;
     }
   }

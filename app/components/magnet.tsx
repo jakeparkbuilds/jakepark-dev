@@ -16,11 +16,14 @@ export default function Magnet({
   children,
   divisor = 3,
   field = 150,
+  max,
   className,
 }: {
   children: React.ReactNode;
   divisor?: number;
   field?: number;
+  /** Travel ceiling in px — see MagnetEntry. */
+  max?: number;
   className?: string;
 }) {
   const reduced = useReducedMotion();
@@ -33,8 +36,8 @@ export default function Magnet({
     // Pointer-fine only. On a touch screen there is no hover state to lead the
     // finger toward, and a link that moves under a tap is a bug.
     if (!window.matchMedia("(pointer: fine) and (hover: hover)").matches) return;
-    return registerMagnet({ el, divisor, field });
-  }, [reduced, divisor, field]);
+    return registerMagnet({ el, divisor, field, max });
+  }, [reduced, divisor, field, max]);
 
   return (
     <span ref={ref} className={className} style={{ display: "inline-block" }}>

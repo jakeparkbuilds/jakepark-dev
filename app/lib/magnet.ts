@@ -24,6 +24,19 @@ export type MagnetEntry = {
   divisor: number;
   /** How far outside the element's bounds the field reaches, in px. */
   field: number;
+  /**
+   * Ceiling on the travel, in px, applied to the VECTOR so the direction is
+   * kept. It exists because the offset is measured from the element's centre,
+   * so a wide element leans by half its own width before the field is even
+   * left: the email is 612px across, and at the far edge of its 200px field it
+   * wanted 84.3px of travel. That was fine while the block was centred in the
+   * section with nothing beside it. Left-aligned beside the portrait it is not
+   * — measured at 1440, an unclamped email put its left edge 35px INSIDE the
+   * photograph, and the pointer position that did it was over the photograph.
+   * The cap keeps the weight relationship: the heavier the type, the less it
+   * moves, at the cap as well as below it.
+   */
+  max?: number;
 };
 
 type Registered = MagnetEntry & {
@@ -60,8 +73,16 @@ function onPointerMove(e: PointerEvent) {
       e.clientY <= r.bottom + m.field;
 
     if (inField) {
-      const dx = (e.clientX - (r.left + r.width / 2)) / m.divisor;
-      const dy = (e.clientY - (r.top + r.height / 2)) / m.divisor;
+      let dx = (e.clientX - (r.left + r.width / 2)) / m.divisor;
+      let dy = (e.clientY - (r.top + r.height / 2)) / m.divisor;
+      if (m.max !== undefined) {
+        const d = Math.hypot(dx, dy);
+        if (d > m.max) {
+          const k = m.max / d;
+          dx *= k;
+          dy *= k;
+        }
+      }
       if (!m.active) {
         m.active = true;
         m.el.style.willChange = "transform";

@@ -197,8 +197,11 @@ Rules:
   nothing renders a noise texture anywhere. The description is struck. Adding
   grain is a new proposal and has to argue for itself.
 - Nav gutter: ~180px reserved on the right of every section. Collapses to 0
-  below 900px. The connect section overrides this and centers on the full
-  viewport.
+  below 900px. **§ 05 connect used to override this and centre on the full
+  viewport; it does not any more.** It is two columns whose right one must end
+  on the section's content edge like every other section, and without the gutter
+  that edge is 104px inside the nav. Every section now uses the same content box
+  at every width.
 - Section markers are `02 / work` format. The `§` symbol was removed.
 - `::selection` is accent #22384F at 0.18 alpha with color #0A0908. The browser
   default blue must never appear.
@@ -218,7 +221,7 @@ number, which is why the ink ground and the cursor/ink-trail inversion keyed to
 | 02 | work — project rows, then the tool index | paper | done |
 | 03 | experience | ink | done — the inverted plate, entries arrive on scroll |
 | 04 | background — three stations and the schools, and nothing else | paper | done |
-| 05 | connect | paper | done |
+| 05 | connect — the Kyoto portrait, then the email; bands; footer | paper | done |
 
 Ground sequence, top to bottom: **paper → paper → ink → paper → paper.**
 § 03 is the only section that is not paper.
@@ -494,8 +497,8 @@ do not add a synthetic figure to a project that lacks a thumbnail.**
   differ and that is correct.
 - **The registration corners are what make a full-color rectangle belong to the
   page.** 0.5px ink, 14px arms, 8px outside the image's corners, never touching
-  it and never closing into a rectangle — the same vocabulary as § 04's
-  education plates and its Kyoto portrait. They are the section's only hover
+  it and never closing into a rectangle — the same vocabulary as § 04's staged
+  plate and § 05's Kyoto portrait. They are the section's only hover
   gesture: they translate
   5px further out along their diagonals. **The image itself never moves, scales,
   lifts, tints, or gains an overlay** — that is hover-lift and § 8 bans it.
@@ -569,7 +572,7 @@ again now.
 
 What defines that rectangle is **the four registration corners** — ink at
 ~14.9:1, the single strongest mark anywhere near the image — plus the caption
-directly beneath it. That is the same vocabulary § 04's plates and § 02's
+directly beneath it. That is the same vocabulary § 04's plate and § 05's
 portrait use, and it is what the vocabulary is *for*: making a full-colour
 rectangle belong to a drawn page without drawing a box around it.
 
@@ -579,49 +582,97 @@ a frame on one of three thumbnails would break the register's only consistent
 treatment to solve a 0.06 contrast difference.
 
 ### §05 connect — the composition
-**Three elements in the centre, and the EMAIL is the monument.** It holds the
-position and the weight the display headline used to, which is why the headline
-demotes to a 13px mono label above it. `you've reached the end` is deleted: the
-bands and the end of the page already say that, and a label announcing it was a
-fourth thing competing for one centre.
+**TWO COLUMNS, and the EMAIL is still the monument.** The portrait on the left,
+the three elements that used to be centred left-aligned beside it and vertically
+centred against it, so the two read as one unit. `you've reached the end` is
+deleted: the bands and the end of the page already say that, and a label
+announcing it was a fourth thing competing for one centre.
 
 ```
-LET'S CONNECT                       mono label, 13px / 0.24em / #6B6455
-        ↕ 32px
-jp2282 [at] georgetown [dot] edu    IBM Plex Mono 500, ink, -0.01em, one line
-        ↕ 28px
-always up for a conversation …      Bricolage 19/400, #2E2A24, one line ≥1200px
+[ Kyoto portrait ]     LET'S CONNECT                   mono, 13px / 0.24em / #6B6455
+[ 4:5, in its    ]             ↕ 32px
+[ crop marks     ]     jp2282 [at] georgetown [dot] edu   Plex Mono 500, ink, -0.01em
+KYOTO, JAPAN · 2025            ↕ 28px
+                       always up for a conversation …  Bricolage 19/400, #2E2A24
 ```
+
+**Nothing is centred any more, and nothing may go back to being centred.** Three
+centred blocks stacked in a column of dead space is what this replaced.
+
+- **The grid is `auto minmax(0, 1fr)`** at ≥900px. The portrait track takes
+  exactly the figure's capped width and the text track takes everything else, so
+  **the text column's right edge lands on the section's content edge by
+  construction** — measured Δ 0.00px at 1920/1600/1280/1024/900/768/390 and
+  −0.01 at 1440. There is no number to keep in agreement.
+- **§ 05 RESERVES THE NAV GUTTER AGAIN.** It used to zero `--nav-gutter` above
+  1280px and centre a text column on the full viewport, and the centre block
+  then insetted 104 + 24px symmetrically to dodge the nav. Both are deleted:
+  "the content edge" has to mean the same thing here as everywhere else, and
+  without the gutter it is 104px inside the nav. The visible consequence is that
+  the footer's rule and coordinates end 180px further left at ≥1280 than they
+  did.
+- **The portrait is 4:5, cropped in the FRAME and never in `/public`.** The file
+  is 3:4, so `object-fit: cover` at `object-position: 50% 50%` takes 6.25% of
+  its height, 3.1% off each end. Both subjects survive with room — measured on
+  the rendered (EXIF-rotated) image, the face sits 57.5% down and the pagoda's
+  spire 10.9% down. Widths 240 / 280 (≥1440) / 320 (≥1600), and 100% capped at
+  300 below 900px. **It is not a trigger** — no hover response, because a plate
+  that opens is a different object and this must not suggest it is one.
+- **Its caption is `#6B6455`, not muted.** It names a place and a year, so it is
+  a caption a reader reads and § 11's floor applies. That is also the value
+  `.edu-plate-caption` uses, so the site's two photo captions now match and
+  **nothing on the site sets type in `#9B9382` any more.**
+- **The portrait is taller than the text block and that is expected**; the ask
+  is that it not dominate. Measured figure height against the text block:
+  427 / 143 = **2.98×** at 1920 and 1600, 377 / 143 = 2.63 at 1440, 327 / 142 =
+  2.30 at 1280, 327 / 196 = 1.67 at 1024. A photograph beside three lines of
+  type cannot be shorter than they are without becoming a thumbnail.
+- **The text column is wider than its ink at 1920 and that is inherent.** The
+  ink measures 988px in a 1152px column, so it stops 560px short of the content
+  edge; at 1440 it stops 146px short. Left-aligning short content in a wide box
+  is what puts the air on the outside, and the alternative — right-anchoring the
+  block to the content edge — moves the same air into the middle and breaks
+  "the two read as one unit". Do not fix this by centring anything.
 
 - The `mailto:` href carries the **real address**; the bracket notation is
   display only, with `[at]` and `[dot]` in #6B6455 so they read as annotation
   rather than as part of the address.
+- **THE ADDRESS WRAPS, and only where a space already is.** It is three nowrap
+  segments — `jp2282`, `[at] georgetown`, `[dot] edu` — with real spaces between
+  them, so the only break opportunities on the line are the ones the bracket
+  notation put there. Never mid-word, never hyphenated (`hyphens: none`,
+  `overflow-wrap: normal`). Measured: one line down to 1280, two at 1024 / 900 /
+  390.
+- **The underline is per SEGMENT.** One rule on the whole anchor draws a single
+  bar under the last line of a wrapped address and leaves the lines above it
+  bare; the segments are the line fragments, so an underline per segment is an
+  underline per line. They share one transition, so a wrapped address still
+  draws as one gesture.
 - There is exactly **one** space either side of each bracket group and it looks
   like two, because Plex Mono is monospaced and each space is a full 0.6em
-  advance — 25px at 42px type. `word-spacing: -0.22em` on the annotation span
-  pulls those two spaces back. It must stay on the span: the address's own
-  letterfit has to remain monospaced to read as data, which is the whole point
-  of setting it in the data face.
+  advance — 20px at 34px type. `word-spacing: -0.22em` pulls those spaces back.
+  **It sits on `.connect-email` now, not on the annotation span**: the span can
+  no longer own the spaces, because a break opportunity cannot live inside a
+  nowrap segment. word-spacing touches spaces only, so the address's own
+  letterfit is still monospaced, which is the whole point of setting it in the
+  data face.
 - **This is the one place mono is used at display scale** (§ 3's table assigns it
   to labels and metadata). It is deliberate: the address is data, and setting the
   page's largest type in the data face is the joke of the section landing
   straight.
-- **The email's size is the smaller of the specified size and what fits.**
-  `clamp(22px, 3.1vw, 42px)` is a viewport measure and § 05's content box is not
-  the viewport — below 1280px it also gives up 180px to the nav gutter. At the
-  earlier `clamp(28px, 4.2vw, 58px)` the 1200 case asked for 50.4px, which laid
-  the address out at 967px inside an 876px column; `nowrap` does not wrap that,
-  it pushes a horizontal scrollbar onto the document. So the ceiling is still
-  `min(clamp(...), 5.1cqi)`: 32 characters at 0.6em advance less
-  0.01em tracking is 18.88em, so it fits at container/18.88 (5.30cqi), taken with
-  a 4% margin. Where the spec fits it wins unchanged.
-- **§ 05 centres on the full viewport, so above 1280px nothing reserves the nav
-  column** — safe while the centre was a 720px text column, not safe with a 58px
-  monument in it. Measured, the email's right edge landed 48px inside the nav at
-  1280 and 18px at 1440. The centre block insets by the nav's width (a constant
-  104px) plus 24px, **symmetrically**, so it stays viewport-centred instead of
-  being shoved off-centre by a one-sided gutter — and since that block is also
-  the email's sizing container, the monument shrinks to match by itself.
+- **The size is `clamp(24px, 2.6vw, 34px)` and the ceiling came DOWN from 42.**
+  The address is 32 characters at 0.6em advance less 0.01em tracking — 18.88em —
+  so 42px laid it out **793px** wide, which does not fit a text column beside a
+  portrait. At 34 it is **612px** and still by a long way the largest thing in
+  the section (the blurb is 19px). The 2.6vw term takes it down from 1308px, so
+  a narrow column gets a smaller monument rather than more lines.
+- **The `min(…, 5.1cqi)` fitting term and the `container-type` on the parent are
+  DELETED.** They existed only because the address was `white-space: nowrap`: a
+  size that did not fit could not wrap, so it pushed a horizontal scrollbar onto
+  the document instead. It wraps now, so overflow is not a possible failure and
+  the size does not have to defend against it. Longest single segment is
+  `[at] georgetown` at 9em — 216px at the 24px floor, inside a 366px content box
+  at 390. **Do not reintroduce a fitting term to force one line.**
 - The underline **draws** left to right in 380ms and **retracts** right to left
   in 280ms, never the enter reversed. Switching `transform-origin` with the
   hover state is what buys the second direction.
@@ -631,8 +682,9 @@ always up for a conversation …      Bricolage 19/400, #2E2A24, one line ≥120
 footer sits on the bottom edge. The stage's 5svh top padding is what puts the
 block slightly high rather than dead centre — its content centres inside the
 padding box, so the middle lands at ~38% and stays proportional at other heights
-instead of drifting the way a fixed offset would. Measured 900.0px at 1440×900,
-block midpoint 35.8%. **Do not go back to padding tuned to one viewport height;**
+instead of drifting the way a fixed offset would. Re-measured with the two
+columns in it: **exactly 900px at 1920 / 1600 / 1440 / 1280 / 1024 / 900 / 768 /
+390 on a 900px viewport, with zero document overflow at every one.** **Do not go back to padding tuned to one viewport height;**
 three passes in a row had to re-tune it.
 
 **The footer is one row, three parts, one baseline**: trigger left, socials
@@ -644,18 +696,32 @@ arrangement needs its own markup. Stacked, the middots are **removed, not
 hidden**, and with them gone the three names fit 390px on one line, which is why
 the row stays `nowrap` all the way down and can never orphan a separator.
 
-Magnetism is confined to § 05's **centre block — the email and its label, and
+Magnetism is confined to § 05's **text column — the email and its label, and
 nothing else on the page.** Each has its own independent field, and **strength
 is set by weight** — the heavier type moves less, so the block reads as having
 mass rather than as uniformly springy:
 
-| element | divisor | field |
-|---|---|---|
-| the email — the monument | 6 | 200px |
-| `LET'S CONNECT` | 4 | 140px |
+| element | divisor | field | max travel |
+|---|---|---|---|
+| the email — the monument | 6 | 200px | 18px |
+| `LET'S CONNECT` | 4 | 140px | 24px |
 
 Position only: no scale, no colour, no rotation. Pointer-fine only, never under
 reduced motion, and § 05 only.
+
+**The `max` column is new and it is load-bearing, because the block is
+left-aligned now.** The offset is measured from the element's CENTRE, so a wide
+element leans by half its own width before the field is even left: the email is
+612px across and at the far edge of its 200px field it wanted **84.3px** of
+travel. That was fine while the block was centred in the section with nothing
+beside it. Beside the portrait it is not — measured at 1440, an unclamped email
+put its left edge **35px inside the photograph**, and the pointer position that
+did it was over the photograph. The cap is applied to the VECTOR, so direction
+is kept, and it preserves the weight relationship at the cap as well as below
+it: the heavier email is capped tighter than the lighter label. Measured
+clearance between the pulled ink and the portrait's right edge, at full travel:
+**38 / 31 / 25.5 / 16.8 / 12.6px** at 1920 / 1440 / 1280 / 1024 / 900, and the
+label clears by 6.6px at its worst (900). Never negative at any width.
 
 - **The footer is entirely excluded, and the social links were removed from it.**
   They carried divisor 5 / 150px and no longer do. The footer is the page's last
@@ -685,7 +751,7 @@ motion. One rAF drives both, gated on § 05's intersection and on
 - **Full bleed by cancelling the section's own padding**, never the usual
   `left: 50%; width: 100vw; margin-left: -50vw`. That idiom assumes the parent
   is centred in the viewport and § 05's is not — it carries the 180px nav gutter
-  as padding-right below 1280px, which puts the content box centre 90px left of
+  as padding-right at every width ≥900px, which puts the content box centre 90px left of
   the viewport centre. Measured: the bands started at −90px and left 90px of the
   right edge bare at 1200, 1024 and 900.
 - The translate is wrapped modulo **one measured repetition width**, with three
@@ -1791,8 +1857,8 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
   makes every performance number un-attributable. Do not claim this budget line
   is met until that gate exists.
 - anime.js imported modularly, never the whole bundle
-- Raster images now number **seven** — the about-section portrait, one photo per
-  education row, `pizza.png` for § 05's easter egg, and **three project
+- Raster images now number **seven** — § 05's Kyoto portrait, one photo per
+  school station in § 04, `pizza.png` for § 05's easter egg, and **three project
   thumbnails** in § 02. Everything else is SVG or type. `pizza.png` is 31KB, is
   requested once and on demand by the rain, and is not part of any section's
   load.
