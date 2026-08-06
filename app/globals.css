@@ -2905,29 +2905,16 @@
   }
 }
 
-/* ── the drafting ground — § 02 work's ground ────────────────────────────────
-   FLAT. A tonal shift and nothing else: #EDEBE4, full-bleed to the section box,
-   hard-edged against the grounds above and below. No fade, no feather, no
-   transition band.
-
-   IT CARRIES NO RULING AND MUST NEVER CARRY ONE. A 32px #C5CBD1 lattice was
-   built here and removed under CLAUDE.md § 9: a friend's portfolio uses a ruled
-   paper ground, and close imitation of another site's signature move has
-   already cost this project one full revert. The tonal shift alone is the third
-   register. See CLAUDE.md § 2 and § 5 / §02.
-
-   No component, no JS, no observer, nothing to arm — a background colour is the
-   whole of it. */
-@layer components {
-  .has-drafting {
-    background: theme("colors.drafting");
-  }
-}
+/* § 02 sat on a third ground here — flat #EDEBE4, one declaration, no ruling.
+   It is deleted and there are TWO grounds: paper, and ink for § 03 only. The
+   tone read as a seam rather than as a register once the lattice that was to
+   have carried it went (CLAUDE.md § 9), and a ground with no consumer is the
+   fiction class § 12 exists to keep out. Do not reintroduce a third. */
 
 /* ── § 02 work — the section shell and what the merge added ─────────────────
    The rows themselves keep every .proj-* rule above; what follows is the
-   section's own furniture (head, body), the widened type scale, the metric row
-   and the stack tokens. */
+   section's own furniture (head, body), the widened type scale and the stack
+   tokens. */
 @layer components {
   .work-head {
     display: flex;

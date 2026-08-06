@@ -58,8 +58,9 @@ mark     #C8952E   warm ochre — the Georgetown star on the hero map, AND
 ```
 
 **There is no ruling token and there must not be one.** `#C5CBD1` was admitted
-here for a 32px lattice on the drafting ground, built, measured, and then struck
-along with the lattice — see § 9. The palette is closed at the values above.
+here for a 32px lattice on § 02's ground, built, measured, and then struck along
+with the lattice — see § 9. The ground it was for is struck too. The palette is
+closed at the values above.
 
 Legibility variants: `#6B6455` for any mono text a user must read (nav labels,
 section markers, gutter annotations, captions, coursework). `#0A0908` for the
@@ -110,34 +111,29 @@ contained within paper tiles.** Brand color is quarantined to those tiles and
 appears nowhere else on the site.
 - Never pure white, never pure black, never a gray with blue in it.
 - No dark mode, and no theme of any kind: there is no toggle and nothing on the
-  site responds to a system preference. **Exactly three grounds exist. There is
-  no fourth.**
+  site responds to a system preference. **EXACTLY TWO GROUNDS EXIST. There is no
+  third.**
 
 ```
-paper     #F5F1E8   § 01 hero, § 04 background, § 05 connect
-ink       #1A1815   § 03 experience ONLY — the inverted plate, paper type
-drafting  #EDEBE4   § 02 work ONLY — cooler and one step darker than paper.
-                    FLAT. No ruling, no lattice, no grid of any kind, ever.
+paper   #F5F1E8   § 01 hero, § 02 work, § 04 background, § 05 connect
+ink     #1A1815   § 03 experience ONLY — the inverted plate, paper type
 ```
 
-**`drafting` is a tonal shift and nothing else, and that is the whole of the
-third register.** It was specified as carrying a blueprint ruling; the ruling
-was built — a 32px #C5CBD1 lattice, heavier every fifth line, measured crisp at
-every device pixel ratio — and then removed. **A friend's portfolio uses a ruled
-paper ground, and § 9 forbids close imitation of another site's signature move.
-That rule is not a preference; borrowing one has already cost this project a
-full revert.** Do not rebuild the lattice, do not substitute a dot grid, a
-graph-paper texture, a blueprint tint or a faint repeating anything. If § 02
-ever reads unfinished, the answer is composition, not a pattern.
+**§ 02 had a third ground and it is struck.** `drafting` #EDEBE4 — a flat tonal
+shift, one CSS declaration — was specified as carrying a blueprint ruling; the
+ruling was built (a 32px #C5CBD1 lattice, heavier every fifth line, crisp at
+every dpr) and then removed under § 9, because a friend's portfolio uses a ruled
+paper ground and close imitation of another site's signature move has already
+cost this project a full revert. **What was left read as a seam between two
+paper sections rather than as a register**, so the tone went with the lattice.
+The token, the `.has-drafting` rule and the class are all deleted.
 
-  § 03 is the only inverted section and no other may become one. § 02 is the
-  only ruled one. Both are full-bleed horizontally, running edge to edge past
-  every other section's `section-pad` measure.
-  A third register is the point — three sections, three grounds, no repetition
-  — so do not give a fourth section a ground of its own to match them.
-
-  Drafting moved from projects to work when the two merged. It is the same
-  ground on the same content; the section it belongs to is what changed.
+Do not reintroduce a third ground, do not rebuild the lattice, and do not route
+around either with a dot grid, graph paper, a blueprint tint or a faint
+repeating anything. If § 02 ever reads unfinished, the answer is composition,
+not a pattern. **§ 03 is the only section with a ground of its own and no other
+may become one**; it is full-bleed horizontally, running edge to edge past every
+other section's `section-pad` measure.
 - **Never double-soften.** `body` #2E2A24 is already the softened ink. Applying
   an opacity utility on top of it is a bug — this caused a site-wide washed-out
   contrast problem that took a full pass to correct.
@@ -199,8 +195,7 @@ Rules:
   `opacity: 0.05`, `mix-blend-mode: multiply`, one instance fixed to the page —
   as though it existed. It does not: `app/layout.tsx` says so in a comment, and
   nothing renders a noise texture anywhere. The description is struck. Adding
-  grain is a new proposal and has to argue for itself, including against the
-  drafting ground's 32px lattice, which a fine noise field can moiré against.
+  grain is a new proposal and has to argue for itself.
 - Nav gutter: ~180px reserved on the right of every section. Collapses to 0
   below 900px. The connect section overrides this and centers on the full
   viewport.
@@ -220,12 +215,13 @@ number, which is why the ink ground and the cursor/ink-trail inversion keyed to
 | § | section | ground | status |
 |---|---|---|---|
 | 01 | hero (no number shown — it's the cover) | paper | done |
-| 02 | work — project rows, then the tool index | drafting | done |
+| 02 | work — project rows, then the tool index | paper | done |
 | 03 | experience | ink | done — the inverted plate, entries arrive on scroll |
 | 04 | background — the route, with education at its stations | paper | done |
 | 05 | connect | paper | done |
 
-Ground sequence, top to bottom: **paper → drafting → ink → paper → paper.**
+Ground sequence, top to bottom: **paper → paper → ink → paper → paper.**
+§ 03 is the only section that is not paper.
 
 **The numbers are DERIVED from `CONTENT_SECTIONS` in `app/lib/sections.ts` and
 are written down nowhere else.** The page maps over that array and so does the
@@ -427,27 +423,21 @@ else — never a heading, a mono label, or the hero blurb.
   linkage. The branch is in the effect, never in render — branching on a
   client-only value during render is the § 02 hydration trap.
 
-### §02 work — the drafting ground
-The site's third register, and the ground the whole of § 02 sits on. **It is a
-background colour and nothing else** — `.has-drafting` in globals.css, one
-declaration. No component, no element, no JS, no observer, nothing to arm.
+### §02 work — the ground it no longer has
+**§ 02 IS PAPER.** It carried a third ground — `drafting` #EDEBE4, a flat tonal
+shift, `.has-drafting` in globals.css, one declaration — and that ground is
+deleted along with its token and its class. The tone existed to carry a 32px
+#C5CBD1 lattice; the lattice was built, measured (crisp at dpr 1/1.5/2/3, stable
+across sub-pixel scroll, zero long tasks) and then removed under § 9, because a
+friend's portfolio uses a ruled paper ground. What was left was a bare tonal
+step between two paper sections, which read as a seam rather than as a register,
+so it went too. The component, the pattern, the wipe, the `ruling` token, the
+`drafting` token and the scratch route that existed to judge it are all gone.
 
-`drafting` #EDEBE4, full-bleed to the section box and **hard-edged**: no fade, no
-feather, no transition band against the grounds above and below. The section is
-already viewport-width, so a background on it *is* the full bleed — never
-`left: 50%; width: 100vw`, which would have to reason about the scrollbar.
-
-**IT CARRIES NO RULING AND MUST NEVER CARRY ONE.** A 32px #C5CBD1 lattice,
-heavier every fifth line, inset to the content box and uncovered by a clip-path
-wipe, was built here and measured — crisp at dpr 1/1.5/2/3, stable across
-sub-pixel scroll, zero long tasks. It was removed anyway, under § 9: **a
-friend's portfolio uses a ruled paper ground, and close imitation of another
-site's signature move has already cost this project one full revert.** The
-component, the pattern, the wipe, the `ruling` token and the scratch route that
-existed to judge it are all deleted. Do not rebuild the lattice, and do not
-substitute a dot grid, graph paper, a blueprint tint or a faint repeating
-anything. If § 02 ever reads unfinished, the answer is composition, not a
-pattern.
+Do not rebuild the lattice, do not give § 02 a ground again, and do not route
+around either with a dot grid, graph paper, a blueprint tint or a faint
+repeating anything. If § 02 ever reads unfinished, the answer is composition,
+not a pattern.
 
 **One thing learned there is worth keeping, and it generalises: an
 IntersectionObserver cannot watch the element it clips.** `clip-path` is part of
@@ -561,19 +551,19 @@ would render an inert token that looks interactive.
 - **The header line's stack stays inert.** It is a truncating one-liner and an
   affordance that clips is not an affordance.
 
-**The three thumbnails on the drafting ground — measured, and one is a
-finding.** Edge contrast of each image against the ground it sits on:
+**The three thumbnails — measured, and one is a finding.** Edge contrast of each
+image against the paper it sits on:
 
-| row | image | on paper | on drafting |
-|---|---|---|---|
-| 01 | my5, dark UI | 16.64:1 | 15.73:1 |
-| 02 | capitolcast, dark UI | 16.64:1 | 15.73:1 |
-| 03 | bike-heat, light poster | **1.12:1** | **1.06:1** |
+| row | image | on paper |
+|---|---|---|
+| 01 | my5, dark UI | 16.64:1 |
+| 02 | capitolcast, dark UI | 16.64:1 |
+| 03 | bike-heat, light poster | **1.12:1** |
 
-Row 03's own outer margin is near-white and does not read as an edge against
-either ground — **this predates the drafting ground and is not caused by it.**
-On paper it was 1.12:1 and nobody called it a bug; flat drafting takes it to
-1.06:1, a difference of 0.06 that no eye resolves.
+Row 03's own outer margin is near-white and does not read as an edge against the
+ground. That is accepted and predates everything: it measured 1.12:1 on paper
+before § 02 briefly had a ground of its own, 1.06:1 on that ground, and 1.12:1
+again now.
 
 What defines that rectangle is **the four registration corners** — ink at
 ~14.9:1, the single strongest mark anywhere near the image — plus the caption
@@ -585,11 +575,6 @@ rectangle belong to a drawn page without drawing a box around it.
 row 03.** Nothing on this site is enclosed by its own complete border (§ 4), and
 a frame on one of three thumbnails would break the register's only consistent
 treatment to solve a 0.06 contrast difference.
-
-**The drafting ground carries these rows, and it is a tonal shift only.** Three
-native-color thumbnails on a flat `#EDEBE4` is a slightly different picture than
-the same three on paper — every ink value loses 0.1–1.0 contrast points (§ 11) —
-but the composition the register was drawn against is otherwise intact.
 
 ### §05 connect — the composition
 **Three elements in the centre, and the EMAIL is the monument.** It holds the
@@ -1547,8 +1532,8 @@ fiction survived four rounds of review.
 
 **Three of six occupied.** The free slots are not an invitation. They are what
 is left after § 02's generated figures were deleted (§ 9), after two entries
-that had never been built were struck, and after the drafting ruling was removed
-under § 9 — a piece that shipped and was then taken out. A seventh idea still
+that had never been built were struck, and after § 02's ruling was removed under
+§ 9 — a piece that shipped and was then taken out. A seventh idea still
 argues for itself against the cap, and a new piece has to ship to take a slot.
 
 The §02 field is deliberately NOT a set piece: it has no entrance, draws
@@ -1653,7 +1638,8 @@ licence, and a fourth needs its own argument.
   real data converted at build time. Never ask the model to draw it from memory.**
 - **The cursor was a crosshair.** Rejected — read as a videogame reticle. It is a
   dot. Do not add a ring, halo, outline, label, blend mode, or magnetic snap.
-- **§ 02's drafting ground had a ruling and it was removed.** A 32px #C5CBD1
+- **§ 02 had a ground of its own and it is gone, twice over.** First the ruling,
+  then the tone under it. A 32px #C5CBD1
   lattice, heavier every fifth line, inset to the content box, uncovered by a
   900ms clip-path wipe. It was fully built and measured well. **A friend's
   portfolio uses a ruled paper ground**, and the rule against close imitation is
@@ -1727,14 +1713,13 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
   is a 1px accent outline with 2px offset — not a browser default, not removed.
 - All external links: `target="_blank" rel="noopener noreferrer"`.
 - Any text a user must read uses `#6B6455` minimum, ideally `#2E2A24`.
-- **4.92:1 — `#6B6455` on `drafting` #EDEBE4 — is the site's contrast floor.
-  Nothing may be introduced below it.** Any new colour pairing is measured
-  against this number, **not** against the paper-ground values, which are all
-  0.1–1.0 points more generous (`#6B6455` is 5.21:1 on paper). The floor is
+- **5.21:1 — `#6B6455` on paper #F5F1E8 — is the site's contrast floor.
+  Nothing may be introduced below it.** The floor used to be 4.92:1, the same
+  token on § 02's #EDEBE4 ground; that ground is deleted and every measured
+  pairing on the site moved 0.1–1.0 points more generous with it. The floor is
   accepted rather than fixed: it passes AA at 4.5:1 at every size including the
   11px mono labels, and darkening the token or adding a second one would
-  collapse a mono/body hierarchy that is doing real work, which costs more than
-  0.29 points buys.
+  collapse a mono/body hierarchy that is doing real work.
 - One `<h1>`. Sections as `<section>` with `aria-labelledby`.
 - Decorative SVG gets `aria-hidden`; meaningful SVG gets a `<title>`.
 

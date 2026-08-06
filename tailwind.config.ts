@@ -26,11 +26,8 @@ const config: Config = {
       // The hero's star predates this token and still carries the raw hex; the
       // two values must stay identical.
       mark: "#C8952E",
-      // § 02 work's ground. FLAT — cooler and one step darker than paper, and
-      // that tonal shift is the whole of the third register. It carries no
-      // ruling: a #C5CBD1 lattice token sat here and was struck under
-      // CLAUDE.md § 9 together with the lattice it served.
-      drafting: "#EDEBE4",
+      // A third ground, #EDEBE4, sat here for § 02. It is struck: the site has
+      // TWO grounds, paper and § 03's ink. See globals.css where the rule was.
       // Darkest marks on the page: the cursor dot and the active nav label.
       // Consumed through theme() in globals.css, not as a utility class.
       "near-black": "#0A0908",

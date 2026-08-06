@@ -18,7 +18,7 @@ import SkillsIndex from "./skills-index";
 // token and a dial can never disagree about which node they mean.
 const NODE_AT = new Map(NODE_SEEDS.map((s, i) => [s.tool.name, i]));
 
-// § 02 work — the project rows, on the drafting ground.
+// § 02 work — the project rows.
 //
 // projects + skills merged into one section. THE ORDER IS NOT NEGOTIABLE: the
 // rows come first and the index goes underneath them, because a recruiter must
@@ -478,11 +478,11 @@ export default function Work({
     <section
       id={id}
       aria-labelledby={headingId}
-      className="work has-drafting section-pad py-section-y"
+      className="work section-pad py-section-y"
     >
-      {/* The ground is a background colour on this section and nothing more —
-          no element, no component, no JS. See .has-drafting in globals.css for
-          why it carries no ruling. */}
+      {/* Paper, like every section but § 03. The flat #EDEBE4 tone this
+          section used to carry is gone: with no ruling on it, it read as a
+          seam between two paper sections rather than as a register. */}
       <div className="work-head">
         <SectionMark mark={number} label={label} />
         <h2 id={headingId} className="font-display text-h2 text-ink">
