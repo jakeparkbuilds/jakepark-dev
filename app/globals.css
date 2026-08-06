@@ -515,11 +515,12 @@
      clear space beside the body column is ~119px wide, which is too small to
      read as a photograph. So it is shown at two sizes rather than one bad one:
 
-       .edu-plate-ref    the reference mark — a 12px hollow square, a 14px
-                         leader and the word PHOTO, 14px past the school name.
-                         Absolutely positioned inside a zero-height anchor, so
-                         it adds NOTHING to the line box: the row's height is
-                         identical with and without it. Verified, not assumed.
+       .edu-plate-ref    the trigger — a real button (.ui-btn--outline),
+                         PHOTO when closed and CLOSE when open, 14px past the
+                         school name. Absolutely positioned inside a
+                         zero-height anchor, so it adds NOTHING to the line
+                         box: the row's height is identical with and without
+                         it. Verified, not assumed.
        .edu-plate        the plate — position: ABSOLUTE, up to 500×667. Never
                          fixed: this line said `fixed` for as long as the rule
                          said `absolute`. Reserves no space, contributes 0 to
@@ -539,89 +540,42 @@
     position: relative;
     display: inline-block;
     vertical-align: baseline;
-    width: 84px;
+    /* Reserved inline space, so the name wraps as though the trigger were in
+       flow. The button measures 76.2px of box at the 11px/0.16em step ("photo"
+       and "close" are both five characters, so it never changes width). */
+    width: 78px;
     height: 0;
     margin-left: 14px;
     white-space: nowrap;
   }
 
-  /* The reference mark. A 28px crop of the photograph used to sit here, and it
-     read as a broken image rather than as an affordance — at that size a
-     photograph carries no subject, only noise, and noise beside a heading looks
-     like a failed load. It is a drawn reference instead: a 7px hollow square,
-     a 0.5px leader across the 10px gap, and the word. That is the same
-     vocabulary as the plate's crop marks, and it says "there is a plate" with
-     type rather than with an unreadable thumbnail.
+  /* THE TRIGGER — the outline variant, out of flow inside the zero-height
+     anchor above, so the station's height is unchanged whatever it does.
 
-     Optically aligned to the school name's cap band: the name is 40px/500,
-     Bricolage's cap height measures 28.4px, so the band's centre sits 14.2px
-     above the baseline and the 11px label's centre is put at 14.5px. */
+     It has been wrong twice. First a 28px crop of the photograph: at that size
+     a photograph carries no subject, only noise, and noise beside a heading
+     reads as a failed image load — the opposite of an affordance. Then a hollow
+     square, a leader and the word PHOTO: the plate's OWN vocabulary, which is
+     also what the four crop marks around the plate are drawn in, so the control
+     and the decoration were the same mark and nobody read it as clickable.
+
+     Vertically it is centred on the school name's CAP BAND, not on its
+     baseline. The name is 40px/500, Bricolage's cap height measures 28.4px, so
+     the band's centre is 14.2px above the baseline; the box is 34px tall, so
+     its bottom edge sits at 14.5 − 17 = −2.5px. That is the same optical centre
+     the 13px label used, which is why nothing on the line appears to have
+     moved. */
   .edu-plate-ref {
     position: absolute;
-    /* The hit area extends 8px past the ink on every side: 8px of padding, with
-       the box offset by the same 8px so the INK lands exactly where it did
-       before. Padding rather than a pseudo-element, so the focus ring frames
-       what is actually clickable. Content bottom therefore sits 8px above the
-       baseline and the 13px label's optical centre lands at 14.5px, the same
-       place the 11px one did. */
-    left: -8px;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    padding: 8px;
-    border: 0;
-    background: none;
-    line-height: 13px;
-    white-space: nowrap;
-    cursor: none;
-  }
-  .edu-plate-ref-square {
-    width: 12px;
-    height: 12px;
-    flex: none;
-    border: 1px solid theme("colors.ink");
-    /* Hollow at rest, solid when addressed — the only thing that changes. */
-    background: transparent;
-    transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  /* The leader occupies the whole gap, so the square and the word are one
-     object rather than two things that happen to be near each other. */
-  .edu-plate-ref-leader {
-    width: 14px;
-    height: 0.5px;
-    flex: none;
-    background: theme("colors.muted");
-  }
-  .edu-plate-ref-label {
-    font-size: 13px;
-    font-weight: 400;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #6b6455;
-    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .edu-plate-ref:hover .edu-plate-ref-square,
-  .edu-plate-ref:focus-visible .edu-plate-ref-square,
-  .edu-plate-ref[aria-expanded="true"] .edu-plate-ref-square {
-    background: theme("colors.ink");
-  }
-  .edu-plate-ref:hover .edu-plate-ref-label,
-  .edu-plate-ref:focus-visible .edu-plate-ref-label,
-  .edu-plate-ref[aria-expanded="true"] .edu-plate-ref-label {
-    color: theme("colors.ink");
-  }
-  .edu-plate-ref:focus-visible {
-    outline: 1px solid theme("colors.accent");
-    outline-offset: 2px;
-  }
-  .edu-plate-ref:focus:not(:focus-visible) {
-    outline: none;
+    left: 0;
+    bottom: -2.5px;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .edu-plate-ref-square,
-    .edu-plate-ref-label {
-      transition: none !important;
+  /* Below 640 the name steps down to the 34px display size, where the cap band
+     centre is 12.1px above the baseline. */
+  @media (max-width: 639.98px) {
+    .edu-plate-ref {
+      bottom: -5px;
     }
   }
 
@@ -1439,19 +1393,22 @@
      component, and it is the single value most responsible for whether this
      belongs to the site.
 
-     THE BUTTON IS A TRANSPARENT OVERLAY, NOT THE PLATE'S PARENT. A <ul> inside
-     a <button> is invalid content and the browser drops the entire list out of
-     the accessibility tree — measured, the back face exposed nothing. So the
-     rotating element is a sibling and the button sits on top of it, which also
-     keeps the button, the corners and the focus brackets out of the rotation. */
-  .cn-turn-btn {
+     NOTHING INTERACTIVE MAY WRAP THE ROTATING ELEMENT. A <ul> inside a <button>
+     is invalid content and the browser drops the entire list out of the
+     accessibility tree — measured, when the control was the plate's parent the
+     back face exposed nothing at all. The control is a labelled button in the
+     foot row now (.ui-btn--outline), so that is satisfied structurally, and the
+     corners and the focus brackets stay out of the rotation.
+
+     .cn-turn-hit is the plate's own pointer target: hover and click, no tab
+     stop, aria-hidden. It is allowed to be a click target without being in the
+     accessibility tree only because it is REDUNDANT with the labelled button
+     directly below it. */
+  .cn-turn-hit {
     position: absolute;
     inset: 0;
     z-index: 2;
     display: block;
-    padding: 0;
-    border: 0;
-    background: none;
     cursor: none;
   }
   .cn-turn {
@@ -1507,12 +1464,12 @@
     color: #6b6455;
   }
 
-  /* Focus: four accent registration brackets, radius 0, the § 02 / § 04 motif.
-     Inside the plate's edge so they never collide with the mount's ink corners,
-     and siblings of the rotating element so they do not turn either. */
-  .cn-turn-btn:focus-visible {
-    outline: none;
-  }
+  /* Four accent registration brackets, radius 0, the § 02 / § 04 motif. They
+     are drawn while the TURN button has focus: the button carries the standard
+     ring, and these say WHAT IT ACTS ON — the plate is 400px away from the
+     control that turns it, and a ring on the button alone leaves that
+     unexplained. Inside the plate's edge so they never collide with the mount's
+     ink corners, and outside the rotating element so they do not turn. */
   .cn-focus {
     position: absolute;
     width: 16px;
@@ -1520,7 +1477,7 @@
     opacity: 0;
     pointer-events: none;
   }
-  .cn-turn-btn:focus-visible .cn-focus {
+  .connect-portrait:has(.cn-turn-btn:focus-visible) .cn-focus {
     opacity: 1;
   }
   .cn-focus[data-c="tl"] {
@@ -1589,52 +1546,6 @@
     visibility: visible;
   }
 
-  /* § 04's reference mark, reused exactly — 12px hollow ink square, 0.5px muted
-     leader across a 14px gap, 13px mono label. It is DECORATIVE: the plate is
-     the button, so this is not a second tab stop, and it fills solid when the
-     plate is addressed, the same gesture □—PHOTO makes.
-     The label is #6B6455, not muted: it is a word a reader must read, and § 11
-     does not allow #9B9382 to carry type. That is also what □—PHOTO does — the
-     muted value there is the LEADER, not the word. */
-  .cn-turn-ref {
-    display: flex;
-    align-items: center;
-    flex: none;
-    white-space: nowrap;
-  }
-  .cn-turn-ref-square {
-    width: 12px;
-    height: 12px;
-    flex: none;
-    border: 1px solid theme("colors.ink");
-    background: transparent;
-    transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .cn-turn-ref-leader {
-    width: 14px;
-    height: 0.5px;
-    flex: none;
-    background: theme("colors.muted");
-  }
-  .cn-turn-ref-label {
-    font-size: 13px;
-    font-weight: 400;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #6b6455;
-    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .connect-portrait:has(.cn-turn-btn:hover) .cn-turn-ref-square,
-  .connect-portrait:has(.cn-turn-btn:focus-visible) .cn-turn-ref-square,
-  .connect-portrait:has(.cn-print[data-turned]) .cn-turn-ref-square {
-    background-color: theme("colors.ink");
-  }
-  .connect-portrait:has(.cn-turn-btn:hover) .cn-turn-ref-label,
-  .connect-portrait:has(.cn-turn-btn:focus-visible) .cn-turn-ref-label,
-  .connect-portrait:has(.cn-print[data-turned]) .cn-turn-ref-label {
-    color: theme("colors.ink");
-  }
-
   /* Reduced motion: the faces swap instantly, with the caption. The state is
      still fully reachable — hover, tap, click and Enter/Space all still work,
      only the rotation is dropped. */
@@ -1643,10 +1554,6 @@
       transition: none;
     }
     .cn-cap-face {
-      transition: none;
-    }
-    .cn-turn-ref-square,
-    .cn-turn-ref-label {
       transition: none;
     }
   }
@@ -1856,40 +1763,18 @@
     opacity: 0;
   }
 
-  /* The trigger wears the site's own affordance vocabulary — a hollow square,
-     a gap and a mono label — precisely because what it does is off-theme. The
-     joke is funnier for being announced in the same voice as everything else.
+  /* The joke's trigger. It wore the site's own drawing vocabulary — a hollow
+     square, a gap and a mono label — on the argument that announcing an
+     off-theme joke in the same voice as everything else made it funnier. What
+     it actually did was make the one control in the footer look exactly like
+     the crop marks and reference squares that are decoration, so nobody knew
+     it was a button. It is the SOLID variant now: the loudest control on the
+     page, for the loudest thing on it.
 
-     NOTE: the education photo reference is 12px at 1px stroke since its own
-     pass. This is the 7px the brief specifies, so the two match in TREATMENT
-     (hollow square, fills solid on hover, label to ink) but not in size. */
+     Only the entrance lives here — every other property comes from .ui-btn. */
   .pizza-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 11px;
-    line-height: 1;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: #6b6455;
     opacity: 0;
     animation: pizza-btn-in 400ms cubic-bezier(0.33, 1, 0.68, 1) forwards;
-    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .pizza-btn-sq {
-    width: 7px;
-    height: 7px;
-    border: 0.5px solid theme("colors.ink");
-    background: transparent;
-    transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .pizza-btn:hover,
-  .pizza-btn:focus-visible {
-    color: theme("colors.ink");
-  }
-  .pizza-btn:hover .pizza-btn-sq,
-  .pizza-btn:focus-visible .pizza-btn-sq {
-    background-color: theme("colors.ink");
   }
   @keyframes pizza-btn-in {
     to {

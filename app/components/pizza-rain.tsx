@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { cubicBezier } from "animejs";
 import { subscribeGlobal } from "../lib/scroll-controller";
 import { useReducedMotion } from "../lib/use-reduced-motion";
+import Button from "./button";
 
 // § 07 — pizza rain. A joke someone left in the code.
 //
@@ -105,6 +106,8 @@ export default function PizzaRain() {
   const [scatter, setScatter] = useState<Slice[] | null>(null);
   const [showButton, setShowButton] = useState(false);
   const [mounted, setMounted] = useState(false);
+  /** Is anything in the air right now — the button's `aria-pressed`. */
+  const raining = waves.length > 0 || scatter !== null;
 
   // Per wave: its nodes, and the timestamp it actually began. The start is
   // taken on the wave's FIRST FRAME, not at click time — the click has to get
@@ -332,17 +335,27 @@ export default function PizzaRain() {
     <>
       {mounted && layer ? createPortal(layer, document.body) : null}
       {showButton ? (
-        <button
-          type="button"
+        // THE SOLID VARIANT, and it is a real control now rather than a hollow
+        // square and a word. What it did was always off-theme; announcing it in
+        // the drawing vocabulary made it indistinguishable from the crop marks
+        // and the reference plates, which are decoration.
+        //
+        // `aria-pressed` is "it is raining", which is the only on/off this
+        // button has: CLICKS ACCUMULATE (CLAUDE.md § 5) — a second press adds
+        // another wave rather than stopping the first — so pressed cannot mean
+        // "you pressed it last". It goes true with the first wave and false the
+        // frame the last one lands, and the accent fill says so.
+        <Button
+          variant="solid"
           onClick={reduced ? showScatter : rain}
           onPointerEnter={warm}
           onFocus={warm}
+          aria-pressed={raining}
           aria-label="replay pizza rain"
-          className="pizza-btn font-mono"
+          className="pizza-btn"
         >
-          <span aria-hidden="true" className="pizza-btn-sq" />
           pizza rain
-        </button>
+        </Button>
       ) : null}
     </>
   );

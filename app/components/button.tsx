@@ -20,6 +20,19 @@ import type { ButtonHTMLAttributes } from "react";
 
 export type ButtonVariant = "solid" | "outline";
 
+/**
+ * WRITTEN OUT IN FULL, never assembled. `ui-btn--${variant}` does not survive
+ * the build: rules inside globals.css's `@layer components` are tree-shaken
+ * against the source, and a class the scanner never sees as a literal string is
+ * dropped. Measured — with the interpolated form, `.ui-btn` shipped and both
+ * variants did not, so every control on the page rendered as bare mono text
+ * with no box at all.
+ */
+const VARIANT: Record<ButtonVariant, string> = {
+  solid: "ui-btn ui-btn--solid",
+  outline: "ui-btn ui-btn--outline",
+};
+
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant: ButtonVariant;
 };
@@ -30,7 +43,7 @@ export default function Button({ variant, className, type, ...rest }: Props) {
       // Explicit, always. A bare <button> inside a form submits it, and this
       // component has no idea what it will be dropped into.
       type={type ?? "button"}
-      className={`ui-btn ui-btn--${variant}${className ? ` ${className}` : ""}`}
+      className={className ? `${VARIANT[variant]} ${className}` : VARIANT[variant]}
       {...rest}
     />
   );

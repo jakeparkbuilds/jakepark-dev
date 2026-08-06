@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import Button from "./button";
 
 // § 05 connect — the print, and its reverse.
 //
@@ -14,7 +15,7 @@ import { useState } from "react";
 //   it. A corner that rotates with the plate mirrors itself at 180deg and the
 //   illusion dies — it stops being a print on a page and becomes a card.
 //
-//   THE PROJECTION IS NEAR-ORTHOGRAPHIC. `perspective` sits on the button at
+//   THE PROJECTION IS NEAR-ORTHOGRAPHIC. `perspective` sits on the mount at
 //   2400px against a plate 296–423px wide, so the far edge foreshortens by a
 //   few percent instead of lunging at the viewer. A short perspective is
 //   exactly what makes this read as a stock component.
@@ -37,22 +38,39 @@ const FRONT_CAPTION = "kyoto, japan · 2025";
 const BACK_CAPTION = "interests";
 
 export default function KyotoPlate() {
-  // `pinned` survives the pointer leaving; `hovered` does not. turned is either.
-  // Clicking while hovering unpins but leaves it turned until the pointer goes,
-  // which is the only reading that does not fight the hover.
+  // `pinned` survives the pointer leaving; `hovered` does not.
+  //
+  // CLICK IS A FIRST-CLASS TOGGLE: click turns and pins, click again RETURNS,
+  // even with the pointer still on the plate. That last clause is what
+  // `muteHover` is for. Without it a click-to-return under the pointer is
+  // immediately overruled by the hover that is still true, and the plate simply
+  // does not come back — which is the same "only hover works" complaint from
+  // the other side. Muting is not a lock: it lasts until the pointer leaves,
+  // and leaving is also what re-arms hover.
   const [pinned, setPinned] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const turned = pinned || hovered;
+  const [muteHover, setMuteHover] = useState(false);
+  const turned = pinned || (hovered && !muteHover);
+
+  const toggle = () => {
+    if (pinned) setMuteHover(true);
+    setPinned(!pinned);
+  };
+  const leave = () => {
+    setHovered(false);
+    setMuteHover(false);
+  };
 
   return (
     <figure className="connect-portrait">
       <div className="cn-print" data-turned={turned ? "" : undefined}>
-        {/* The one element that rotates. It is a SIBLING of the button, not a
-            child of it: a <ul> inside a <button> is invalid content and the
-            browser drops the whole list out of the accessibility tree —
-            measured, the back face exposed nothing at all. The button is a
-            transparent overlay on top instead, which also keeps the corners and
-            the focus brackets out of the rotation. */}
+        {/* The one element that rotates. NOTHING INTERACTIVE MAY WRAP IT: a
+            <ul> inside a <button> is invalid content and the browser drops the
+            whole list out of the accessibility tree — measured, when the
+            control was the plate's parent the back face exposed nothing at
+            all. The control is a labelled button in the foot row now, so the
+            constraint is satisfied by construction rather than by an overlay,
+            and the corners and the focus brackets stay out of the rotation. */}
         <div className="cn-turn">
           <div className="cn-face cn-face-front" inert={turned} aria-hidden={turned}>
             <Image
@@ -83,11 +101,18 @@ export default function KyotoPlate() {
           </div>
         </div>
 
-        <button
-          type="button"
-          className="cn-turn-btn"
-          aria-pressed={turned}
-          aria-label="turn over — interests"
+        {/* The plate's own pointer target — NOT a tab stop and not the
+            control. THE COMPLAINT WAS THAT IT LOOKED LIKE A BUTTON AND ONLY
+            HOVER WORKED: the thing that looked like a button was the □—TURN
+            mark below, which was decoration, while the actual control was the
+            photograph, which does not look like anything. The real button is
+            in the foot row now. This layer stays because clicking the
+            photograph is the obvious gesture and it costs nothing — it is
+            redundant with a labelled control eight pixels away, which is the
+            only reason a click target may be aria-hidden. */}
+        <div
+          aria-hidden="true"
+          className="cn-turn-hit"
           // Mouse only. A touch fires pointerenter and never the matching
           // leave, which is exactly how a hover state gets stuck on a phone —
           // so a tap goes through `click` and toggles `pinned` instead, and
@@ -95,27 +120,28 @@ export default function KyotoPlate() {
           onPointerEnter={(e) => {
             if (e.pointerType === "mouse") setHovered(true);
           }}
-          onPointerLeave={() => setHovered(false)}
-          onClick={() => setPinned((v) => !v)}
+          onPointerLeave={leave}
+          onClick={toggle}
         >
           {/* Focus: four accent registration brackets, the § 02 / § 04 motif.
-              On the button, which does not rotate. */}
-          <span aria-hidden="true" className="cn-focus" data-c="tl" />
-          <span aria-hidden="true" className="cn-focus" data-c="tr" />
-          <span aria-hidden="true" className="cn-focus" data-c="bl" />
-          <span aria-hidden="true" className="cn-focus" data-c="br" />
-        </button>
+              They are drawn while the TURN button has focus — they say what
+              that button acts on. They do not rotate. */}
+          <span className="cn-focus" data-c="tl" />
+          <span className="cn-focus" data-c="tr" />
+          <span className="cn-focus" data-c="bl" />
+          <span className="cn-focus" data-c="br" />
+        </div>
 
-        {/* The mount's corners. Outside the button entirely — they never turn,
-            never move, and are not part of the target. */}
+        {/* The mount's corners. Outside the rotating element entirely — they
+            never turn, never move, and are not part of any target. */}
         <span aria-hidden="true" className="cn-plate-reg" data-c="tl" />
         <span aria-hidden="true" className="cn-plate-reg" data-c="tr" />
         <span aria-hidden="true" className="cn-plate-reg" data-c="bl" />
         <span aria-hidden="true" className="cn-plate-reg" data-c="br" />
       </div>
 
-      {/* The two mono elements BRACKET the plate rather than stacking: the
-          caption at the left end of the row, the turn mark at the right. */}
+      {/* Caption at the left end of the row, control at the right, so the two
+          still BRACKET the plate rather than stacking. */}
       <div className="cn-print-foot">
         {/* The caption belongs to whichever face is showing, and it swaps at
             the exact moment the plate is edge-on and invisible — no fade, no
@@ -130,16 +156,29 @@ export default function KyotoPlate() {
           </span>
         </figcaption>
 
-        {/* § 04's reference mark, reused exactly: a 12px hollow ink square, a
-            0.5px muted leader across a 14px gap, and the word in 13px mono.
-            Decorative — the plate itself is the button, so this is not a second
-            tab stop; it fills solid when the plate is addressed, the same
-            gesture □—PHOTO makes. */}
-        <span aria-hidden="true" className="cn-turn-ref">
-          <span className="cn-turn-ref-square" />
-          <span className="cn-turn-ref-leader" />
-          <span className="cn-turn-ref-label font-mono">turn</span>
-        </span>
+        {/* THE CONTROL. The outline variant, at the right end of the foot row
+            so the two elements still bracket the plate. It replaced the □—TURN
+            reference mark, which was aria-hidden decoration that looked like a
+            button — the exact failure the mark was supposed to prevent.
+
+            Click is first class: it toggles `pinned`, so a click turns the
+            plate and pins it and a second click brings it back, on a mouse and
+            on a phone alike. Enter and Space are the same path, because this is
+            a real <button>. Hover still turns it, on the plate and on the
+            button, and only for a mouse. */}
+        <Button
+          variant="outline"
+          className="cn-turn-btn"
+          aria-pressed={turned}
+          aria-label="turn over — interests"
+          onPointerEnter={(e) => {
+            if (e.pointerType === "mouse") setHovered(true);
+          }}
+          onPointerLeave={leave}
+          onClick={toggle}
+        >
+          {turned ? "back" : "turn"}
+        </Button>
       </div>
     </figure>
   );

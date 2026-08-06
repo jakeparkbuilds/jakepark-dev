@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import Button from "./button";
 
 // § 04 background — the contact print and the plate.
 //
@@ -9,14 +10,16 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 // space beside the 620px body column is ~119px wide — too small to read as a
 // photograph at all. So the photo is shown at two sizes instead of one bad one.
 //
-//   the reference mark — a 12px hollow ink square, a 0.5px muted leader across
-//     a 14px gap, and the word PHOTO in mono, 14px past the school name's last
-//     character. It lives inside a zero-growth inline anchor (absolutely
-//     positioned, anchor height 0) so it adds NOTHING to the line box and the
-//     station's height is byte-identical with and without it. This was a 28px
-//     crop of the photograph itself; at that size a photograph has no subject,
-//     only noise, and it read as a failed image load rather than as an
-//     affordance.
+//   the trigger — a real button, the outline variant, labelled PHOTO when the
+//     plate is closed and CLOSE when it is open. It lives inside a zero-growth
+//     inline anchor (absolutely positioned, anchor height 0) so it adds NOTHING
+//     to the line box and the station's height is byte-identical with and
+//     without it. It has been two wrong things before this: a 28px crop of the
+//     photograph (at that size a photograph has no subject, only noise, and it
+//     read as a failed image load), and then a hollow square with a leader and
+//     the word PHOTO — the site's own drawing vocabulary, which is exactly what
+//     the crop marks AROUND the plate are made of, so a control and a piece of
+//     decoration looked identical. It is a control and it looks like one now.
 //
 //   the plate — the full photograph. There is exactly ONE of these for the
 //     whole section, rendered by Background inside `.bg-plates` rather than
@@ -96,12 +99,21 @@ export default function EduPhotoTrigger({
 
   return (
     <span className="edu-plate-anchor">
-      <button
-        type="button"
+      {/* The outline variant. This was a hollow square, a leader and the word
+          PHOTO — the site's drawing vocabulary, which is also what the crop
+          marks around the plate are made of, so the control was indis-
+          tinguishable from the decoration. It is a control and it looks like
+          one now.
+
+          `aria-expanded`, not `aria-pressed`: it discloses the plate, and it
+          names it through aria-controls. The button's pressed styling keys off
+          both, so the accent border shows either way. */}
+      <Button
+        variant="outline"
         className="edu-plate-ref"
         aria-expanded={open}
         aria-controls={PLATE_ID}
-        aria-label={`View photograph: ${photo.alt}`}
+        aria-label={open ? "Close photograph" : `View photograph: ${photo.alt}`}
         onPointerDown={() => {
           pointerFocus.current = true;
         }}
@@ -119,16 +131,11 @@ export default function EduPhotoTrigger({
           else openNow(index);
         }}
       >
-        {/* A drawn reference, not a crop of the photograph. A 28px thumbnail
-            carries no subject at that size — it reads as a broken image, which
-            is the opposite of an affordance. The square, the leader and the
-            word are the plate's own vocabulary. */}
-        <span aria-hidden="true" className="edu-plate-ref-square" />
-        <span aria-hidden="true" className="edu-plate-ref-leader" />
-        <span aria-hidden="true" className="edu-plate-ref-label font-mono">
-          photo
-        </span>
-      </button>
+        {/* The label IS the state. Both words are five characters at the same
+            mono step, so the box does not change width when it swaps and
+            nothing on the line moves. */}
+        {open ? "close" : "photo"}
+      </Button>
     </span>
   );
 }
