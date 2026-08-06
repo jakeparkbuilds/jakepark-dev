@@ -185,10 +185,26 @@ Rules:
   step — it grays out and then vanishes, leaving a card with an empty right
   half. It is the same drawing exposed for a lossy medium. Nothing that renders
   in a browser may take this number.
-- `border-radius: 0` on everything, with exactly two exceptions: `.cursor-dot`
-  uses `border-radius: 50%` because it is a literal circle, and § 02's field
-  nodes are hairline `<circle>` elements — SVG geometry, not a rounded box. No
-  other exceptions, and in particular no rounded rectangles anywhere.
+- **`border-radius: 0` everywhere EXCEPT: the cursor dot, § 02's index node
+  circles, and INTERACTIVE CONTROLS (buttons and toggles). A control is a thing
+  that does something when activated. Radius is NOT permitted on cards, plates,
+  images, containers, badges, labels, or any decorative element. Pill badges
+  remain banned — a badge displays state, a button takes action.**
+
+  The cursor dot and the field nodes are circles by construction (`50%`, and
+  SVG `<circle>` geometry). The controls take **4px**, through the one component
+  in `app/components/button.tsx` — `.ui-btn`, solid and outline. **Nothing
+  authors a radius outside that component**, so the exemption cannot leak: a new
+  radius anywhere else is a bug whether or not it looks like a button.
+
+  **This reverses the flat rule deliberately, and the reason is measured in
+  complaints, not taste.** Every control on the site wore the drawing
+  vocabulary — a hollow square, a leader rule, a mono word — which is the same
+  motif the crop marks and the reference plates use decoratively three feet
+  away. So the three things that DO something were indistinguishable from the
+  dozens that do not, and nobody knew they were clickable. The rest of the
+  no-radius rule is untouched and the box-shadow ban is not weakened by this:
+  the button has no shadow at any state.
 - **No box-shadows anywhere.** Cards are defined by rules and space. Nothing on
   this site is enclosed by its own complete border — **with exactly one
   exception, § 05's print reverse.** A 0.5px ink rectangle closes around the
@@ -1812,7 +1828,10 @@ Never produce these, even if asked indirectly:
   test is whether removing an element loses information. If it does not, it is a
   particle and it is banned.
 - Rounded pill badges in a row (the shadcn tag-chip look) — tech stacks are mono
-  text separated by `·`
+  text separated by `·`. **§ 4's 4px radius on `.ui-btn` does not touch this.**
+  A badge displays state and a button takes action; the exemption is for
+  controls, and a row of rounded boxes that do nothing when clicked is exactly
+  what is banned here.
 - Proficiency bars, percentages-as-progress, star ratings, dots-out-of-five
 - Animated stat counters
 - Emoji, 3D icons, icon fonts, logo packs. Links are text.

@@ -137,6 +137,95 @@
     padding-right: calc(theme("spacing.section") + var(--nav-gutter));
   }
 
+  /* ── the button ────────────────────────────────────────────────────────────
+     ONE control, two variants, used by every genuine button on the page. See
+     button.tsx for why it exists and CLAUDE.md § 4 for the radius exemption:
+     radius is permitted on INTERACTIVE CONTROLS and on nothing else. Cards,
+     plates, images, containers, badges and labels stay at 0, and pill badges
+     stay banned outright.
+
+     `border` is on BOTH variants — transparent on the solid one — so the two
+     have identical box metrics and a row that mixes them sits on one baseline
+     without a correction. box-sizing is already border-box site-wide, so the
+     34px is the drawn height at both.
+
+     No shadow at any state. There is no hover-lift, no translate and no scale:
+     what changes is the fill, the border and the ink. */
+  .ui-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    padding: 0 16px;
+    /* The site's ONE radius that is not a circle. 4px: enough to read as a
+       control at 34px tall, small enough that it never reads as a pill. */
+    border-radius: 4px;
+    border: 1px solid transparent;
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+    /* The native pointer is hidden site-wide on fine pointers; the dot is the
+       cursor and it reacts to interactive elements on its own. */
+    cursor: none;
+    transition:
+      background-color 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      color 160ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Focus is the site's own ring, not the browser's: 2px offset, accent, and
+     the radius follows the box so the ring is concentric with it. */
+  .ui-btn:focus-visible {
+    outline: 1px solid theme("colors.accent");
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  .ui-btn:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  .ui-btn--solid {
+    background: theme("colors.ink");
+    color: theme("colors.paper");
+  }
+  .ui-btn--solid:hover {
+    background: theme("colors.near-black");
+  }
+  /* Pressed, and held. `aria-pressed` is the real state — a toggle that only
+     went accent while the pointer was down would say nothing about whether it
+     is on. */
+  .ui-btn--solid:active,
+  .ui-btn--solid[aria-pressed="true"],
+  .ui-btn--solid[aria-expanded="true"] {
+    background: theme("colors.accent");
+  }
+
+  .ui-btn--outline {
+    background: transparent;
+    border-color: theme("colors.muted");
+    color: #6b6455;
+  }
+  .ui-btn--outline:hover {
+    border-color: theme("colors.body");
+    color: theme("colors.ink");
+  }
+  .ui-btn--outline:active,
+  .ui-btn--outline[aria-pressed="true"],
+  .ui-btn--outline[aria-expanded="true"] {
+    border-color: theme("colors.accent");
+    color: theme("colors.accent");
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-btn {
+      transition: none !important;
+    }
+  }
+
   /* ── § 04 background — the route ───────────────────────────────────────────
      THREE stations on ONE continuous 0.5px hairline. The spine is absolutely
      positioned against .bg-route and stretches its full height, so no wrapper,
