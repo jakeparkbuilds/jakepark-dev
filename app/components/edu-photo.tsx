@@ -110,7 +110,11 @@ export default function EduPhotoTrigger({
           both, so the accent border shows either way. */}
       <Button
         variant="outline"
-        className="edu-plate-ref"
+        // `bg-recede` puts it in the group that goes back to 0.08 when a photo
+        // is open; the `[aria-expanded="true"]` rule is more specific and pulls
+        // the ACTIVE one back to 1. So the other station's trigger recedes with
+        // everything else and this one does not.
+        className="edu-plate-ref bg-recede"
         aria-expanded={open}
         aria-controls={PLATE_ID}
         aria-label={open ? "Close photograph" : `View photograph: ${photo.alt}`}

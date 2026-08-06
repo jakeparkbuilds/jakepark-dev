@@ -259,6 +259,84 @@
     position: relative;
   }
 
+  /* The section's closing rule. It answers the head rule above station 01 —
+     same 0.5px, same ink, same content-box width, same 40px of air — and it is
+     what stops § 04 running into § 05, two paper sections with nothing between
+     them. Out of .bg-route on purpose: the route is indented 16px by the spine
+     and a rule inside it would not line up with the one it answers. */
+  .bg-terminus {
+    margin-top: 40px;
+    border-top: 0.5px solid theme("colors.ink");
+  }
+
+  /* ── § 04 — WHEN A PHOTO IS OPEN, EVERYTHING ELSE RECEDES ──────────────────
+     opacity 0.08 over 320ms `reveal`. The plate, its caption and the trigger
+     that opened it stay at 1; every other thing in the section — the spine, the
+     header block, the station heads, the crests, the institution names, the
+     degree lines, the coursework, the closing rule and the OTHER station's
+     trigger — goes back.
+
+     The photograph was always painted above the coursework (measured: of 8–12
+     coursework items geometrically overlapping the open plate, ZERO paint above
+     it, at 1920/1440/1024/900). What actually collided was the caption, an
+     11px mono line with no background sitting directly on top of a coursework
+     item at 1440 and 1024 — and the coursework left visible ABOVE and BELOW the
+     plate, which read as debris around it. Raising a z-index would have fixed
+     neither. This does.
+
+     The state is read structurally with :has() — no class on <html>, no
+     attribute written from JS, nothing to leave behind on unmount. The
+     suppression classes the coursework wipe used to need are exactly what this
+     replaces, and they are not coming back.
+
+     The trigger has to be a SIBLING of the name it sits beside for this to be
+     possible at all: opacity groups its subtree, so a button inside a dimmed
+     <p> can never be brighter than the <p>. See .bg-school-name. */
+  /* `:has()` gives the state; `.bg-recede` names the things that take it. The
+     spine is a ::before and cannot live inside :is(), so it gets its own pair
+     of rules — a pseudo-element in a forgiving selector list is invalid and
+     would silently take the rest of the list down with it. */
+  .bg-recede,
+  .bg-route::before {
+    transition: opacity 320ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  section:has(.edu-plate) > .sec-head {
+    transition: opacity 320ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  section:has(.edu-plate[data-open]) .bg-recede,
+  section:has(.edu-plate[data-open]) .bg-route::before,
+  section:has(.edu-plate[data-open]) > .sec-head {
+    opacity: 0.08;
+  }
+  /* The one that opened it holds. It reads CLOSE, and it is the way back —
+     along with Escape and a press anywhere else. */
+  section:has(.edu-plate[data-open]) .edu-plate-ref[aria-expanded="true"] {
+    opacity: 1;
+  }
+  /* The head rule is a BORDER on a wrapper that also contains the plate, so it
+     cannot take opacity without taking the plate with it. Its colour goes to
+     the same 8% instead, which for a 0.5px line is the identical result.
+     Scoped to the section that HAS a plate, so the shared shell is untouched
+     everywhere else. */
+  section:has(.edu-plate) > .sec-body {
+    transition: border-top-color 320ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  section:has(.edu-plate[data-open]) > .sec-body {
+    border-top-color: rgba(26, 24, 21, 0.08);
+  }
+
+  /* Reduced motion: the recede still HAPPENS — it is what says which thing on
+     the screen is the subject, and dropping it would drop that information.
+     Only the 320ms goes. */
+  @media (prefers-reduced-motion: reduce) {
+    .bg-recede,
+    .bg-route::before,
+    section:has(.edu-plate) > .sec-head,
+    section:has(.edu-plate) > .sec-body {
+      transition: none !important;
+    }
+  }
+
   /* A station is a header line and, where there is a school, one entry row
      under it. The tracks:
 
@@ -750,6 +828,13 @@
                       top margin; the coda is deleted and the wrapper is now the
                       last thing in § 04, so what is below it is the page's own
                       gap to § 05. Less 8px: 64.
+
+     THE BOTTOM NEIGHBOUR IS THE TERMINATING RULE NOW, not the padding. .bg-
+     terminus takes 40px of that budget, so what is under the wrapper is 32px
+     of air and then a 0.5px line. Re-measured with it in place, the caption
+     clears the rule by 17.2px at 1920 — the tightest width, because .bg-plates
+     is shortest there — and by 63.2 / 76.5 / 71.2 / 169.2 / 191.2 / 169.2 /
+     290.5 at 1600 / 1440 / 1360 / 1024 / 900 / 768 / 390. Never negative.
 
      The TOP is therefore the binding end now, not the bottom: h/2 + 8 ≤ 212
      gives h ≤ 408, and the caption (which hangs 43px past the box) needs

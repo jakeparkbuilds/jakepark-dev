@@ -1331,8 +1331,19 @@ the seven strings, the `.bg-elsewhere` / `.bg-interests` / `.bg-marker` styling
 and the trailing rule. **The portrait is not deleted, it MOVED** — it is § 05
 connect's left column now (§ 5 / §05). **The seven interests are not deleted
 either — they came back on the BACK OF THAT PRINT** (§ 5 / §05). What is gone
-from § 04 is the block: there is no marker, no list and no trailing hairline
-here, and none may return.
+from § 04 is the block: there is no marker and no list here, and neither may
+return.
+
+**THE TRAILING HAIRLINE IS BACK, AND IT IS NOT THE CODA'S.** `.bg-terminus` is
+a 0.5px ink rule at the section's own content edges, 40px below station 03,
+**identical in weight, colour and inset to the head rule above station 01** —
+measured `1px rgb(26, 24, 21)` (0.5px at dpr 1, like every hairline on the
+site) at the same left and the same width at 1920 / 1600 / 1440 / 1360 / 1024 /
+900 / 768 / 390. The coda's rule was a divider INSIDE the section, separating
+the route from a block below it; this one TERMINATES the section. § 04 ends at
+station 03 and § 05 is also paper, so without it the two ran together. It is a
+sibling of `.bg-route`, never a child: the route carries a 16px spine indent and
+a rule inside it would miss the one it answers by exactly that much.
 
 **NOTHING REPLACED THE PROSE.** There is no standfirst, no transitional line and
 no caption standing in for a deleted sentence, and none may be added. A station
@@ -1342,8 +1353,10 @@ section reads thin, that is the brief.
 - **2007—2014 is supplied data**, given with the strip instruction. It is
   station 01's only content. **No attendance years exist for TJHSST or
   Georgetown and none may be invented** — the two school stations carry no
-  dates at all, and `class of 2029` on Georgetown's degree line is the only
-  year anywhere in the section besides Seoul's.
+  dates at all. **`class of 2029` is deleted from Georgetown's degree line**,
+  which now reads `B.S. Computer Science · A.B. Mathematics` — so **2007—2014
+  is the only year anywhere in § 04**. The class year still appears at the top
+  of this file, which is a description of Jake and not of the section.
 - **The coordinates are gone from § 04 entirely**, and with them the one
   exemption that let `#9B9382` carry type. § 05 connect's footer coordinates are
   a different element and are unaffected. **The date range does NOT inherit the
@@ -1450,28 +1463,38 @@ from here and the section fell from 1480px to **739px at 1920 — a further 50.1
 and 62.6% off the 1975px it started at.** The three stations are 435px of that
 and the shared section chrome (padding, mark, h2, head rule) is the rest, so
 there is nothing left in § 04 to take.
+**The terminating hairline then added 41px** (40px of air + the rule), so § 04
+measures **780px at 1920**, 872 at 1600 and 1440, 986 at 1360, 1182 at 1024,
+1226 at 900, 1182 at 768 and 1423 at 390. That is the one deliberate addition
+since the strip and it buys the section an end.
 
-Photo per school — **the reference mark and the plate.**
+Photo per school — **the trigger and the plate.**
 
 **There is no room in the station for a mounted photograph, and this is
 measured, not opinion.** A photo obeying the clear space beside the 620px name
 column is ~119px wide, which is too small to read as a photograph at all. Do not
 re-derive this — it has been measured twice.
 
-- **the reference mark** — a 12px hollow ink square at 1px, a 0.5px muted
-  leader across a 14px gap, and `PHOTO` at 13px/0.20em #6B6455, sitting 14px
-  past the school name's last character and optically aligned to its cap band
-  (the label's centre at 14.5px above the baseline). On hover/focus the square
-  fills solid ink and the label goes to #1A1815 over 150ms `micro`. That is the
-  entire interaction on the mark.
-  **The hit area extends 8px past the ink on every side** — 94×29 against 78px
-  of ink, 2.8× the area of the first version, which was too small to notice or
-  to hit. It is padding on the button with the box offset by the same 8px, so
-  the ink did not move and the focus ring frames what is actually clickable.
-  **This was a 28px crop of the photograph itself and that was wrong.** At 28px
-  a photograph has no subject, only noise, and noise beside a heading reads as a
-  failed image load — the exact opposite of an affordance. Do not put the image
-  back.
+- **the trigger** — a real button, `.ui-btn--outline` (§ 4), reading `PHOTO`
+  when the plate is closed and `CLOSE` when it is open, sitting 14px past the
+  school name's last character. Both words are five characters at the same mono
+  step, so the box measures **75.8px** in either state and nothing on the line
+  moves when it swaps. Vertically it is centred on the name's **cap band**, not
+  its baseline: the name is 40px/500 and Bricolage's cap height measures
+  28.4px, so the band's centre is 14.2px up and a 34px box sits at
+  `bottom: -2.5px`. Below 640px the name steps to 34px and the same derivation
+  gives `-5px`.
+  **It has been wrong twice and both are recorded so nobody re-proposes them.**
+  First a 28px crop of the photograph: at that size a photograph has no subject,
+  only noise, and noise beside a heading reads as a failed image load. Then a
+  12px hollow ink square, a 0.5px leader and the word `PHOTO` — the site's own
+  drawing vocabulary, which is **exactly what the four crop marks around the
+  plate are made of**, so the control and the decoration were the same mark and
+  nobody read it as clickable. Do not put either back.
+  **The zero-growth guarantee is unchanged and re-verified:** the anchor is
+  `height: 0` and the button is out of flow, so forcing the button to 204px tall
+  leaves every station's height byte-identical at 1920 / 1440 / 1024 / 900 / 768
+  / 390.
 - **the anchor's height must be `0`, never `1em`.** An inline-block whose content
   is all out of flow takes its baseline from its bottom margin edge, so at `1em`
   it is a 40px box sitting entirely above the text baseline — taller than the
@@ -1501,6 +1524,40 @@ re-derive this — it has been measured twice.
   **Exactly one image is ever in the DOM**: measured 1 while open and **0** while
   closed, at 1920/1600/1440/1360/1024/900/768/390, and both triggers resolve to
   identical box coordinates at every one.
+
+**WHEN A PHOTO IS OPEN, EVERYTHING ELSE IN § 04 RECEDES TO OPACITY 0.08** over
+320ms `reveal` — the spine, the section head block, every station head, both
+crests, both institution names, both degree lines, both coursework lists, the
+terminating rule and the OTHER station's trigger. The plate, its caption and
+the trigger that opened it stay at 1. Full revert on close; Escape closes;
+a press anywhere outside closes.
+
+- **The stacking was never the bug, and this is measured.** The plate carries
+  `z-index: 60` while open and resolves at the root, so of the 8–12 coursework
+  items that geometrically overlap the open plate, **zero paint above it** at
+  1920 / 1440 / 1024 / 900. What actually collided was **the caption** — an 11px
+  mono line with no background sitting directly on top of a coursework item at
+  1440 and 1024 — and the coursework left standing above and below the plate,
+  which read as debris around it. No z-index would have fixed either. The recede
+  does, and it is what says which thing on the screen is the subject.
+- **The head rule takes a colour change, not an opacity.** It is a border on the
+  wrapper that also contains the plate, and opacity groups its whole subtree, so
+  fading the wrapper would fade the plate. `rgba(26, 24, 21, 0.08)` is the
+  identical result for a 0.5px line.
+- **The institution name lives in its own `<span>` and that is structural.**
+  Opacity groups its subtree, so a trigger inside a dimmed `<p>` can never be
+  brighter than the `<p>`. The name and the trigger are siblings, which is the
+  only reason the active button can hold at 1 while the name beside it goes to
+  0.08.
+- **The state is read with `:has()`** — no class on `<html>`, no attribute
+  written from an effect, nothing to leave behind on unmount. The
+  `html.edu-staged` / `html.edu-rearming` suppression classes the coursework
+  wipe used to need are exactly what this replaces, and they are not coming
+  back.
+- **Reduced motion: the recede still happens, only the 320ms goes.** It is
+  state, not decoration — removing it would remove the information about which
+  element is the subject. Verified: `transition-duration: 0s`, dim still 0.08,
+  Escape and outside-press still revert to 1.
 
 - **IT OPENS ON CLICK, AT EVERY WIDTH, AND THERE IS NO BREAKPOINT.** Hover
   opened it above 1440px, and the whole argument for that was that the plate

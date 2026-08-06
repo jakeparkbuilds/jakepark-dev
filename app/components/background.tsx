@@ -88,7 +88,7 @@ const TJHSST: School = {
 
 const GEORGETOWN: School = {
   institution: "Georgetown University",
-  degree: "B.S. Computer Science · A.B. Mathematics · class of 2029",
+  degree: "B.S. Computer Science · A.B. Mathematics",
   logoFile: "georgetown.svg",
   logoAlt: "Georgetown University shield",
   logoHeight: [34, 44],
@@ -142,9 +142,9 @@ function StationRow({ station, index }: { station: Station; index: number }) {
       {/* The station's mark on the spine. 12px of ink crossing a 0.5px muted
           rule, centred on it by the route's own indent — so the tick never has
           to know where the spine is in page coordinates. */}
-      <span aria-hidden="true" className="bg-tick" />
+      <span aria-hidden="true" className="bg-tick bg-recede" />
 
-      <div className="bg-head">
+      <div className="bg-head bg-recede">
         <p className="bg-index">{no}</p>
         <p className="bg-place">{place}</p>
         {note && <p className="bg-note">{note}</p>}
@@ -156,7 +156,7 @@ function StationRow({ station, index }: { station: Station; index: number }) {
               the institution name beside it — not to its line box, which is
               looser by the font's own ascent. */}
           <div
-            className="bg-crest"
+            className="bg-crest bg-recede"
             style={
               {
                 "--edu-logo-h": `${school.logoHeight[0]}px`,
@@ -169,18 +169,28 @@ function StationRow({ station, index }: { station: Station; index: number }) {
           />
 
           <div className="bg-school">
-            {/* The contact print is appended to the school name so it sits on
-                the name's last line, 14px past its last character. It is out of
+            {/* The trigger is appended to the school name so it sits on the
+                name's last line, 14px past its last character. It is out of
                 flow inside a zero-height anchor, so nothing else in the block
-                moves and the station's height is unchanged. */}
+                moves and the station's height is unchanged.
+
+                THE NAME IS WRAPPED IN ITS OWN SPAN AND THIS IS STRUCTURAL, not
+                tidying. When a photo is open every other thing in § 04 recedes
+                to opacity 0.08 while the trigger that opened it stays at 1 —
+                and opacity groups its whole subtree, so a descendant can never
+                be brighter than its ancestor. Dimming the <p> would drag the
+                button down with it. The name and the trigger are siblings, so
+                they can take different values. */}
             <p className="font-display text-h2 text-ink">
-              {school.institution}
+              <span className="bg-school-name bg-recede">{school.institution}</span>
               <EduPhotoTrigger photo={school.photo} index={PHOTO_INDEX.get(place)!} />
             </p>
-            <p className="mt-[10px] font-display text-body text-body">{school.degree}</p>
+            <p className="bg-degree bg-recede mt-[10px] font-display text-body text-body">
+              {school.degree}
+            </p>
           </div>
 
-          <div className="edu-course">
+          <div className="edu-course bg-recede">
             <ul className="edu-course-list">
               {school.coursework.map((course) => (
                 <li key={course}>{course}</li>
@@ -219,6 +229,18 @@ export default function Background({
           <EduPlate photos={PHOTOS} />
         </div>
       </div>
+
+      {/* The section terminates on a rule, the same way it opens on one. § 04
+          ends at station 03 and had nothing under it but padding, so the route
+          simply stopped and § 05 began — the two paper sections ran together.
+          0.5px ink at the section's own content edges, identical in weight,
+          colour and inset to the head rule above station 01, and it takes the
+          same 40px of air the head rule puts below itself.
+
+          A sibling of .bg-route, NOT a child of it: the route carries a 16px
+          spine indent, and a rule inside it would start 16px in and not match
+          the one it is meant to answer. */}
+      <div aria-hidden="true" className="bg-terminus bg-recede" />
     </SectionShell>
   );
 }

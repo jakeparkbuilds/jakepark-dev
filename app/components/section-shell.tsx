@@ -23,14 +23,14 @@ export default function SectionShell({
       aria-labelledby={headingId}
       className="section-pad flex w-full flex-col gap-10 py-section-y"
     >
-      <div className="flex flex-col gap-4">
+      <div className="sec-head flex flex-col gap-4">
         <SectionMark mark={number} label={label} />
         <h2 id={headingId} className="font-display text-h2 text-ink">
           {label}
         </h2>
       </div>
 
-      <div className="border-t-[0.5px] border-ink pt-10">{children}</div>
+      <div className="sec-body border-t-[0.5px] border-ink pt-10">{children}</div>
     </section>
   );
 }
