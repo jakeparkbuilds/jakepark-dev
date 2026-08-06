@@ -736,11 +736,22 @@ centred blocks stacked in a column of dead space is what this replaced.
   column's right edge lands on the section's content edge by construction** —
   measured Δ 0.00px at 1920/1600/1280/1024/900/768/390 and −0.01 at 1440. There
   is no number to keep in agreement.
-- **THE GUTTER IS 32px AND IT IS DERIVED, not chosen.** It is the text block's
-  own largest internal step — the 32px between `LET'S CONNECT` and the email —
-  so the gap BETWEEN the columns is the same measure as the gaps INSIDE one of
-  them and the pair reads as one object. It replaced `clamp(28px, 3.4vw, 56px)`,
-  which opened to 56px at 1920 and left the print stranded at the left margin.
+- **THE GUTTER IS THE SECTION'S OWN EDGE MEASURE — `spacing.section`,
+  `clamp(24px, 6vw, 96px)` — and it is derived, not chosen.** That is the
+  padding every section on the site puts between its content and the page edge,
+  so the print is bracketed by the SAME measure on both sides: page edge to
+  print on the left, print to text on the right. The print sits centred in its
+  own margin rather than pressed against one of them. Measured **96 / 96 / 86.4
+  / 76.8 / 61.4 / 54 / 46.1 / 24px** at 1920 / 1600 / 1440 / 1280 / 1024 / 900 /
+  768 / 390, and the measured column gap equals it exactly at every one.
+  **It was 32px and that was too tight** — the two columns read as one crowded
+  object rather than as a pair. 32 was the text block's largest internal step
+  (`LET'S CONNECT` to the email), which made the gap BETWEEN the columns
+  identical to a gap INSIDE one of them; against a 423px print that is not
+  enough air to separate a photograph from type. Before that it was
+  `clamp(28px, 3.4vw, 56px)`, rejected because 56px at 1920 stranded a **320px**
+  print at the left margin — the print is 423px now and that failure mode went
+  with the width that caused it.
 - **THE PRINT IS 40% OF THE CONTENT WIDTH, CAPPED BY THE VIEWPORT'S HEIGHT, and
   the cap is not a preference.** § 05 fills exactly one viewport, so the print
   has to fit the stage: measured **586px** of usable stage at a 900px viewport
@@ -790,8 +801,11 @@ centred blocks stacked in a column of dead space is what this replaced.
   segments — `jp2282`, `[at] georgetown`, `[dot] edu` — with real spaces between
   them, so the only break opportunities on the line are the ones the bracket
   notation put there. Never mid-word, never hyphenated (`hyphens: none`,
-  `overflow-wrap: normal`). Measured: one line down to 1280, two at 1024 / 900 /
-  390.
+  `overflow-wrap: normal`). Measured with the wider gutter: **one line at 1920,
+  1600 and 768; two at 1440, 1280, 1024, 900 and 390.** It was one line down to
+  1280 at the 32px gutter — the gutter took the width, exactly as designed, and
+  the per-segment underline is what makes a wrapped address still draw as one
+  gesture.
 - **The underline is per SEGMENT.** One rule on the whole anchor draws a single
   bar under the last line of a wrapped address and leaves the lines above it
   bare; the segments are the line fragments, so an underline per segment is an
@@ -833,8 +847,24 @@ block slightly high rather than dead centre — its content centres inside the
 padding box, so the middle lands at ~38% and stays proportional at other heights
 instead of drifting the way a fixed offset would. Re-measured with the two
 columns in it: **exactly 900px at 1920 / 1600 / 1440 / 1280 / 1024 / 900 / 768 /
-390 on a 900px viewport, with zero document overflow at every one.** **Do not go back to padding tuned to one viewport height;**
-three passes in a row had to re-tune it.
+390 on a 900px viewport, with zero document overflow at every one.**
+
+**The footer's margins came down when the pizza trigger became a 34px control**
+— `margin-top` 28 → 18px, and the stacked gap below 1024px 14 → 10px. The
+trigger used to be an 11px text line and those numbers were the optical gaps
+around a line of text; a 34px box already carries (34 − 13) / 2 = 10.5px of its
+own air on every side, so the new numbers put the TEXT back where it was.
+Without them § 05 measured **911.8px** at 390 on a 900px viewport.
+
+**On viewports shorter than 900px at narrow widths § 05 does overflow, and that
+is PRE-EXISTING.** Below 900px the print is capped by a fixed `max-width: 300px`
+rather than by `svh`, so it does not shrink with the viewport: measured **+41.9
+/ +96.9 / +197.3px** at 390×844 / 390×780 / 390×664. The 34px control added
+13.6px at 1440×700 on top of that. Nothing above claims a guarantee at those
+heights — every measured target is a 900px viewport — but the fix, if one is
+ever wanted, is to give the sub-900px print an `svh` cap the way the ≥900px one
+has, **not** to trim padding. **Do not go back to padding tuned to one viewport
+height;** three passes in a row had to re-tune it.
 
 **The footer is one row, three parts, one baseline**: trigger left, socials
 centred, coordinates right, beneath a full-width rule. The outer tracks are
@@ -905,9 +935,17 @@ motion. One rAF drives both, gated on § 05's intersection and on
   right edge bare at 1200, 1024 and 900.
 - The translate is wrapped modulo **one measured repetition width**, with three
   copies in the DOM, so it never exposes a gap at either end.
-- Type is outlined at 0.75px ink, `clamp(38px, 4.4vw, 64px)`, 6px between the
-  bands. The section must fit **one viewport at 1440×900 with no scrolling** —
-  that constraint, not taste, is what sets the size.
+- Type is outlined at 0.75px ink, **`clamp(27px, 3.1vw, 45px)`** — down ~30%
+  from `clamp(38px, 4.4vw, 64px)` — 6px between the bands. **Every term is the
+  old one × 0.70 taken to a whole pixel**, so the relationship between floor,
+  fluid term and ceiling is unchanged: this is one size step, not a
+  re-derivation. At the old size the bands were the loudest thing in a section
+  whose monument is the email, and two rows of 64px display type under a 34px
+  address inverted the hierarchy. Below 900px the single band is **21px**, the
+  same 0.70 of its old 30. Measured after: 45 / 44.6 / 39.7 / 31.7 / 27.9 /
+  21px at 1920 / 1440 / 1280 / 1024 / 900 / 768. The stroke stays 0.75px — a
+  hairline does not scale with its type. The section must still fit **one
+  viewport at 1440×900 with no scrolling**, and it does.
 - **The letterforms are filled with a hairline hatch, and the hatch is fixed to
   the viewport, not to the text.** As a band travels, the letters move across a
   stationary hatch field rather than carrying it along — that is the whole

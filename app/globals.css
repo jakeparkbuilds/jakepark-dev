@@ -1296,7 +1296,13 @@
     will-change: transform;
     font-family: var(--font-bricolage), sans-serif;
     font-weight: 500;
-    font-size: clamp(38px, 4.4vw, 64px);
+    /* DOWN ~30% from clamp(38px, 4.4vw, 64px). At the old size the bands were
+       the loudest thing in a section whose monument is the email, and two rows
+       of 64px display type under a 34px address inverted the hierarchy. Every
+       term is scaled by the same 0.70 and taken to a whole pixel, so the
+       relationship between the floor, the fluid term and the ceiling is
+       unchanged — this is one size step, not a re-derivation. */
+    font-size: clamp(27px, 3.1vw, 45px);
     line-height: 1.06;
     letter-spacing: -0.02em;
     text-transform: lowercase;
@@ -1335,8 +1341,9 @@
     display: block;
   }
   @media (max-width: 899.98px) {
+    /* 30px x 0.70, whole pixel. One band below 900. */
     .type-band {
-      font-size: 30px;
+      font-size: 21px;
     }
   }
   /* Static at offset 0 and fully legible: the content exists, only the movement
@@ -1398,13 +1405,25 @@
      agreement. That only works because § 05 reserves the nav gutter again (see
      Connect): with it zeroed, "the content edge" is 104px inside the nav. */
   .connect-columns {
-    /* THE GUTTER IS 32px AND IT IS DERIVED, not chosen. It is the text block's
-       own largest internal step — the 32px between LET'S CONNECT and the email
-       — so the gap BETWEEN the columns is the same measure as the gaps inside
-       one of them, and the pair reads as one object with a consistent internal
-       rhythm. It replaced clamp(28px, 3.4vw, 56px), which opened to 56px at
-       1920 and left the print stranded at the left margin. */
-    --cn-gutter: 32px;
+    /* THE GUTTER IS THE SECTION'S OWN EDGE MEASURE, and it is derived, not
+       chosen. `spacing.section` is clamp(24px, 6vw, 96px) — the padding every
+       section on the site puts between its content and the page edge. Using it
+       here means the print is bracketed by the SAME measure on both sides: page
+       edge to print on the left, print to text on the right. The print sits
+       centred in its own margin rather than pushed against one of them.
+
+       96 / 86.4 / 76.8 / 61.4 / 54 / 46.1 / 24px at 1920 / 1440 / 1280 / 1024 /
+       900 / 768 / 390.
+
+       IT WAS 32px AND THAT WAS TOO TIGHT — the two columns read as one crowded
+       object rather than as a pair. 32 was the text block's own largest
+       internal step (LET'S CONNECT to the email), which made the gap BETWEEN
+       the columns identical to a gap INSIDE one of them; at a 423px print that
+       is not enough air to separate a photograph from type. The value before
+       that was clamp(28px, 3.4vw, 56px), rejected because 56px at 1920 stranded
+       a 320px print at the left margin — the print is 423px now and that
+       failure mode is gone with the width that caused it. */
+    --cn-gutter: theme("spacing.section");
     display: grid;
     width: 100%;
     grid-template-columns: minmax(0, 1fr);
@@ -1778,10 +1797,15 @@
      what is left over. The source order is socials, coordinates, trigger —
      which is the stacking order below 1024 — and `order` arranges them
      left/centre/right above it, so neither arrangement needs its own markup. */
+  /* margin-top came DOWN from 28 when the pizza trigger became a 34px control.
+     It used to be an 11px text line, and the 28px was the optical gap between
+     the rule and that line. A 34px box carries (34 - 13) / 2 = 10.5px of its
+     own air above its text, so 18px puts the TEXT back where it was. The
+     control supplies the air the margin used to; this is not a height tune. */
   .connect-footer {
     display: flex;
     width: 100%;
-    margin-top: 28px;
+    margin-top: 18px;
     align-items: baseline;
     gap: 16px;
   }
@@ -1801,10 +1825,14 @@
     text-align: right;
   }
   @media (max-width: 1023.98px) {
+    /* Stacked, and the same argument: two of the three rows are 11px text
+       lines and the third is a 34px box that already carries 10.5px of air on
+       each side. 14px between three text lines became 10px between two lines
+       and a control. */
     .connect-footer {
       flex-direction: column;
       align-items: center;
-      gap: 14px;
+      gap: 10px;
     }
     .cf-left,
     .cf-mid,
