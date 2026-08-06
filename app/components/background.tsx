@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { CSSProperties } from "react";
-import Image from "next/image";
 import EduPhotoTrigger, { EduPlate, type EduPhoto as EduPhotoData } from "./edu-photo";
 import SectionShell from "./section-shell";
 
@@ -26,11 +25,13 @@ import SectionShell from "./section-shell";
 // less: the tick sequence and the numbers are now the only thing saying these
 // three places happened in an order.
 //
-// THE TWO PHOTO MECHANISMS. The Kyoto portrait is always visible and lives in
-// the interests block. The staged plate is anchored to .bg-plates, a wrapper
-// holding exactly the two stations that carry a school — so the portrait is
-// outside the plate's containing block and no value of `top` can put one over
-// the other. See CLAUDE.md § 5 / §04.
+// THE SECTION ENDS AT STATION 03. There is no coda: the `interests` label, the
+// seven items and the Kyoto portrait that used to sit under a trailing hairline
+// are all deleted, and the portrait is now § 05 connect's left column. So § 04
+// carries exactly ONE photo mechanism — the staged plate, anchored to
+// .bg-plates, a wrapper holding exactly the two stations that carry a school.
+// Both therefore stage to the same coordinates by construction, and there is
+// nothing below the wrapper but the section's own bottom padding.
 
 type School = {
   institution: string;
@@ -121,16 +122,6 @@ const SCHOOL_STATIONS = STATIONS.filter((s) => s.school !== null);
 const PHOTOS = SCHOOL_STATIONS.map((s) => s.school!.photo);
 const PHOTO_INDEX = new Map(SCHOOL_STATIONS.map((s, i) => [s.place, i]));
 
-const INTERESTS = [
-  "long-distance running",
-  "golf",
-  "dollar slice pizza",
-  "country music",
-  "sudoku",
-  "basketball",
-  "weightlifting",
-];
-
 // Read once per render from the repo's own static asset — not user input, so
 // injecting the raw markup is safe. Inline (rather than <Image>) is what lets
 // these render at their own baked-in brand-color fills.
@@ -202,43 +193,6 @@ function StationRow({ station, index }: { station: Station; index: number }) {
   );
 }
 
-// Always visible, never staged, never a trigger — the same crop-mark language
-// as the plate so the section's rasters read as one family, but with no hover
-// response, because the portrait is not an affordance and must not suggest it
-// is. It lives in the interests block, which is what keeps it outside
-// .bg-plates and therefore out of the plate's reach.
-function Portrait() {
-  return (
-    <div className="bg-portrait">
-      <span className="about-plate">
-        <Image
-          src="/portrait.jpg"
-          alt="Jake Park"
-          // 4284x5712, NOT the 5712x4284 the raw pixel matrix reports. The
-          // file carries an EXIF rotation, so `sips` and the declaration
-          // inherited from about.tsx both had it landscape while every browser
-          // and next/image's own pipeline render it portrait. Measured: the
-          // box reserved 480x360 and the image arrived 480x640, a 280px shift
-          // under the caption every time it loaded in view.
-          width={4284}
-          height={5712}
-          // 72, not 90 — the heaviest optimized raster on the page.
-          quality={72}
-          sizes="(min-width: 1440px) 30vw, 400px"
-          className="h-auto w-full saturate-[.85]"
-        />
-        <span aria-hidden="true" className="about-plate-reg" data-c="tl" />
-        <span aria-hidden="true" className="about-plate-reg" data-c="tr" />
-        <span aria-hidden="true" className="about-plate-reg" data-c="bl" />
-        <span aria-hidden="true" className="about-plate-reg" data-c="br" />
-      </span>
-      <p className="mt-4 font-mono text-mono-micro uppercase text-muted">
-        kyoto, japan · 2025
-      </p>
-    </div>
-  );
-}
-
 export default function Background({
   number,
   id,
@@ -256,26 +210,13 @@ export default function Background({
         {/* The plate's containing block: exactly the two stations that carry a
             school. Both therefore stage the photo to the same coordinates by
             construction — there is one box and only its image and caption
-            change — and the portrait, being outside this wrapper, can never be
-            reached by it. */}
+            change. It is also the LAST thing in the section: what the plate
+            borrows below it is now the section's own bottom padding rather than
+            a coda's top margin. */}
         <div className="bg-plates">
           <StationRow station={STATIONS[1]} index={1} />
           <StationRow station={STATIONS[2]} index={2} />
           <EduPlate photos={PHOTOS} />
-        </div>
-      </div>
-
-      {/* Off the route: not a station, so the spine stops above it. It runs the
-          station's own tracks, so its label holds the stations' left edge and
-          the portrait lands in the same aside column the coursework does. */}
-      <div className="bg-elsewhere">
-        <div className="bg-elsewhere-grid">
-          <p className="bg-marker">interests</p>
-          {/* One mono line, middot-separated — the site's own list treatment
-              (§ 8). It was a two-column grid of seven paragraphs, which cost
-              four rows of height to say what fits on one or two. */}
-          <p className="bg-interests font-mono">{INTERESTS.join(" · ")}</p>
-          <Portrait />
         </div>
       </div>
     </SectionShell>

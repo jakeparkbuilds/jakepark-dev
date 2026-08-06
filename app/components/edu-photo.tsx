@@ -25,8 +25,8 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 //     have to be kept in agreement: there is only one box, and only its image
 //     and caption change. It is absolutely positioned against that wrapper —
 //     never fixed, never computed from scroll — which holds exactly the two
-//     stations that carry a school, and so cannot reach the Kyoto portrait in
-//     the interests block below.
+//     stations that carry a school. The wrapper is the last thing in § 04, so
+//     what the plate borrows below it is the section's own bottom padding.
 //
 // IT OPENS ON CLICK, AT EVERY WIDTH, AND THERE IS NO BREAKPOINT.
 // Hover used to open it above 1440px, and the argument for that was that the

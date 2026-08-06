@@ -217,7 +217,7 @@ number, which is why the ink ground and the cursor/ink-trail inversion keyed to
 | 01 | hero (no number shown — it's the cover) | paper | done |
 | 02 | work — project rows, then the tool index | paper | done |
 | 03 | experience | ink | done — the inverted plate, entries arrive on scroll |
-| 04 | background — three stations, the schools, interests | paper | done |
+| 04 | background — three stations and the schools, and nothing else | paper | done |
 | 05 | connect | paper | done |
 
 Ground sequence, top to bottom: **paper → paper → ink → paper → paper.**
@@ -1107,9 +1107,16 @@ four narrative paragraphs, the four coordinate pairs and the fourth station
 01  seoul, south korea       2007—2014
 02  alexandria, virginia     TJHSST     + coursework
 03  washington, d.c.         Georgetown + coursework
-
-    interests                seven, one middot-separated line   + the Kyoto portrait
 ```
+
+**THE SECTION ENDS AT STATION 03. THERE IS NO CODA.** It briefly carried one —
+an `interests` marker, seven items on a single middot-separated mono line, and
+the Kyoto portrait, under a trailing hairline. All of it is deleted: the label,
+the seven strings, the `.bg-elsewhere` / `.bg-interests` / `.bg-marker` styling
+and the trailing rule. **The portrait is not deleted, it MOVED** — it is § 05
+connect's left column now (§ 5 / §05). Nothing about Jake's interests appears
+anywhere on the site, and `interests` may not be described as a block that
+exists or might return.
 
 **NOTHING REPLACED THE PROSE.** There is no standfirst, no transitional line and
 no caption standing in for a deleted sentence, and none may be added. A station
@@ -1146,7 +1153,8 @@ places happened in an order, where four paragraphs used to say it in words.
   `--spine-indent`**, so a tick never has to know where the spine is in page
   coordinates. Nothing on a station opens any more, so there is no tick gesture
   and no station hover state at all.
-- The spine stops above `interests`. That is not a station.
+- The spine runs the full height of `.bg-route` and stops with station 03,
+  which is now the end of the section.
 
 **The station's tracks.** `40 · 64 · 20 · 620 · 32 · 1fr`, inside a box inset
 16px by the spine.
@@ -1219,28 +1227,13 @@ courses and TJHSST 10, and left-aligning both made the shorter list read as an
 orphaned block floating mid-row with dead space to its right. Below 900px they
 revert to left-aligned, full width, beneath the entry.
 
-**The Kyoto portrait closes the section, off the route**, in the interests row's
-aside — the same track the coursework runs in, so the right side of § 04 reads
-as one column top to bottom: coursework, coursework, portrait. It is 100% of its
-track capped at 400px (480 at ≥1600), right-anchored, and it is **not a
-trigger** — no hover response, because a plate that opens is a different object
-and the portrait must not suggest it is one.
-
-- **`portrait.jpg` is 4284×5712, NOT the 5712×4284 its raw pixel matrix
-  reports.** The file carries an EXIF rotation, so `sips` and the declaration
-  inherited from `about.tsx` both had it landscape while every browser and
-  next/image's own pipeline render it portrait. Measured: the box reserved
-  480×360 and the image arrived 480×640 — a 280px shift under the caption every
-  time it loaded in view. Declare the DISPLAYED size.
-- **It is also what stops § 04 getting shorter.** At 1920 the portrait and its
-  caption are 673px of a 1480px section — 45%. The three stations are 435px and
-  the shared section chrome is 264px. Any further compression of § 04 is a
-  decision about the portrait's size, not about its spacing.
-
-**`interests` was `elsewhere`**, same mono-label treatment, same seven items,
-now **one middot-separated mono line** rather than seven paragraphs in a
-two-column grid. It said in four rows what fits on one line at 1440 and two at
-1920.
+**§ 04 CARRIES EXACTLY ONE PHOTO MECHANISM NOW — the staged plate.** The Kyoto
+portrait used to close the section in the coda's aside, and it was 45% of the
+section's height, which is why § 04 could not be compressed further. It is gone
+from here and the section fell from 1480px to **739px at 1920 — a further 50.1%,
+and 62.6% off the 1975px it started at.** The three stations are 435px of that
+and the shared section chrome (padding, mark, h2, head rule) is the rest, so
+there is nothing left in § 04 to take.
 
 Photo per school — **the reference mark and the plate.**
 
@@ -1283,14 +1276,12 @@ re-derive this — it has been measured twice.
   mark. No frame, no fill, no border box, no radius, no shadow, no filter, no
   grayscale.
 
-  **The wrapper is what keeps the plate off the Kyoto portrait, and that is
-  structural, not a number.** § 04 carries two photo mechanisms — the portrait,
-  which is always visible and lives in the interests row, and this plate, which
-  is staged. The portrait is outside the wrapper, so no value of `top` can put
-  the plate over it. Do not anchor the plate to the section, to the route, or to
-  a station: to the section or the route and it can reach the portrait; to a
-  station and the two stations stage to different coordinates, which is the one
-  property this design exists to guarantee.
+  **The wrapper is structural, not a number.** Do not anchor the plate to the
+  section, to the route, or to a station: anchored to a station the two stations
+  stage to different coordinates, which is the one property this design exists to
+  guarantee. There is nothing below the wrapper any more — the coda and its
+  portrait are gone — so the plate's only neighbour underneath is the section's
+  own bottom padding.
   **Exactly one image is ever in the DOM**: measured 1 while open and **0** while
   closed, at 1920/1600/1440/1360/1024/900/768/390, and both triggers resolve to
   identical box coordinates at every one.
@@ -1326,37 +1317,38 @@ re-derive this — it has been measured twice.
   at 1600/1440, 548 at 1360** and 744+ below. The plate is centred on that
   block, so at the shortest it has 180px either side of the centre plus what it
   may borrow at each end — **40px above** (the clear air between the wrapper's
-  top and station 01's date range, which shares the content edge) and **40px
-  below** (`.bg-elsewhere`'s own top margin, before the interests hairline),
-  less 8px of clearance each. The bottom is the tighter of the two because the
-  caption hangs 43px past the box, so `h/2 + 8 + 43 ≤ 212` gives **h ≤ 322** and
-  `--plate-h` is **320**. The 3:4 ratio then fixes the width at **240**, which
-  is why there are no per-band widths any more: the height binds at every width
-  ≥1440, and 240 + the 8px crop offset leaves **47px** of clear paper against
-  the 295.2px coursework track at 1440, the narrowest it gets. This replaced
-  220/360/390 and `--plate-h: 520`, all of which were derived against stations
-  carrying four paragraphs of prose.
+  top and station 01's date range, which shares the content edge) and, below,
+  **the section's own `py-section-y` bottom padding**: 72px at a 900px viewport
+  and up to 120. That used to be the coda's 40px top margin, and with the coda
+  deleted the wrapper is the last thing in § 04, so what is under it is the
+  page's own gap to § 05. Less 8px of clearance each, the top is now the tighter
+  end: `h/2 + 8 ≤ 212` gives **h ≤ 408**. **`--plate-h` stays at 320** because
+  the WIDTH binds first — 3:4 puts 320 at **240** wide, and 240 + the 8px crop
+  offset already leaves only **47px** of clear paper against the 295.2px
+  coursework track at 1440, the narrowest it gets. This replaced 220/360/390 and
+  `--plate-h: 520`, all of which were derived against stations carrying four
+  paragraphs of prose.
 - Measured with the plate open, both triggers, every width: clear of station
-  01's date range **51.8px**, clear above the portrait **46.2px**, clear right
-  of the name column **+99.2px at 1440** — negative below 1440, which is the
-  lightbox band where the plate deliberately crosses the station.
+  01's date range **51.8px**, clear of the section's own bottom edge **49.2px at
+  1920 / 95.2 at 1600 / 108.5 at 1440**, clear right of the name column
+  **+99.2px at 1440** — negative below 1440, which is the lightbox band where
+  the plate deliberately crosses the station.
 - The mark is the **only** pointer target. The plate is `pointer-events: none`
   until it is open, so it can never steal or trap a pointer.
 - The two photos are **3:4** (4284×5712 and 2870×3826), not the 9:19.5 they are
   repeatedly assumed to be. They are **never** cropped — 9:19.5 would mean
   cutting ~57% of each image's width away.
 
-**Vertical compression, measured at 1920 with the portrait loaded: 1975px →
-1480px, −25.1%.** Also −20.9% at 1440, −26.3% at 1024, −30.7% at 900, −28.5% at
-768 and −38.4% at 390. **It did not reach the 40% asked for and the portrait is
-why**: at 1920 the portrait block is 673px of the remaining 1480 (45%), the
-three stations are 435px, and 264px is section padding and the head rule that
-every section carries. Everything that was spacing HAS been taken — station
-padding `clamp(40px, 5vh, 64px)` → `clamp(20px, 2.4vh, 28px)`, the interests
-block's margin 48 → 40 and its padding 32 → 28, the coursework's row gap 10 → 8,
-and the 28px that sat under each school block for a paragraph that no longer
-exists. Reaching 40% at 1920 means capping the portrait at ~230px wide, which is
-a decision about the photograph, not about the layout.
+**Vertical compression at 1920, in two passes: 1975px → 1480px (−25.1%) when
+the prose was stripped, then → 739px (−50.1% again, −62.6% overall) when the
+coda went.** After: 831px at 1440, 1141 at 1024, 1215 at 900, 1141 at 768, 1382
+at 390. The first pass stopped at 25% and the portrait was why — it was 673px of
+the remaining 1480, 45% of the section — which is exactly the block the second
+pass moved to § 05. Everything that was spacing had already been taken in the
+first pass: station padding `clamp(40px, 5vh, 64px)` → `clamp(20px, 2.4vh, 28px)`
+and the coursework's row gap 10 → 8. **§ 04 is now three stations and the section
+chrome and nothing else, and there is no further compression available that is
+not a decision about the stations themselves.**
 
 ## 6. Interaction systems
 

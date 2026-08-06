@@ -238,8 +238,7 @@
 
   .bg-index,
   .bg-place,
-  .bg-note,
-  .bg-marker {
+  .bg-note {
     font-family: var(--font-plex-mono), ui-monospace, monospace;
     font-weight: 400;
     text-transform: uppercase;
@@ -247,13 +246,9 @@
     line-height: 1;
   }
   .bg-index,
-  .bg-note,
-  .bg-marker {
+  .bg-note {
     font-size: 11px;
     letter-spacing: 0.16em;
-  }
-  .bg-marker {
-    color: #6b6455;
   }
   /* The index owns the 40px rail: fixed width, so the place label starts
      exactly where the crest below it does. */
@@ -312,79 +307,15 @@
     grid-area: body;
   }
 
-  .edu-course,
-  .bg-portrait {
+  .edu-course {
     grid-area: aside;
   }
 
-  /* The portrait right-anchors on the same content edge the coursework does, so
-     the section's right column reads as one column: two lists, then a
-     photograph. It takes the track's width because the track is what the plate
-     is sized against too — one measure for everything on that side. The 400px
-     cap is what stops it becoming a lead image below 1440px, where the aside is
-     a full-width row rather than a column. */
-  .bg-portrait {
-    width: 100%;
-    max-width: 400px;
-    margin-left: auto;
-  }
-  @media (min-width: 1600px) {
-    .bg-portrait {
-      max-width: 480px;
-    }
-  }
-
-  /* Off the route. `interests` is not a station — the spine stops above it —
-     but it runs the SAME tracks, so its marker holds the stations' left edge
-     and the portrait lands in the same aside column the coursework does. */
-  .bg-elsewhere {
-    margin-top: 40px;
-    padding-left: 16px;
-  }
-  .bg-elsewhere-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      "marker"
-      "list"
-      "aside";
-    row-gap: 20px;
-    border-top: 0.5px solid theme("colors.muted");
-    padding-top: 28px;
-  }
-  .bg-elsewhere-grid > .bg-marker {
-    grid-area: marker;
-  }
-  /* One wrapping mono line, middot-separated — the site's list treatment (§ 8).
-     It was seven paragraphs in a two-column grid, four rows tall, to say what
-     fits on one line at 1440 and two at 1024. */
-  .bg-interests {
-    grid-area: list;
-    font-size: 15px;
-    line-height: 1.6;
-    color: theme("colors.body");
-  }
-  @media (min-width: 640px) {
-    .bg-elsewhere-grid {
-      grid-template-columns: 40px 64px 20px minmax(0, 620px) 32px minmax(0, 1fr);
-      grid-template-areas:
-        "marker marker list  list list list"
-        ".      aside  aside aside aside aside";
-      column-gap: 0;
-      row-gap: 32px;
-      align-items: start;
-    }
-    /* The marker sits on the first line's baseline, not on its line-box top:
-       11px mono against 15px mono is a 3px difference in ascent. */
-    .bg-elsewhere-grid > .bg-marker {
-      margin-top: 4px;
-    }
-  }
-  @media (min-width: 1440px) {
-    .bg-elsewhere-grid {
-      grid-template-areas: "marker marker list list . aside";
-    }
-  }
+  /* THERE IS NO CODA. `interests` — a marker, seven items on one middot line
+     and the Kyoto portrait under a trailing hairline — is deleted, and the
+     portrait is now § 05 connect's left column. § 04 ends at station 03, so
+     .bg-plates is the last thing in the section and the plate's bottom
+     neighbour is the section's own padding (see --plate-h below). */
 
   /* Coursework as an aligned list, not a middot run. CSS multi-column gives
      column-first flow — items fill the left column top to bottom, then the
@@ -622,11 +553,12 @@
      no fixed positioning, no scroll arithmetic and no viewport units in its
      placement.
 
-     The wrapper is also what keeps the plate off the Kyoto portrait: the
-     portrait lives in the interests block, outside this containing block, so no
-     value of `top` can reach it. Anchoring to the section or to `.bg-route`
-     could; anchoring per station would lose "both stations stage to the same
-     coordinates", which is the property the single-plate design exists for. */
+     Anchoring per station would lose "both stations stage to the same
+     coordinates", which is the property the single-plate design exists for; the
+     wrapper is what makes that structural rather than two numbers kept in
+     agreement. There is no longer a coda below it to collide with — the Kyoto
+     portrait has moved to § 05 — so the only thing under the wrapper is the
+     section's own bottom padding. */
   .edu-plate {
     position: absolute;
     z-index: 30; /* above the education content, far below the cursor (9999) */
@@ -770,15 +702,20 @@
        above   40px — the clear air between the wrapper's top and the bottom of
                       station 01's date range, which shares the content edge.
                       Less 8px of clearance: 32.
-       below   40px — .bg-elsewhere's own top margin, before the interests
-                      hairline. Less 8px: 32.
+       below   the SECTION'S OWN BOTTOM PADDING, py-section-y — 72px at a 900px
+                      viewport and up to 120. It used to be .bg-elsewhere's 40px
+                      top margin; the coda is deleted and the wrapper is now the
+                      last thing in § 04, so what is below it is the page's own
+                      gap to § 05. Less 8px: 64.
 
-     The bottom is the tighter of the two because the caption hangs 43px past
-     the box (32px offset + its own 11px). So h/2 + 8 + 43 ≤ 212, i.e. h ≤ 322,
-     and --plate-h is 320. The 3:4 ratio then fixes the width at 240, which is
-     why there are no per-band widths any more: the height binds first at every
-     width ≥1440, and 240 + the 8px crop offset leaves 47px of clear paper
-     against the 295.2px coursework track at 1440, the narrowest it gets.
+     The TOP is therefore the binding end now, not the bottom: h/2 + 8 ≤ 212
+     gives h ≤ 408, and the caption (which hangs 43px past the box) needs
+     h/2 + 8 + 43 ≤ 244, i.e. h ≤ 386. --plate-h STAYS AT 320 because the width
+     binds first: the 3:4 ratio puts 320 at 240 wide, and 240 + the 8px crop
+     offset already leaves only 47px of clear paper against the 295.2px
+     coursework track at 1440, the narrowest it gets. Re-measured after the coda
+     came out: the caption clears the section's bottom edge by 49.2px at 1920,
+     95.2 at 1600 and 108.5 at 1440.
 
      This replaced 220/360/390 and --plate-h 520, all of which were derived
      against stations that carried four paragraphs of prose. */
