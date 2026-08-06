@@ -8,7 +8,13 @@ import {
   TOOLS,
   keepOutZones,
 } from "../lib/skills";
-import { CLUSTER_LABEL } from "../lib/skills-geometry";
+import {
+  CLUSTER_LABEL,
+  OUTER_R,
+  REST_DELTA,
+  REST_SCALE,
+  linkEnds,
+} from "../lib/skills-geometry";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import SkillsNode from "./skills-node";
 import SkillsReadout from "./skills-readout";
@@ -203,8 +209,14 @@ export default function SkillsIndex({
         data-quiet={active !== null ? "" : undefined}
         data-domain={tool ? tool.cluster : undefined}
       >
-        {/* ── the wiring. Behind every ring, so a line terminates UNDER the
-            dial it points at. Rendered only while a node is addressed.
+        {/* ── the wiring. Rendered only while a node is addressed.
+
+            A line runs between the two dials, not into them: both endpoints
+            are pushed out along the centre-to-centre vector by that node's own
+            ring-plus-tick radius and a 3px gap, so neither circle is entered.
+            Drawn from the centres, seventeen lines met in one knot behind the
+            active node's label. The group still sits behind every ring, which
+            is what covers the rounding at the moment a node is addressed.
 
             pathLength="1" is load-bearing: the nodes drift, so a line's real
             length changes every frame and a dasharray computed from its
@@ -228,20 +240,44 @@ export default function SkillsIndex({
                 const base = baseRef.current;
                 const a = base[active];
                 const b = base[j];
+                // Off the centres by each node's own outer ink. This is the
+                // resting frame — the loop rewrites all four coordinates on
+                // every frame it runs, but under reduced motion it never runs,
+                // so these values are what that path shows permanently.
+                //
+                // REST_DELTA, and it is load-bearing: `base` is the composed
+                // home, and a node is DRAWN one t = 0 drift offset away from
+                // it. Without it an endpoint landed 18.2px inside a ring.
+                const e =
+                  a && b
+                    ? linkEnds(
+                        a.x + REST_DELTA[active].dx,
+                        a.y + REST_DELTA[active].dy,
+                        OUTER_R[active] * REST_SCALE[active],
+                        b.x + REST_DELTA[j].dx,
+                        b.y + REST_DELTA[j].dy,
+                        OUTER_R[j] * REST_SCALE[j],
+                      )
+                    : null;
                 return (
                   // Keyed on the pair, so switching nodes remounts every line
-                  // and the draw replays from the start.
+                  // and the draw replays from the start. A pair too close to
+                  // draw is still MOUNTED, hidden — drift can separate it, and
+                  // the loop only writes to elements that exist.
                   <line
                     key={`${active}-${j}`}
                     data-to={j}
-                    x1={a ? Math.round(a.x) : 0}
-                    y1={a ? Math.round(a.y) : 0}
-                    x2={b ? Math.round(b.x) : 0}
-                    y2={b ? Math.round(b.y) : 0}
+                    x1={e ? e.x1 : 0}
+                    y1={e ? e.y1 : 0}
+                    x2={e ? e.x2 : 0}
+                    y2={e ? e.y2 : 0}
                     pathLength={1}
                     strokeDasharray={1}
                     strokeDashoffset={1}
-                    style={{ animationDelay: `${k * 40}ms` }}
+                    style={{
+                      animationDelay: `${k * 40}ms`,
+                      ...(e ? null : { display: "none" }),
+                    }}
                   />
                 );
               })}

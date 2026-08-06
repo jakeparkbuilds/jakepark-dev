@@ -528,28 +528,28 @@ weight; stepping the metadata down is what makes the change read as CONTRAST
 rather than as inflation. The column header does not follow the title up: it
 labels the column, it is not an instance of it.
 
-**Captions identify, metrics measure. A caption carries no numbers.**
-CapitolCast's used to read `16,213 bills · 0.48 PR-AUC · 15× baseline`; those
-moved into the metric row and the caption became
-`capitolcast · bill advancement forecast`. My 5's and Bike Heat's were already
-correct.
+**A caption identifies the artifact and carries no numbers.** CapitolCast's used
+to read `16,213 bills · 0.48 PR-AUC · 15× baseline`; the caption became
+`capitolcast · bill advancement forecast` and stays that way. My 5's and Bike
+Heat's were already correct.
 
-**The metric row.** Value in mono at 30px (22px below 1024px) in ink — the only
-numbers in the section and the thing a recruiter scans for — over an 11px mono
-label in `muted`, uppercased by CSS. 64px between metrics, wrapping. A `<dl>`,
-because each value is a term and its label describes it.
-- **It must look deliberate at 0, 1 and 4 metrics, and it is built so with no
-  special case**: a wrapping flex row, so one metric sits alone at the left
-  exactly as four spread across, and an empty array renders **no element at
-  all** rather than an empty row.
-- `muted` on the label is legitimate here and only here: the label is redundant
-  beside its own value and never has to be read alone. It is not a licence to
-  use `muted` for type anywhere else (§ 2, § 11).
-- **Every number must already exist in the repo.** My 5's `43×` was promoted
-  from the index's evidence line for `aws`, which keeps it — the same fact is a
-  claim about the tool there and a result of the project here. Bike Heat has
-  none and shows none. **Banned: animated counters, count-up on scroll,
-  percentage bars, any self-rated figure.**
+**THE METRIC ROW IS GONE.** A `<dl>` of 30px mono values over 11px `muted`
+labels sat between the claim and the stack, carrying My 5's `43×` and
+CapitolCast's four figures. The component, the CSS, the `ProjectMetric` type and
+the `metrics` field on every project are deleted — not hidden, not commented
+out. A row is now: header line, claim, full stack, links, thumbnail.
+
+- **The numbers went back where they came from.** `43×` is the index's evidence
+  line for `aws`, which always had it and keeps it. `5.8m` is inside
+  CapitolCast's claim. **`16,213 bills`, `0.48 PR-AUC` and `15× baseline` are
+  now nowhere on the site except inside the screenshot** — the caption gave
+  them up when the metric row took them, and the metric row then went. That is
+  the accepted state, not an oversight: the caption is not to take them back.
+- Deleting it also removed the **only place on the site `muted` carried type**.
+  The exemption is withdrawn with the element — § 2 and § 11 apply to § 02 with
+  no exception now.
+- Still **banned**: animated counters, count-up on scroll, percentage bars, any
+  self-rated figure. And any figure that does not already exist in the repo.
 
 **Stack tokens.** Each entry in the FULL stack below the claim is a real
 `<button>` carrying `data-tool="<node-id>"`, styled to be indistinguishable from
@@ -1006,8 +1006,8 @@ algorithm or the four-quadrant layout changed, and none of it may.**
   `app/lib/skills.ts` — `my5`, `capitolcast`, `transit`, `coursework` — derived
   from its own evidence line and from § 02's stacks, never invented. Two nodes
   are linked iff they share one. On select, a 0.5px accent hairline at 0.55
-  alpha runs from the addressed node's centre to every node it shipped with,
-  drawn in 420ms `draw`, staggered 40ms **nearest-first by euclidean distance**.
+  alpha runs between the addressed node and every node it shipped with, drawn
+  in 420ms `draw`, staggered 40ms **nearest-first by euclidean distance**.
   A module-scope check throws if any tool has an empty array: an orphan would
   fail silently, as a section that just looks emptier on one selection.
   - **Links exist ONLY while a node is active.** A permanent web between 17
@@ -1024,6 +1024,55 @@ algorithm or the four-quadrant layout changed, and none of it may.**
     nothing is active. A fourth rAF is a hard fail (§ 6, § 12). Measured max
     fan-out is **13** (python), not the 6 that was assumed — still far too few
     to need a cap, and a cap or culling must not be added.
+  - **A LINE RUNS BETWEEN TWO DIALS, NEVER INTO THEM.** Both endpoints are
+    pushed out along the centre-to-centre unit vector by that node's own outer
+    radius plus a **3px gap**, so neither circle is entered at either end.
+    Drawn from the centres — which is how it was first built — thirteen lines
+    converged into one knot of overlapping strokes behind the active node's own
+    label.
+  - **The outer radius is ring + longest tick, times that node's current depth
+    scale.** Derived in `app/lib/skills-geometry.ts` from `r + TICK_REACH`,
+    never hardcoded: radii vary by tier, the ticks sit OUTSIDE the ring, and an
+    endpoint landing between ring and tick reads as a line that failed to
+    reach. The scale is taken per frame because the rendered ring is scaled by
+    the depth cycle and the SVG the lines live in is not — the node pass has
+    just computed it, so the linkage pass reads it rather than recomputing it.
+    No second geometry pass.
+  - **A pair closer than the ink it carries draws NOTHING** — if the two
+    offsets would cross there is no correct short line, and drawing one gives a
+    stroke pointing backwards through both nodes. It is hidden, not unmounted:
+    drift can separate the pair later and the loop only writes to elements that
+    exist.
+  - **THIS BRANCH FIRES, and it is supposed to.** Rings are explicitly meant to
+    cross (see the relaxation notes below — only labels are kept apart), and two
+    dials whose ink overlaps have no space between them for a line to occupy.
+    Measured across all 17 selections, 20 sampled frames each: **111 of 1920
+    link-frames hidden at 1440 (5.8%) and 64 of 1920 at 1920 (3.3%)**,
+    concentrated in the pairs whose rings actually cross — xgboost↔python,
+    fastapi↔pytorch, typescript↔aws, fastapi↔next.js, c++↔java,
+    docker↔postgresql. They come back the moment the pair drifts apart. **Zero
+    backwards lines at either width.**
+  - **The direction check happens AFTER the rounding.** A pair barely clear of
+    the offsets leaves a sub-pixel segment, and rounding four coordinates
+    independently can invert it: measured, fastapi→next.js at 1440 drew
+    backwards on 13 sampled frames when the guard tested the raw distance
+    alone.
+  - Measured endpoint clearance on every drawn line: **minimum 2.17px at 1920
+    and 2.32px at 1440** outside the node's rendered outer ink, against the 3px
+    asked for — the shortfall is the integer rounding, and no endpoint at any
+    width on any frame landed inside a ring or a tick.
+  - The same offsets are applied in the React render, which is the frame the
+    **reduced-motion** path shows permanently — using the resting depth scale
+    at t = 0. Computing them only in the loop would leave that path drawing
+    centre-to-centre forever.
+  - **A node's composed home is NOT where it is drawn.** `baseRef` holds the
+    home the seed relaxation solved for; `nodeStyle` then translates the node
+    by `drift(s, 0)`, and `createBodies` starts every body at home + that same
+    offset. The render path has to add it too (`REST_DELTA` in
+    `skills-geometry.ts`). It did not, and under reduced motion — where nothing
+    ever corrects it — an endpoint landed a measured **18.2px inside a ring**.
+    Centre-to-centre lines hid this: the error was under the dial. Anything
+    that positions against a node at rest has to add the t = 0 drift offset.
 - **The field dims, in OPACITY only.** Active 1.0, linked 0.62, unlinked 0.24,
   260ms `micro`, uniform 1.0 on deselect. This is the largest visual change the
   section has and it costs nothing chromatically. Never introduce a lighter grey

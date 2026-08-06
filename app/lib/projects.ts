@@ -35,11 +35,6 @@ export type ProjectThumb = {
   linkLabel: string;
 };
 
-/** A measured result. Static, rendered once — never counted up, never a bar,
- *  never a self-rated figure (CLAUDE.md § 8). `value` and `label` are both
- *  lowercase in the source; the label is uppercased by CSS (§ 3). */
-export type ProjectMetric = { value: string; label: string };
-
 /** Stack entry → the index node it addresses, or null for one with no node.
  *  Exhaustive over every string in every project's `stack` and `headerStack`:
  *  a missing key would render an inert token that LOOKS interactive, so the
@@ -78,10 +73,6 @@ export type Project = {
   /** The complete list, below the claim. Wraps freely. Every entry must be a
    *  key of TOOL_FOR_STACK. */
   stack: string[];
-  /** Measured results, in the order they should read. May be empty: a project
-   *  with no published numbers shows no metric row, and the layout is built so
-   *  that reads as deliberate rather than as a missing element. */
-  metrics: ProjectMetric[];
   links: ProjectLink[];
   thumb?: ProjectThumb;
 };
@@ -92,7 +83,7 @@ export const PROJECTS: Project[] = [
     name: "My 5",
     year: "2026",
     headerStack: ["Python", "AWS", "Terraform", "Next.js"],
-    claim: "a basketball matchup simulator that knows when to stop.",
+    claim: "an NBA 5v5 matchup simulator built on Monte Carlo simulation.",
     stack: [
       "Python",
       "AWS Lambda",
@@ -102,10 +93,6 @@ export const PROJECTS: Project[] = [
       "WebSockets",
       "Next.js",
     ],
-    // Promoted from the index's evidence line for `aws`, which keeps it: the
-    // same fact is a claim about the tool there and a result of the project
-    // here, and both are true. Nothing here is new.
-    metrics: [{ value: "43×", label: "hot-path speedup" }],
     links: [
       { label: "live", href: "https://my5-sigma.vercel.app/", icon: "live" },
     ],
@@ -134,15 +121,6 @@ export const PROJECTS: Project[] = [
       "Next.js",
       "SHAP",
     ],
-    // All four were already on the page — three in the thumbnail caption, the
-    // fourth inside the claim. The caption gave them up when captions became
-    // identification only; the claim keeps its wording.
-    metrics: [
-      { value: "16,213", label: "bills" },
-      { value: "0.48", label: "pr-auc" },
-      { value: "15×", label: "baseline" },
-      { value: "5.8m", label: "edges" },
-    ],
     links: [
       {
         label: "live",
@@ -156,9 +134,10 @@ export const PROJECTS: Project[] = [
       height: 1363,
       alt: "The CapitolCast interface, showing bill advancement forecasts.",
       // A caption NAMES THE ARTIFACT and carries no numbers. This one used to
-      // read "16,213 bills · 0.48 PR-AUC · 15× baseline"; those three moved up
-      // into the metric row, where measured results live and only measured
-      // results live.
+      // read "16,213 bills · 0.48 PR-AUC · 15× baseline". Those three went to
+      // the metric row and the metric row is now gone, so of them only the
+      // 5.8m edge count is still on the page, inside the claim above. The rest
+      // are in the screenshot. The caption stays as it is: it identifies.
       caption: "capitolcast · bill advancement forecast",
       href: "https://capitol-cast.vercel.app/",
       linkLabel: "CapitolCast — open the live site",
@@ -174,10 +153,6 @@ export const PROJECTS: Project[] = [
     // ArcGIS Pro is the mapping and analysis tool; the rest are data sources.
     // Nothing the poster does not name.
     stack: ["ArcGIS Pro", "OpenStreetMap", "USGS Earth Explorer", "NOAA NCEI"],
-    // No published numbers exist for this one anywhere in the repo, and none
-    // are invented. The row renders with no metric block at all — see
-    // MUST SUPPLY in the § 02 notes.
-    metrics: [],
     // No live deployment and no repo. Not padded with a disabled link — that
     // asymmetry is honest (CLAUDE.md § 5 / §04).
     links: [{ label: "poster (pdf)", href: "/assip-poster.pdf", icon: "pdf" }],

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, type RefObject } from "react";
 import { createBodies, step, type Body } from "../lib/field-physics";
+import { OUTER_R, depthScale, linkEnds } from "../lib/skills-geometry";
 import {
   NODE_SEEDS,
   TICK_REACH,
@@ -50,6 +51,11 @@ export function useFieldMotion(
   // A node's CSS base, in px. The transform carries only the delta from it, so
   // the resting layout in the server-rendered HTML is untouched.
   const baseRef = useRef<{ x: number; y: number }[]>([]);
+  // This frame's depth scale per node, written by the node pass and read by the
+  // linkage pass below it. Allocated once: the linkage needs to know how big
+  // both of its endpoints are rendered right now, and the node pass has already
+  // computed exactly that.
+  const scales = useRef<number[]>(NODE_SEEDS.map(() => 1));
 
   const layout = useCallback(
     (t: number, seeds: NodeSeed[]) => {
@@ -67,9 +73,11 @@ export function useFieldMotion(
         const dx = b && p ? b.x - p.x : 0;
         const dy = b && p ? b.y - p.y : 0;
         const { z } = drift(s, t - offsets.current[i]);
+        const scale = depthScale(z);
+        scales.current[i] = scale;
         el.style.transform = `translate3d(${dx.toFixed(2)}px, ${dy.toFixed(
           2,
-        )}px, 0) scale(${(0.88 + z * 0.24).toFixed(4)})`;
+        )}px, 0) scale(${scale.toFixed(4)})`;
         el.style.zIndex = String(Math.round(z * 100));
         // Depth reads on the circle only. The label keeps its full #6B6455 —
         // dimming type that a reader has to read would break CLAUDE.md § 11.
@@ -89,22 +97,42 @@ export function useFieldMotion(
       //
       // With no node addressed there is nothing in the group and the whole block
       // is skipped — at rest this costs one null check per frame.
+      //
+      // Both ends are pushed out of their own node's ink — see linkEnds. The
+      // offsets are computed here rather than anywhere else for the same reason
+      // the endpoints are: they depend on the depth scale, which changes every
+      // frame, and this pass has just written it.
       const g = linksRef.current;
       const a = activeRef.current;
       if (!g || a === null || !bodies) return;
       const from = bodies[a];
       if (!from) return;
-      // Integers. Sub-pixel endpoints make a 0.5px hairline shiver against its
-      // own antialiasing as the nodes drift.
-      const x1 = String(Math.round(from.x));
-      const y1 = String(Math.round(from.y));
+      const ar = OUTER_R[a] * scales.current[a];
       for (const el of Array.from(g.children) as SVGLineElement[]) {
-        const to = bodies[Number(el.dataset.to)];
+        const j = Number(el.dataset.to);
+        const to = bodies[j];
         if (!to) continue;
-        el.setAttribute("x1", x1);
-        el.setAttribute("y1", y1);
-        el.setAttribute("x2", String(Math.round(to.x)));
-        el.setAttribute("y2", String(Math.round(to.y)));
+        const e = linkEnds(
+          from.x,
+          from.y,
+          ar,
+          to.x,
+          to.y,
+          OUTER_R[j] * scales.current[j],
+        );
+        // Too close for both offsets to fit: no line at all, rather than one
+        // drawn backwards through both nodes. The pair can separate later, so
+        // this is display and not an unmount — the element stays, and the draw
+        // runs whenever it first becomes visible.
+        if (!e) {
+          if (el.style.display !== "none") el.style.display = "none";
+          continue;
+        }
+        if (el.style.display) el.style.display = "";
+        el.setAttribute("x1", String(e.x1));
+        el.setAttribute("y1", String(e.y1));
+        el.setAttribute("x2", String(e.x2));
+        el.setAttribute("y2", String(e.y2));
       }
     },
     [activeRef],

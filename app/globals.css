@@ -2978,55 +2978,10 @@
     }
   }
 
-  /* ── the metric row. Measured results, static, rendered once.
-     A <dl> because that is what it is: each value is a term and its label is
-     the description. Never a counter, never a bar, never a percentage of
-     anything (§ 8).
-
-     Built for 0, 1 and 4 metrics with no special case: it is a wrapping flex
-     row, so one metric sits alone at the left exactly as four sit spread
-     across, and zero metrics render no element at all. */
-  .proj-metrics {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px 64px;
-    margin: 28px 0 0;
-  }
-
-  .proj-metric {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .proj-metric-value {
-    margin: 0;
-    font-size: 22px;
-    font-weight: 400;
-    line-height: 1;
-    letter-spacing: -0.01em;
-    /* Ink, not body: these are the only numbers in the section and they are
-       the thing a recruiter scans for. */
-    color: theme("colors.ink");
-  }
-
-  .proj-metric-label {
-    margin: 0;
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    /* Decorative-weight muted, which is legitimate here and only here: the
-       label is redundant beside its own value and never has to be read on its
-       own. */
-    color: theme("colors.muted");
-  }
-
-  @media (min-width: 1024px) {
-    .proj-metric-value {
-      font-size: 30px;
-    }
-  }
+  /* The metric row was here — a <dl> of 30px mono values over 11px muted
+     labels, between the claim and the stack. It is deleted, and with it the
+     only place on the site `muted` was allowed to carry type. Nothing in § 02
+     may take muted for type now. */
 
   /* ── stack tokens.
      A real <button> so it is in the tab order and reachable, styled to be

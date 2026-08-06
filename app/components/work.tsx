@@ -36,7 +36,12 @@ const NODE_AT = new Map(NODE_SEEDS.map((s, i) => [s.tool.name, i]));
 // Everything from the old § 04 is preserved: always-open rows, the thumbnail
 // right-aligned at native colour inside registration corners, its sizes /
 // quality / decode-gated reveal, and .proj-row:last-child. What is new is the
-// type scale, the metric row and the stack tokens.
+// type scale and the stack tokens.
+//
+// A row is: the header line, the claim, the full stack, the links, and the
+// thumbnail. There is no metric row — it was built and then removed, and the
+// numbers it carried are back where they came from (the index's evidence line
+// for `aws`, CapitolCast's claim, and the screenshots). Do not add it back.
 
 // 10px inline glyphs, matching the hero's social links: hand-drawn strokes at
 // 0.9 so their weight survives next to the filled brand marks. The GitHub path
@@ -206,7 +211,7 @@ function ProjectRow({
   onLeave: (node: string) => void;
   onPin: (node: string) => void;
 }) {
-  const { thumb, metrics } = project;
+  const { thumb } = project;
   return (
     // The id is the index's landing target: its readout links a tool to the
     // rows it shipped in.
@@ -231,21 +236,6 @@ function ProjectRow({
           <p className="proj-claim" data-reveal>
             {project.claim}
           </p>
-
-          {/* Measured results, and only measured results. Static — no counter,
-              no count-up, no bar (§ 8). An empty array renders nothing at all:
-              a project with no published numbers shows no metric row, which is
-              honest, rather than a row of blanks. */}
-          {metrics.length > 0 && (
-            <dl className="proj-metrics" data-reveal>
-              {metrics.map((m) => (
-                <div key={m.label} className="proj-metric">
-                  <dt className="proj-metric-value font-mono">{m.value}</dt>
-                  <dd className="proj-metric-label font-mono">{m.label}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
 
           <StackTokens
             stack={project.stack}
