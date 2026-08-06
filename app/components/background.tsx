@@ -3,27 +3,31 @@ import path from "node:path";
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import EduPhotoTrigger, { EduPlate, type EduPhoto as EduPhotoData } from "./edu-photo";
-import RevealText from "./reveal-text";
 import SectionShell from "./section-shell";
 
-// § 04 background — the route.
+// § 04 background — the route, stripped.
 //
-// about + education, merged. The four markers that used to label the about
-// paragraphs are now STATIONS on a route, and the two schools hang off the two
-// stations where they happened: TJ at alexandria, Georgetown at washington.
-// Nothing here is new copy — every sentence, degree line, course and caption is
-// the string it was in about.tsx or education.tsx.
+// THREE stations and nothing else on them. Every sentence of prose is deleted:
+// the immigration beat, the TJ beat, the Georgetown beat, and station 04 "what
+// for" along with the whole station. The coordinates are deleted with them —
+// every °N/°W line and the data behind them. What is left is a place, a date
+// range on the first station, and a school on the other two.
+//
+// Nothing replaced any of it. A station says where and when; the schools say
+// what; the coursework says how much. There is no standfirst and no
+// transitional line, and none may be added.
 //
 // THE SPINE. One continuous 0.5px muted hairline for the whole route,
-// absolutely positioned against .bg-route and full height, so no wrapper, row
-// gap or station box can break it. § 03's spine is the opposite construction: a
-// 6px bar assembled from one colour-carrying segment per employer, where the
-// rule itself is the data. This one carries nothing — it is quiet, hairline and
-// unsegmented, and the stations are marked on it by 12px ink ticks. A route
-// with stops, not a stack of blocks.
+// absolutely positioned against .bg-route and full height, so no wrapper or
+// station box can break it. § 03's is the opposite construction: a 6px bar
+// assembled from one colour-carrying segment per employer, where the rule
+// itself is the data. This one carries nothing and is marked by a 12px ink tick
+// at each stop. With the prose gone it is doing MORE work than it was, not
+// less: the tick sequence and the numbers are now the only thing saying these
+// three places happened in an order.
 //
 // THE TWO PHOTO MECHANISMS. The Kyoto portrait is always visible and lives in
-// station 01's aside. The staged plate is anchored to .bg-plates, a wrapper
+// the interests block. The staged plate is anchored to .bg-plates, a wrapper
 // holding exactly the two stations that carry a school — so the portrait is
 // outside the plate's containing block and no value of `top` can put one over
 // the other. See CLAUDE.md § 5 / §04.
@@ -43,10 +47,11 @@ type School = {
 
 type Station = {
   place: string;
-  /** [lat, lon], displayed one per line. Lowercase in source, uppercased by
-      CSS — the same treatment § 05's footer coordinates take. */
-  coords: [string, string] | null;
-  beat: string;
+  /** The station's only content where there is no school. Right-aligned to the
+      section's content edge, on the place's own line — the same edge the
+      coursework lists end on, so the section's right column reads as one
+      column top to bottom. */
+  note: string | null;
   school: School | null;
 };
 
@@ -55,10 +60,10 @@ const TJHSST: School = {
   degree: "Advanced Studies Diploma",
   logoFile: "tjhsst.svg",
   logoAlt: "Thomas Jefferson High School for Science and Technology crest",
-  // 1.20x Georgetown: ~1.10 because a circular mark reads smaller than a
-  // squarish one at equal height, and ~1.09 more because this one is drawn in
-  // hairlines rather than filled.
-  logoHeight: [48, 62],
+  // 1.20x Georgetown, the measured ratio: ~1.10 because a circular mark reads
+  // smaller than a squarish one at equal height, and ~1.09 more because this
+  // one is drawn in hairlines rather than filled.
+  logoHeight: [41, 53],
   coursework: [
     "computer science principles",
     "data structures",
@@ -82,10 +87,10 @@ const TJHSST: School = {
 
 const GEORGETOWN: School = {
   institution: "Georgetown University",
-  degree: "B.S. Computer Science · A.B. Mathematics",
+  degree: "B.S. Computer Science · A.B. Mathematics · class of 2029",
   logoFile: "georgetown.svg",
   logoAlt: "Georgetown University shield",
-  logoHeight: [40, 52],
+  logoHeight: [34, 44],
   coursework: [
     "computer science i & ii",
     "data structures",
@@ -104,30 +109,9 @@ const GEORGETOWN: School = {
 };
 
 const STATIONS: Station[] = [
-  {
-    place: "seoul",
-    coords: ["37.5665°n", "126.9780°e"],
-    beat: "I grew up in Northern Virginia, after my family immigrated from Seoul when I was in elementary school.",
-    school: null,
-  },
-  {
-    place: "alexandria",
-    coords: ["38.8048°n", "77.0469°w"],
-    beat: "I went to Thomas Jefferson High School for Science and Technology, where I learned how to build things.",
-    school: TJHSST,
-  },
-  {
-    place: "washington, d.c.",
-    coords: ["38.9076°n", "77.0723°w"],
-    beat: "Now I'm at Georgetown, where being in the middle of D.C. made it obvious how much of public life runs on infrastructure most people never see.",
-    school: GEORGETOWN,
-  },
-  {
-    place: "what for",
-    coords: null,
-    beat: "I want to use math and CS for the communities that took my family in, building technology that serves actual people.",
-    school: null,
-  },
+  { place: "seoul, south korea", note: "2007—2014", school: null },
+  { place: "alexandria, virginia", note: null, school: TJHSST },
+  { place: "washington, d.c.", note: null, school: GEORGETOWN },
 ];
 
 // The plate's photos, in the order the two school stations appear. The index a
@@ -154,54 +138,32 @@ function readLogo(file: string) {
   return fs.readFileSync(path.join(process.cwd(), "public/logos", file), "utf8");
 }
 
-function StationRow({
-  station,
-  index,
-  aside,
-}: {
-  station: Station;
-  index: number;
-  aside?: React.ReactNode;
-}) {
-  const { place, coords, beat, school } = station;
+function StationRow({ station, index }: { station: Station; index: number }) {
+  const { place, note, school } = station;
   const no = String(index + 1).padStart(2, "0");
 
-  const placeId = `bg-station-${no}`;
-
   return (
-    // The focus stop exists only where there is something to reveal: the
-    // coursework opens on :focus-within, so a sighted keyboard user reaches it
-    // without a pointer. Stations with no list get no tab stop.
-    //
-    // It must be a NAMED group. A bare focusable div has no role, so a screen
-    // reader announces its whole subtree — measured, the station read out as
-    // "02alexandria38.8048°n77.0469°w Thomas Jefferson High Schoo...". `group`
-    // with aria-labelledby on the place name announces "alexandria, group" and
-    // leaves the contents to be read normally.
-    <div
-      className="bg-station"
-      {...(school
-        ? { tabIndex: 0, role: "group" as const, "aria-labelledby": placeId }
-        : {})}
-    >
+    // No tab stop and no role. The station used to be a focus stop because the
+    // coursework opened on :focus-within; the coursework is always visible now,
+    // so a focusable wrapper would be a stop that does nothing. The photo
+    // trigger is the station's only control.
+    <div className="bg-station">
       {/* The station's mark on the spine. 12px of ink crossing a 0.5px muted
           rule, centred on it by the route's own indent — so the tick never has
           to know where the spine is in page coordinates. */}
       <span aria-hidden="true" className="bg-tick" />
 
-      <div className="bg-meta">
+      <div className="bg-head">
         <p className="bg-index">{no}</p>
-        <p className="bg-place" id={placeId}>
-          {place}
-        </p>
-        {coords && (
-          <p className="bg-coords">
-            {coords[0]}
-            <br />
-            {coords[1]}
-          </p>
-        )}
-        {school && (
+        <p className="bg-place">{place}</p>
+        {note && <p className="bg-note">{note}</p>}
+      </div>
+
+      {school && (
+        <>
+          {/* The crest sits in the left rail, top-aligned to the cap band of
+              the institution name beside it — not to its line box, which is
+              looser by the font's own ascent. */}
           <div
             className="bg-crest"
             style={
@@ -214,11 +176,7 @@ function StationRow({
             aria-label={school.logoAlt}
             dangerouslySetInnerHTML={{ __html: readLogo(school.logoFile) }}
           />
-        )}
-      </div>
 
-      <div className="edu-body">
-        {school && (
           <div className="bg-school">
             {/* The contact print is appended to the school name so it sits on
                 the name's last line, 14px past its last character. It is out of
@@ -230,28 +188,16 @@ function StationRow({
             </p>
             <p className="mt-[10px] font-display text-body text-body">{school.degree}</p>
           </div>
-        )}
-        {/* Each beat runs its OWN progress window — separate elements with
-            separate rects, so the fourth is not already inked by the time it
-            arrives. */}
-        <RevealText className="block max-w-[560px] font-display text-body text-body">
-          {beat}
-        </RevealText>
-      </div>
 
-      {aside ?? (school ? <Coursework school={school} /> : null)}
-    </div>
-  );
-}
-
-function Coursework({ school }: { school: School }) {
-  return (
-    <div className="edu-course">
-      <ul className="edu-course-list">
-        {school.coursework.map((course) => (
-          <li key={course}>{course}</li>
-        ))}
-      </ul>
+          <div className="edu-course">
+            <ul className="edu-course-list">
+              {school.coursework.map((course) => (
+                <li key={course}>{course}</li>
+              ))}
+            </ul>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -259,7 +205,8 @@ function Coursework({ school }: { school: School }) {
 // Always visible, never staged, never a trigger — the same crop-mark language
 // as the plate so the section's rasters read as one family, but with no hover
 // response, because the portrait is not an affordance and must not suggest it
-// is. It sits in station 01's aside, which is what keeps it outside .bg-plates.
+// is. It lives in the interests block, which is what keeps it outside
+// .bg-plates and therefore out of the plate's reach.
 function Portrait() {
   return (
     <div className="bg-portrait">
@@ -267,8 +214,14 @@ function Portrait() {
         <Image
           src="/portrait.jpg"
           alt="Jake Park"
-          width={5712}
-          height={4284}
+          // 4284x5712, NOT the 5712x4284 the raw pixel matrix reports. The
+          // file carries an EXIF rotation, so `sips` and the declaration
+          // inherited from about.tsx both had it landscape while every browser
+          // and next/image's own pipeline render it portrait. Measured: the
+          // box reserved 480x360 and the image arrived 480x640, a 280px shift
+          // under the caption every time it loaded in view.
+          width={4284}
+          height={5712}
           // 72, not 90 — the heaviest optimized raster on the page.
           quality={72}
           sizes="(min-width: 1440px) 30vw, 400px"
@@ -310,29 +263,18 @@ export default function Background({
           <StationRow station={STATIONS[2]} index={2} />
           <EduPlate photos={PHOTOS} />
         </div>
-
-        <StationRow station={STATIONS[3]} index={3} />
       </div>
 
-      {/* Off the route: not a station, so the spine stops above it. The
-          portrait lives here rather than in a station's aside — in station 01
-          it drove that station to 463px for two lines of copy, which opened a
-          250px hole in the middle of the route. Here it closes the section and
-          takes the same aside track the coursework does, so the right column
-          reads as one column all the way down. */}
+      {/* Off the route: not a station, so the spine stops above it. It runs the
+          station's own tracks, so its label holds the stations' left edge and
+          the portrait lands in the same aside column the coursework does. */}
       <div className="bg-elsewhere">
         <div className="bg-elsewhere-grid">
-          <p className="bg-marker">elsewhere</p>
-          {/* grid-flow-col + grid-rows-4 fills column-first (items 1-4 left
-              column, 5-7 right) instead of the default row-first order, so
-              reading order runs down then over. */}
-          <div className="bg-interests grid grid-cols-1 gap-x-12 gap-y-3.5 sm:grid-flow-col sm:grid-cols-2 sm:grid-rows-4">
-            {INTERESTS.map((interest) => (
-              <p key={interest} className="font-mono text-small text-body">
-                {interest}
-              </p>
-            ))}
-          </div>
+          <p className="bg-marker">interests</p>
+          {/* One mono line, middot-separated — the site's own list treatment
+              (§ 8). It was a two-column grid of seven paragraphs, which cost
+              four rows of height to say what fits on one or two. */}
+          <p className="bg-interests font-mono">{INTERESTS.join(" · ")}</p>
           <Portrait />
         </div>
       </div>

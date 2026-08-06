@@ -138,7 +138,7 @@
   }
 
   /* ── § 04 background — the route ───────────────────────────────────────────
-     Four stations on ONE continuous 0.5px hairline. The spine is absolutely
+     THREE stations on ONE continuous 0.5px hairline. The spine is absolutely
      positioned against .bg-route and stretches its full height, so no wrapper,
      row gap or station box can break it — which is the whole reason it is not
      assembled from per-station segments.
@@ -170,97 +170,131 @@
     position: relative;
   }
 
-  /* Named grid areas reflow meta/body/aside across breakpoints without
-     duplicating markup. The gap tracks are explicit rather than a column-gap,
-     because the two gaps are different (24px meta->body, 32px body->aside) and
-     the row's width arithmetic has to be readable: at 1440 the content box is
-     1087.2px, less the 16px spine indent, less 140 + 24 + 620 + 32, leaves the
-     aside 255.2px. That number is what sets the plate's size and the
-     hover-opens breakpoint below. */
+  /* A station is a header line and, where there is a school, one entry row
+     under it. The tracks:
+
+       40px   the index rail — the tick's own column, so the place label and
+              the crest below it share a left edge
+       64px   the crest box. Fixed, and the two marks are sized INSIDE it by
+              perceived weight rather than to it (see .bg-crest)
+       20px   crest -> name
+       620px  the name column. Measured, not proportional: TJHSST's name only
+              stays on two lines above ~601px
+       32px   name -> coursework
+       1fr    the coursework, ending on the section's content edge
+
+     At 1440 the content box is 1087.2px, less the 16px spine indent, less
+     40 + 64 + 20 + 620 + 32, leaves the coursework 295.2px. That number is what
+     sizes the plate. */
   .bg-station {
     position: relative;
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "meta"
+      "head"
+      "crest"
       "body"
       "aside";
-    row-gap: 24px;
+    row-gap: 14px;
     align-items: start;
     align-content: start;
-    padding: clamp(40px, 5vh, 64px) 0;
+    padding: clamp(20px, 2.4vh, 28px) 0;
+  }
+
+  /* The header line: index, place, and — where the station has no school — its
+     date range pushed to the content edge. In the flex rather than in a grid
+     track of its own, so it right-aligns to the same edge the coursework does
+     at every width without a track that has to be kept in agreement. */
+  .bg-head {
+    grid-area: head;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    row-gap: 10px;
+  }
+  /* Pushed to the content edge, and allowed to WRAP below the place rather than
+     past it: at 390 the index, the place and the date range measure 393px in a
+     326px box, and nowrap put the date 10px outside the document. Wrapped it
+     lands on its own line, still right-aligned. */
+  .bg-note {
+    margin-left: auto;
+    padding-left: 24px;
   }
 
   /* The station's mark. Ink, so a station is a definite thing on a quiet rule.
      It is centred on the spine by the route's own indent, so it never has to
-     know where the spine is in page coordinates. +5px puts it on the optical
-     centre of the 11px index line beside it (line-height 1). Static: the
+     know where the spine is in page coordinates. +6px puts it on the optical
+     centre of the 13px place label beside it (line-height 1). Static: the
      education rows' hairline used to go ink on hover, but the route has no row
-     boundaries to light up and the coursework wipe is the hover feedback. */
+     boundaries to light up and nothing on a station opens any more. */
   .bg-tick {
     position: absolute;
-    top: calc(clamp(40px, 5vh, 64px) + 5px);
+    top: calc(clamp(20px, 2.4vh, 28px) + 6px);
     left: calc(-1 * var(--spine-indent) - 6px);
     width: 12px;
     height: 0.5px;
     background: theme("colors.ink");
   }
 
-  /* The station is a focus stop only where it has coursework to reveal. The
-     ring frames the whole station, which is what it opens, and it uses the
-     site's focus treatment rather than the browser default (§ 11). */
-  .bg-station:focus-visible {
-    outline: 1px solid theme("colors.accent");
-    outline-offset: 2px;
-  }
-  .bg-station:focus:not(:focus-visible) {
-    outline: none;
-  }
-
-  .bg-meta {
-    grid-area: meta;
-  }
   .bg-index,
   .bg-place,
-  .bg-coords,
+  .bg-note,
   .bg-marker {
     font-family: var(--font-plex-mono), ui-monospace, monospace;
-    font-size: 11px;
     font-weight: 400;
-    letter-spacing: 0.16em;
     text-transform: uppercase;
     white-space: nowrap;
+    line-height: 1;
+  }
+  .bg-index,
+  .bg-note,
+  .bg-marker {
+    font-size: 11px;
+    letter-spacing: 0.16em;
   }
   .bg-marker {
-    line-height: 1;
     color: #6b6455;
   }
-  /* The index and the coordinates are the station's metadata and sit in muted;
-     the place NAME is the line a reader actually reads and takes #6B6455. */
+  /* The index owns the 40px rail: fixed width, so the place label starts
+     exactly where the crest below it does. */
   .bg-index {
-    line-height: 1;
+    width: 40px;
+    flex: none;
     color: theme("colors.muted");
   }
+  /* The place is the station's title now that the prose is gone, so it takes
+     the mono-label step (13px / 0.24em / 500) rather than the micro one the
+     index and the date range keep. */
   .bg-place {
-    margin-top: 10px;
-    line-height: 1;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.24em;
     color: #6b6455;
   }
-  .bg-coords {
-    margin-top: 10px;
-    line-height: 1.7;
-    color: theme("colors.muted");
+  /* #6B6455, not muted. The date range is station 01's ONLY content — the one
+     thing that station says — so it is copy, not annotation, and § 11's floor
+     applies to it. The coordinates it replaced were the one place on the site
+     muted carried type, under an exemption that is struck with them. */
+  .bg-note {
+    color: #6b6455;
   }
 
-  /* Crest height is per-entry, not shared. The two marks are opposite kinds:
-     Georgetown's G is a solid navy glyph, TJHSST's is a fine-line seal, and
-     matching them by bounding box makes the seal read as the smaller of the
+  /* The crest, in the left rail and TOP-ALIGNED TO THE INSTITUTION NAME'S CAP
+     BAND — not to its line box, which the font's own ascent makes ~7px looser
+     at 40px/500. The offset is half the leading ((44 - 40) / 2 = 2px) plus the
+     gap between the ascender and the cap (measured 5.6px at 40px), so 7.6px
+     rounded to 8. At the 34px base step the same derivation gives 6px.
+
+     Size is per school and must never be normalised. The two marks are opposite
+     kinds: Georgetown's G is a solid navy glyph, TJHSST's is a fine-line seal,
+     and matching them by bounding box makes the seal read as the smaller of the
      two. Measured at an identical 200px set height, the G carries 19,339 units
      of contrast-weighted ink at 0.578 density against the seal's 7,190 at
-     0.180 — 2.7x the optical mass. So the seal is set larger, by the station's
+     0.180 — 2.7x the optical mass. So the seal is set 1.20x, by the station's
      own --edu-logo-h. See background.tsx for the chosen values. */
   .bg-crest {
-    margin-top: 24px;
+    grid-area: crest;
+    margin-top: 6px;
     height: var(--edu-logo-h);
     width: auto;
   }
@@ -274,13 +308,8 @@
     width: auto;
   }
 
-  .edu-body {
-    grid-area: body;
-  }
-  /* The formal record sits above the beat, so the crest, the school name and
-     the coursework all register on the station's top line. */
   .bg-school {
-    margin-bottom: 28px;
+    grid-area: body;
   }
 
   .edu-course,
@@ -289,11 +318,11 @@
   }
 
   /* The portrait right-anchors on the same content edge the coursework does, so
-     the section's right column reads as one column: a photograph, then two
-     lists, then air. It takes the track's width because the track is what the
-     plate is sized against too — one measure for everything on that side. The
-     400px cap is what stops it becoming a lead image below 1440px, where the
-     aside is a full-width row rather than a column. */
+     the section's right column reads as one column: two lists, then a
+     photograph. It takes the track's width because the track is what the plate
+     is sized against too — one measure for everything on that side. The 400px
+     cap is what stops it becoming a lead image below 1440px, where the aside is
+     a full-width row rather than a column. */
   .bg-portrait {
     width: 100%;
     max-width: 400px;
@@ -305,60 +334,70 @@
     }
   }
 
-  /* Off the route. `elsewhere` is not a station — the spine stops above it —
+  /* Off the route. `interests` is not a station — the spine stops above it —
      but it runs the SAME tracks, so its marker holds the stations' left edge
-     and the portrait lands in the same aside column the coursework does. The
-     right side of the section therefore reads as one column top to bottom:
-     coursework, coursework, portrait. */
+     and the portrait lands in the same aside column the coursework does. */
   .bg-elsewhere {
-    margin-top: 48px;
+    margin-top: 40px;
     padding-left: 16px;
   }
   .bg-elsewhere-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "marker"
       "list"
       "aside";
-    row-gap: 24px;
+    row-gap: 20px;
     border-top: 0.5px solid theme("colors.muted");
-    padding-top: 32px;
+    padding-top: 28px;
   }
   .bg-elsewhere-grid > .bg-marker {
     grid-area: marker;
   }
+  /* One wrapping mono line, middot-separated — the site's list treatment (§ 8).
+     It was seven paragraphs in a two-column grid, four rows tall, to say what
+     fits on one line at 1440 and two at 1024. */
   .bg-interests {
     grid-area: list;
+    font-size: 15px;
+    line-height: 1.6;
+    color: theme("colors.body");
   }
   @media (min-width: 640px) {
     .bg-elsewhere-grid {
-      grid-template-columns: 140px 24px minmax(0, 620px) 32px minmax(0, 1fr);
+      grid-template-columns: 40px 64px 20px minmax(0, 620px) 32px minmax(0, 1fr);
       grid-template-areas:
-        "marker . list  .     ."
-        "marker . aside aside aside";
+        "marker marker list  list list list"
+        ".      aside  aside aside aside aside";
       column-gap: 0;
-      row-gap: 40px;
+      row-gap: 32px;
       align-items: start;
     }
-    /* The marker sits on the first interest's baseline, not on its line-box
-       top: 11px mono against 15px mono is a 3px difference in ascent. */
+    /* The marker sits on the first line's baseline, not on its line-box top:
+       11px mono against 15px mono is a 3px difference in ascent. */
     .bg-elsewhere-grid > .bg-marker {
       margin-top: 4px;
     }
   }
   @media (min-width: 1440px) {
     .bg-elsewhere-grid {
-      grid-template-areas: "marker . list . aside";
+      grid-template-areas: "marker marker list list . aside";
     }
   }
 
-  /* Coursework as an aligned list, not a middot run (§ item 4). CSS multi-column
-     gives column-first flow — items fill the left column top to bottom, then the
+  /* Coursework as an aligned list, not a middot run. CSS multi-column gives
+     column-first flow — items fill the left column top to bottom, then the
      right — so the reading order is vertical. One course per line, no
      separators; alignment and space do the work. Single column here; two at
      >=1200px (below). IBM Plex Mono 12px/400, #6B6455, line-height 1.0 with the
-     10px row gap providing the rhythm. Items never wrap. */
+     8px row gap providing the rhythm. Items never wrap.
+
+     IT IS ALWAYS VISIBLE. It used to be clipped shut and uncovered by a wipe on
+     hover or focus-within, which is why the station was a focus stop and why
+     the plate had a hover breakpoint. With the prose deleted the right of each
+     station is empty and the list simply lives there — no clip-path, no
+     transition, no stage suppression, no re-arm, nothing to arm. */
   .edu-course-list {
     column-count: 1;
     column-gap: 32px;
@@ -373,25 +412,23 @@
   }
   .edu-course-list li {
     break-inside: avoid;
-    margin: 0 0 10px;
+    margin: 0 0 8px;
     white-space: nowrap;
   }
   .edu-course-list li:last-child {
     margin-bottom: 0;
   }
-  /* Right-anchored at >=900px (CLAUDE.md § 5 / §06). Georgetown has 6 courses
-     and TJHSST 10; left-aligning both made the shorter list read as an orphaned
-     block floating mid-row with dead space to its right. Anchored right, the
-     RAGGED LEFT EDGE is what shows the length difference, which is the point.
+  /* Right-anchored at >=900px. Georgetown has 6 courses and TJHSST 10;
+     left-aligning both made the shorter list read as an orphaned block floating
+     mid-row with dead space to its right. Anchored right, the RAGGED LEFT EDGE
+     is what shows the length difference, which is the point.
 
      There is no invented inset here and there must not be one. `.edu-course` is
      the station's last grid track and that track always runs to the section's
-     content edge — as its own column at >=1440px, and as a row spanning
-     body + aside below it. The list is a multicol container filling that track,
-     so its last column's right edge lands on the content edge by construction —
-     not by a number kept in agreement. `margin-left: auto` is a no-op at full
-     width and is stated only so a future `width: fit-content` cannot silently
-     orphan it. */
+     content edge — as its own column at >=1440px, and as a row spanning the
+     crest through the coursework below it. The list is a multicol container
+     filling that track, so its last column's right edge lands on the content
+     edge by construction — not by a number kept in agreement. */
   @media (min-width: 900px) {
     .edu-course-list {
       margin-left: auto;
@@ -405,147 +442,52 @@
   @media (min-width: 1200px) {
     .edu-course-list {
       columns: 2 210px;
+      /* 2 × 210 + the 32px gap. Without it the multicol fills the whole track —
+         756px at 1920 — and the two right-aligned columns end up 230px apart,
+         which reads as two lists rather than one. Capped and pushed right, they
+         sit adjacent and the last column still lands on the content edge. */
+      max-width: 452px;
     }
   }
 
-  /* The station goes two-column here: the meta plate on the left, everything
-     else stacked in the body track. The aside spans body + aside so the
-     coursework and the portrait still terminate on the section's content edge.
-     620px is a measured value, not a proportion: at 1440px the wrap requirement
-     ("Thomas Jefferson High School for" / "Science and Technology") only holds
-     above ~601px, verified in a real browser. */
+  /* The station goes multi-column here: the index rail and the crest on the
+     left, the name column beside them, and the coursework as a row spanning
+     from the crest to the content edge — so it still terminates on that edge
+     rather than on an invented inset. */
   @media (min-width: 640px) {
     .bg-crest {
+      margin-top: 8px;
       height: var(--edu-logo-h-sm);
     }
     .bg-station {
-      grid-template-columns: 140px 24px minmax(0, 620px) 32px minmax(0, 1fr);
+      grid-template-columns: 40px 64px 20px minmax(0, 620px) 32px minmax(0, 1fr);
       grid-template-areas:
-        "meta . body  .     ."
-        "meta . aside aside aside";
+        "head  head  head head head head"
+        ".     crest .    body body body"
+        ".     aside aside aside aside aside";
       column-gap: 0;
+      row-gap: 18px;
     }
   }
 
-  /* At and above 1440 the aside becomes its own right-hand column — the first
-     width at which it can hold the plate (see --plate-w below). Below it the
-     aside stays a full-width row under the body, which is where the
-     click-opened lightbox band comes from. */
+  /* At and above 1440 the coursework becomes its own right-hand column — the
+     first width at which it can hold the plate (see --plate-w below). Below it
+     it stays a full-width row under the name, which is where the lightbox band
+     comes from. */
   @media (min-width: 1440px) {
     .bg-station {
-      grid-template-areas: "meta . body . aside";
+      grid-template-areas:
+        "head  head  head head head head"
+        ".     crest .    body .    aside";
     }
   }
 
-  /* The coursework's hover/focus reveal, from 1100 up — the same threshold it
-     has always had, and independent of whether the aside is a column or a row.
-     Below it the list is permanently visible and there is no hover surface. */
-  @media (min-width: 1100px) {
-    /* Drawn, not faded. The wipe uncovers from the RIGHT — the inset is on the
-       left side — because the list is right-aligned at these widths and a
-       left-origin wipe on right-aligned text reads backwards: it would start by
-       exposing the ragged edge and finish at the anchored one. The pen follows
-       the alignment. */
-    .edu-course {
-      /* Approximates the institution name's cap-height, not just its
-         (much looser) line-height box top. */
-      margin-top: 6px;
-      clip-path: inset(0 0 0 100%);
-      transition: clip-path 420ms cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    .bg-station:hover .edu-course,
-    .bg-station:focus-within .edu-course {
-      clip-path: inset(0 0 0 0);
-    }
-  }
-
-  /* Between 1100 and ~1360px the beside coursework column is too narrow (down to
-     ~112px) to hold a single-line course title, because the locked 620px body +
-     the 180px nav-gutter leave little room. Rather than clip the titles or drop
-     to unreadable type, the coursework drops to a full-width row beneath the
-     school block here — the body stays in its 620px column (so the left side is
-     unchanged) and the list gets the width to stay one item per line (two auto
-     columns where they fit). This band's rows are correspondingly taller, the
-     way they already are below 1100px where the list also sits beneath. */
-  @media (prefers-reduced-motion: reduce) {
-    .edu-course {
-      clip-path: inset(0 0 0 0) !important;
-      transition: none !important;
-    }
-  }
-
-  /* ── the stage (see regionEnter/regionLeave in edu-photo.tsx) ──────────────
-     While a photo is staged the station clears around it. Scoped to >=1100px —
-     exactly the widths where the coursework is hover-clipped and so has
-     something to yield. That includes the 1100-1440px band where the plate is
-     click-opened rather than hovered. Below 1100px the coursework is
-     permanently visible and there is no stage.
-
-     There is no divider retraction here and there must not be one. It existed
-     because `.edu-grid` forced the two education rows to equal height, which
-     put a hairline at exactly the plate's vertical centre; a four-station route
-     has no such grid and no divider between two rows. `setDividerScale()` and
-     `--edu-divider-scale` went with it. */
-  @media (min-width: 1100px) {
-    /* (a) coursework yields, and stays shut. The !important is doing real work:
-       it has to beat the .bg-station:hover open rule so that sweeping the
-       pointer across a column cannot reopen it while a plate is up.
-       `edu-rearming` holds that suppression for a further beat after the stage
-       ends, so a pointer leaving the plate does not land on an instantly-
-       opening column. */
-    html.edu-staged .edu-course,
-    html.edu-rearming .edu-course {
-      clip-path: inset(0 0 0 100%) !important;
-    }
-    /* (d) it recedes rather than unmounting. */
-    html.edu-staged .edu-course {
-      opacity: 0.15;
-      transition:
-        clip-path 420ms cubic-bezier(0.22, 1, 0.36, 1),
-        opacity 240ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .edu-course {
-      opacity: 1;
-      transition:
-        clip-path 420ms cubic-bezier(0.22, 1, 0.36, 1),
-        opacity 240ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-  }
-
-  /* 1100-1440px: the plate is a click-opened lightbox, and at those widths the
-     coursework has reflowed to a full-width row beneath the body — so there is
-     nowhere beside the body to put a photograph worth looking at. The plate
-     therefore crosses the body block, and the body recedes with the coursework
-     rather than sitting legible underneath it. Nothing readable is left behind
-     the photo. */
-  @media (min-width: 1100px) and (max-width: 1439.98px) {
-    html.edu-staged .edu-body {
-      opacity: 0.15;
-      transition: opacity 240ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .edu-body {
-      transition: opacity 240ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-  }
-
-  /* (c) the plate elevates above all row content, and becomes part of the hover
-     region so travelling from the print onto the photo does not drop the
-     stage. It is only interactive while open. */
+  /* (c) the plate elevates above all station content. It is only interactive
+     while open, so it can never steal or hold the pointer when it is not
+     there. */
   .edu-plate[data-open] {
     z-index: 60;
     pointer-events: auto;
-  }
-
-  /* Reduced motion: the stage still happens — no information is lost — but
-     every transition in it is instant. */
-  @media (prefers-reduced-motion: reduce) {
-    html.edu-staged .edu-course,
-    html.edu-staged .edu-body,
-    .edu-body,
-    .edu-course {
-      transition: none !important;
-    }
   }
 
   /* ── § 04 background — the contact print and the plate (see EduPhoto) ──────
@@ -663,15 +605,14 @@
     }
   }
 
-  /* The plate. Absolutely positioned against .edu-grid and out of flow, so
-     nothing it does can change a row height. Only interactive while open, so it
-     cannot steal or hold the pointer when it is not there.
+  /* The plate. Absolutely positioned against .bg-plates and out of flow, so
+     nothing it does can change a station's height. Only interactive while open,
+     so it cannot steal or hold the pointer when it is not there.
 
-     --plate-w is the widest the photo may be at this breakpoint. Below 1360px
-     it centres as a lightbox (see the breakpoints at the end of this block);
-     at and above 1360px it is anchored to the content's right edge and sized so
-     its left edge never reaches the body column, which is what makes hover safe
-     there — the plate covers the coursework, never type being read. */
+     --plate-w is the widest the photo may be at this breakpoint. Below 1440px
+     it centres as a lightbox over the station; at and above 1440px it is
+     anchored to the content's right edge and sized so its left edge never
+     reaches the name column. */
   /* Anchored to the two SCHOOL STATIONS, not the viewport and not the section.
      There is exactly one plate for the whole section (see EduPlate), positioned
      against `.bg-plates` — a wrapper holding stations 02 and 03 and nothing
@@ -682,7 +623,7 @@
      placement.
 
      The wrapper is also what keeps the plate off the Kyoto portrait: the
-     portrait lives in station 01's aside, outside this containing block, so no
+     portrait lives in the interests block, outside this containing block, so no
      value of `top` can reach it. Anchoring to the section or to `.bg-route`
      could; anchoring per station would lose "both stations stage to the same
      coordinates", which is the property the single-plate design exists for. */
@@ -815,53 +756,36 @@
     transition: opacity 200ms linear 280ms;
   }
 
-  /* ≥1440px is exactly where the coursework is a right-hand COLUMN. There the
-     plate anchors to the content's right edge, clear of all type, and hover may
-     open it. Below 1440px the coursework is already a full-width row under the
-     body, leaving no clear space at any width, so the plate stays right-
-     anchored as a lightbox and opens on click instead (see HOVER_OPENS in
-     edu-photo.tsx).
+  /* ≥1440px is exactly where the coursework is a right-hand COLUMN, so the
+     plate can sit clear of every line of type. Below 1440 the coursework is a
+     full-width row under the name and there is no clear space at any width, so
+     the plate stays right-anchored and simply covers the station as a lightbox.
 
-     --plate-w per band is the aside track's own width less 32px — 8px for the
-     crop-mark offset and 24px of clear paper between the left marks and the
-     body column. The track is the content box less the 16px spine indent, less
-     140 + 24 + 620 + 32:
+     THE HEIGHT BINDS, AND IT IS THE WRAPPER THAT SETS IT. `.bg-plates` is just
+     the two school stations, and the stripped § 04 made them short: measured
+     360px at 1920/1800, 452 at 1600/1440, 548 at 1360 and 744+ below. The plate
+     is centred on that block, so at the SHORTEST measurement it has 180px above
+     and below the centre, plus what it may borrow at either end:
 
-       1440   content 1087.2   aside 255.2   ->  220 + 32 = 252
-       1600   content 1228     aside 396     ->  360 + 32 = 392
-       1800   content 1428     aside 596     ->  height-capped at 390
-       1920   content 1548     aside 716     ->  height-capped at 390
+       above   40px — the clear air between the wrapper's top and the bottom of
+                      station 01's date range, which shares the content edge.
+                      Less 8px of clearance: 32.
+       below   40px — .bg-elsewhere's own top margin, before the interests
+                      hairline. Less 8px: 32.
 
-     That is also why the breakpoint is 1440 and not 1360: the smallest plate's
-     footprint (220 + 8 + 24) first fits the track at 1436px.
+     The bottom is the tighter of the two because the caption hangs 43px past
+     the box (32px offset + its own 11px). So h/2 + 8 + 43 ≤ 212, i.e. h ≤ 322,
+     and --plate-h is 320. The 3:4 ratio then fixes the width at 240, which is
+     why there are no per-band widths any more: the height binds first at every
+     width ≥1440, and 240 + the 8px crop offset leaves 47px of clear paper
+     against the 295.2px coursework track at 1440, the narrowest it gets.
 
-     THE HEIGHT CAP IS NOW LOAD-BEARING and it was not before. The plate used to
-     be centred on a pair of equal-height rows that could grow; it is now centred
-     on `.bg-plates`, whose height is just the two school stations — measured
-     598px at every width ≥1440, because the coursework goes to two columns there
-     and stops driving the height. At the old --plate-h of 668 the box came out
-     667px tall inside a 598px block, overflowing 34.5px at each end: measured at
-     1920, the top crop marks landed 2.5px under the Kyoto portrait's caption.
-     520 is 598 less the 8px crop-mark offsets and a 31px margin at the top,
-     which is the end that has something to hit. The caption still hangs ~18px
-     past the bottom, into station 04's top padding, where the aside is empty.
-     One value for every band: above 1800 the height binds before the width
-     does, so 390 = 520 × 3/4 is the widest the photo can be however much room
-     the track has. */
+     This replaced 220/360/390 and --plate-h 520, all of which were derived
+     against stations that carried four paragraphs of prose. */
   @media (min-width: 1440px) {
     .edu-plate {
-      --plate-w: 220px;
-      --plate-h: 520px;
-    }
-  }
-  @media (min-width: 1600px) {
-    .edu-plate {
-      --plate-w: 360px;
-    }
-  }
-  @media (min-width: 1800px) {
-    .edu-plate {
-      --plate-w: 390px;
+      --plate-w: 240px;
+      --plate-h: 320px;
     }
   }
 

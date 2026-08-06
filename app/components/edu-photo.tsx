@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 // § 04 background — the contact print and the plate.
 //
@@ -9,13 +9,14 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 // space beside the 620px body column is ~119px wide — too small to read as a
 // photograph at all. So the photo is shown at two sizes instead of one bad one.
 //
-//   the reference mark — a 7px hollow ink square, a 0.5px muted leader across a
-//     10px gap, and the word PHOTO in mono-micro, 14px past the school name's
-//     last character. It lives inside a zero-growth inline anchor (absolutely
+//   the reference mark — a 12px hollow ink square, a 0.5px muted leader across
+//     a 14px gap, and the word PHOTO in mono, 14px past the school name's last
+//     character. It lives inside a zero-growth inline anchor (absolutely
 //     positioned, anchor height 0) so it adds NOTHING to the line box and the
-//     row's height is byte-identical with and without it. This was a 28px crop
-//     of the photograph itself; at that size a photograph has no subject, only
-//     noise, and it read as a failed image load rather than as an affordance.
+//     station's height is byte-identical with and without it. This was a 28px
+//     crop of the photograph itself; at that size a photograph has no subject,
+//     only noise, and it read as a failed image load rather than as an
+//     affordance.
 //
 //   the plate — the full photograph. There is exactly ONE of these for the
 //     whole section, rendered by Background inside `.bg-plates` rather than
@@ -25,13 +26,17 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 //     and caption change. It is absolutely positioned against that wrapper —
 //     never fixed, never computed from scroll — which holds exactly the two
 //     stations that carry a school, and so cannot reach the Kyoto portrait in
-//     station 01's aside.
+//     the interests block below.
 //
-// The stage. Addressing a print does not just open a plate — the station clears
-// around it: whichever coursework column is open closes, and coursework
-// hover-open is suppressed so a pointer crossing the column cannot reopen it.
-// There is no divider retraction: it came from `.edu-grid`'s equal-height rows,
-// which the four-station route does not have. See CLAUDE.md § 5 / §04.
+// IT OPENS ON CLICK, AT EVERY WIDTH, AND THERE IS NO BREAKPOINT.
+// Hover used to open it above 1440px, and the argument for that was that the
+// plate covered the coursework rather than type being read — the coursework was
+// clipped shut until the station was hovered. The coursework is permanently
+// visible now, so there is no longer anything on that side of the station that
+// a plate may cover unasked. With hover went the intent delay, the grace
+// period, the region counter, the re-arm beat, the `edu-staged` / `edu-rearming`
+// classes and the whole 1440px derivation. Click to open, click / Escape /
+// anywhere else to close.
 
 export type EduPhoto = {
   src: string;
@@ -41,15 +46,6 @@ export type EduPhoto = {
   height: number;
 };
 
-// Above this width the aside is its own right-hand column, so the plate can sit
-// clear of all type and hover may open it. Tied to that layout change, not to a
-// number: it was 1360 before the merge, and the station's 140px meta column and
-// the route's 16px spine indent moved it to 1436 (rounded to the 1440
-// breakpoint the file already uses). See --plate-w in globals.css.
-const HOVER_OPENS = "(hover: hover) and (pointer: fine) and (min-width: 1440px)";
-const STAGE_IN_MS = 180; // intent delay, so a pointer crossing the print does nothing
-const STAGE_OUT_MS = 260; // grace, so the trigger -> plate journey is one region
-const REARM_MS = 200; // extra beat before coursework may hover-open again
 const PLATE_ID = "edu-plate";
 // The exit's full length: caption 160ms, then the wipe and the corners. The
 // photo has to stay mounted for all of it — a conditionally rendered image
@@ -58,14 +54,11 @@ const PLATE_ID = "edu-plate";
 const EXIT_MS = 480;
 
 // ── the shared stage, in module scope ───────────────────────────────────────
-// The print and the plate are one hover region and they now live in different
-// parts of the tree, so the region counter and the active index have to be
-// shared rather than owned by either. A tiny store rather than context: two
-// siblings deep in a server-rendered tree, and nothing else needs the state.
+// The trigger and the plate live in different parts of the tree and there is
+// one plate for two triggers, so the active index cannot be owned by either. A
+// tiny store rather than context: two siblings deep in a server-rendered tree,
+// and nothing else needs the state.
 let active: number | null = null;
-let region = 0;
-let inTimer: number | null = null;
-let outTimer: number | null = null;
 const listeners = new Set<() => void>();
 
 const subscribe = (fn: () => void) => {
@@ -78,57 +71,11 @@ const getServerActive = () => null;
 function commit(next: number | null) {
   if (active === next) return;
   active = next;
-  const el = document.documentElement;
-  if (next === null) {
-    el.classList.remove("edu-staged");
-    // Hold coursework hover-open shut for a further beat, so a pointer sweeping
-    // off the plate does not instantly trigger the column underneath it.
-    el.classList.add("edu-rearming");
-    window.setTimeout(() => {
-      if (active === null) el.classList.remove("edu-rearming");
-    }, REARM_MS);
-  } else {
-    el.classList.add("edu-staged");
-    el.classList.remove("edu-rearming");
-  }
   listeners.forEach((fn) => fn());
 }
 
-function clearTimers() {
-  if (inTimer) window.clearTimeout(inTimer);
-  if (outTimer) window.clearTimeout(outTimer);
-  inTimer = null;
-  outTimer = null;
-}
-
-function regionEnter(i: number) {
-  region++;
-  clearTimers();
-  // The intent delay lives here: a pointer merely crossing a print never
-  // reaches commit(), so the row never clears for a passer-by.
-  inTimer = window.setTimeout(() => commit(i), STAGE_IN_MS);
-}
-
-function regionLeave() {
-  region = Math.max(0, region - 1);
-  clearTimers();
-  // The grace period: the print -> plate journey briefly leaves both, and this
-  // is what keeps that one region.
-  outTimer = window.setTimeout(() => {
-    if (region > 0) return;
-    commit(null);
-  }, STAGE_OUT_MS);
-}
-
-function openNow(i: number) {
-  clearTimers();
-  commit(i);
-}
-function closeNow() {
-  region = 0;
-  clearTimers();
-  commit(null);
-}
+const openNow = (i: number) => commit(i);
+const closeNow = () => commit(null);
 
 // ── the trigger ─────────────────────────────────────────────────────────────
 export default function EduPhotoTrigger({
@@ -140,21 +87,12 @@ export default function EduPhotoTrigger({
 }) {
   const current = useSyncExternalStore(subscribe, getActive, getServerActive);
   const open = current === index;
-  const [canHover, setCanHover] = useState(false);
   // A pointer press focuses the button BEFORE it clicks it. Without this, focus
   // opened the plate and the click that followed saw it already open and shut
   // it again — one tap, two toggles, nothing on screen. Focus opens only when
   // it did not come from a pointer, which leaves keyboard focus working and
-  // gives tap a single clean toggle.
+  // gives a tap a single clean toggle.
   const pointerFocus = useRef(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia(HOVER_OPENS);
-    setCanHover(mq.matches);
-    const onChange = () => setCanHover(mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
 
   return (
     <span className="edu-plate-anchor">
@@ -164,8 +102,6 @@ export default function EduPhotoTrigger({
         aria-expanded={open}
         aria-controls={PLATE_ID}
         aria-label={`View photograph: ${photo.alt}`}
-        onPointerEnter={() => canHover && regionEnter(index)}
-        onPointerLeave={() => canHover && regionLeave()}
         onPointerDown={() => {
           pointerFocus.current = true;
         }}
@@ -177,11 +113,10 @@ export default function EduPhotoTrigger({
           closeNow();
         }}
         onClick={(e) => {
-          // Hover already owns the fine-pointer case; click is the coarse and
-          // narrow-viewport path, where it toggles.
           e.preventDefault();
           pointerFocus.current = false;
-          if (!canHover) (open ? closeNow() : openNow(index));
+          if (open) closeNow();
+          else openNow(index);
         }}
       >
         {/* A drawn reference, not a crop of the photograph. A 28px thumbnail
@@ -233,8 +168,8 @@ export function EduPlate({ photos }: { photos: EduPhoto[] }) {
       setOpen(true);
       return;
     }
-    // Switching rows: the outgoing photo finishes its exit BEFORE the incoming
-    // one is mounted, so the two are never on screen together.
+    // Switching stations: the outgoing photo finishes its exit BEFORE the
+    // incoming one is mounted, so the two are never on screen together.
     setOpen(false);
     swap.current = window.setTimeout(() => setShown(want), EXIT_MS);
   }, [current, shown, photos]);
@@ -257,12 +192,12 @@ export function EduPlate({ photos }: { photos: EduPhoto[] }) {
     () => () => {
       if (swap.current) window.clearTimeout(swap.current);
     },
-    []
+    [],
   );
 
   const photo = shown;
 
-  // Escape, and a tap anywhere else, dismiss it.
+  // Escape, and a press anywhere else, dismiss it.
   useEffect(() => {
     if (current === null) return;
     const onKey = (e: KeyboardEvent) => {
@@ -283,9 +218,6 @@ export function EduPlate({ photos }: { photos: EduPhoto[] }) {
   // Never leave the page staged behind an unmount.
   useEffect(() => () => closeNow(), []);
 
-  const onEnter = useCallback(() => regionEnter(active ?? 0), []);
-  const onLeave = useCallback(() => regionLeave(), []);
-
   return (
     <span
       id={PLATE_ID}
@@ -294,8 +226,6 @@ export function EduPlate({ photos }: { photos: EduPhoto[] }) {
       data-open={open ? "" : undefined}
       className="edu-plate"
       aria-hidden={open ? undefined : "true"}
-      onPointerEnter={onEnter}
-      onPointerLeave={onLeave}
     >
       <span className="edu-plate-box">
         {photo && (
