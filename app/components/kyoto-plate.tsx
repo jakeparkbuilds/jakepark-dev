@@ -170,7 +170,11 @@ export default function KyotoPlate() {
           variant="outline"
           className="cn-turn-btn"
           aria-pressed={turned}
-          aria-label="turn over — interests"
+          // The accessible name has to CONTAIN the visible label, or speech
+          // input cannot address the control it can see: "click BACK" against a
+          // name of "turn over — interests" matches nothing. So the name tracks
+          // the word on the button and carries the description after it.
+          aria-label={turned ? "back — the photograph" : "turn over — interests"}
           onPointerEnter={(e) => {
             if (e.pointerType === "mouse") setHovered(true);
           }}
