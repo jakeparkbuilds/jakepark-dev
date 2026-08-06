@@ -277,13 +277,20 @@ export default function PizzaRain() {
       setShowButton(true);
       return;
     }
-    // Rides the shared Lenis loop; no second scroll listener.
-    const unsubscribe = subscribeGlobal((progress) => {
-      if (progress >= WARM_AT) warm();
-      if (progress < BOTTOM) return;
-      unsubscribe();
-      rain();
-    });
+    // Rides the shared Lenis loop; no second scroll listener. GATED ON § 05:
+    // both thresholds it watches for — 0.80 to warm the asset and 0.96 to fire
+    // — are only reachable with the last section on screen, so subscribing
+    // from the hero is a callback per frame for the whole page that can never
+    // do anything.
+    const unsubscribe = subscribeGlobal(
+      (progress) => {
+        if (progress >= WARM_AT) warm();
+        if (progress < BOTTOM) return;
+        unsubscribe();
+        rain();
+      },
+      document.getElementById("connect"),
+    );
     return unsubscribe;
   }, [reduced, rain, warm]);
 

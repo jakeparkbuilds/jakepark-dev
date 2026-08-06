@@ -616,6 +616,37 @@ screenshot shows it; the figures were the right answer while the projects had
 nothing to show, and the wrong one once they did. **Do not regenerate them and
 do not add a synthetic figure to a project that lacks a thumbnail.**
 
+**THE THUMBNAIL REVEAL TAKES TWO GATES AND NEEDS BOTH: decoded, and its row
+has arrived.** Decode alone was the whole gate and it was half a mechanism. It
+was added because the row's reveal ran on schedule whether or not pixels
+existed, so on a cold cache the wipe uncovered an empty frame — still true, and
+still the reason the decode gate exists. But on any connection quick enough to
+decode before the reader scrolls, which on a warm cache is every connection, the
+reveal was SPENT OFF SCREEN. Measured on a production build at 1440: all three
+pictures reached `data-loaded` **85ms after navigation** and `data-settled` at
+**608ms**, while sitting **343, 871 and 1399px BELOW THE FOLD**. By the time the
+reader got there the wipe had been over for seconds and the picture was simply
+present at full strength — landing abruptly, with no arrival, while the text
+beside it wiped in and the registration corners faded at 300ms. That is the
+"thumbnails land abruptly on first scroll" complaint, and no amount of easing
+would have touched it.
+
+The second gate is the ROW's own crossing, observed at the same 0.25 threshold
+`data-landed` uses, on the same element — not the box's, because the box is most
+of the row's height but not all of it and two thresholds would put the picture
+and its text on different frames. Re-measured: `data-loaded` now fires at
+**−21 / −3 / −13px** relative to the fold, i.e. as each row crosses in.
+- Under reduced motion the row observer never exists (that effect returns early),
+  so `arrived` starts true and the decode gate is the only one — which is
+  exactly the behaviour that path already had.
+- **Per image, production, cache disabled, 1440 @dpr1:** all three served as
+  **AVIF at `w=640`** — my5 **3,101B**, capitolcast **5,788B**, bike-heat
+  **53,883B** — intrinsic 559×317 / 559×317 / 559×419 against a 532px CSS box,
+  cold `decode()` **1.4 / 1.8 / 4.9ms**. The `w=3840` in the `src` attribute is
+  next/image's non-srcset fallback and no srcset-capable browser requests it.
+  The `data-near` prefetch (`rootMargin: 900px`) fires ~900px ahead for rows 01
+  and 02 and, for row 03, at 893px ahead — early enough in every case.
+
 - All content lives in one typed array, `app/lib/projects.ts`. **Adding a
   project is one entry and no layout work.** `thumb` is optional; an entry
   without one spans its text across cols 2–10.
@@ -1750,7 +1781,15 @@ dimension so the outgoing copy exits as an identical copy arrives.
 
 ### Scroll
 Lenis (`lerp: 0.09`, `duration: 1.1`), disabled under reduced motion and on
-touch. **One shared rAF loop** for the whole page exposing normalized scroll
+touch. **THOSE TWO OPTIONS CONTRADICT EACH OTHER AND `lerp` IS THE DEAD ONE.**
+Lenis's `scrollTo` fills in `easing = defaultEasing` whenever `duration` is a
+number and no easing was given, and `Animate.advance` tests
+`if (this.duration && this.easing)` BEFORE `else if (this.lerp)` — so every
+wheel notch runs a **1.1 second** eased glide (`1.001 − 2^(−10t)`) and the 0.09
+lerp is never consulted. Measured: one notch from rest was still creeping toward
+its target 790ms later. **Flagged, not changed** — the fix is to delete one of
+the two options, and which one is a feel decision that has to be made by
+looking at it. **One shared rAF loop** for the whole page exposing normalized scroll
 progress globally and per-section. Components subscribe; nothing runs its own
 loop; everything unsubscribes on unmount.
 
@@ -1761,21 +1800,59 @@ from § 03's spine, which is static. The truth:
 
 | # | loop | file | gate |
 |---|---|---|---|
-| 1 | shared scroll controller (Lenis + every subscriber) | `app/lib/scroll-controller.ts` | starts on first subscriber, stops on last |
+| 1 | shared scroll controller (Lenis + every subscriber) | `app/lib/scroll-controller.ts` | viewport intersection per subscriber, **plus** a no-movement stand-down |
 | 2 | § 02's index — the drifting field | `app/components/skills.tsx` | viewport intersection + `document.hidden` |
 | 3 | § 05 connect's type bands | `app/components/type-bands.tsx` | viewport intersection + `document.hidden` |
 
 Loops 2 and 3 are fully cancelled on exit, on `document.hidden`, and under
 reduced motion.
 
-**Loop 1 is a KNOWN VIOLATION and it is tracked, not fixed.** `section-mark`
-registers every section permanently, so the last subscriber never leaves and the
-controller never stops: **~610 callbacks per 5s at rest**, with § 02 and § 05
-both off screen. The fix is to gate each `section-mark` subscription on viewport
-intersection the way loops 2 and 3 already are. **Do not do it during a
-restructure** — it is pre-existing and orthogonal, and fixing it mid-restructure
-makes every performance number un-attributable to the change that produced it.
-It is a post-restructure task.
+**LOOP 1'S LEAK IS FIXED.** It was a known violation for months: `section-mark`
+registered every section permanently, so the last subscriber never left and the
+controller never stopped — **608 rAF callbacks AND 6,000 `getBoundingClientRect`
+calls per 5s at rest**, i.e. ~10 forced layouts per frame for a page standing
+perfectly still. Two changes, both in `scroll-controller.ts`:
+
+- **Every subscription is gated on viewport intersection, and THE GATE IS IN
+  THE CONTROLLER, not at the call sites.** `registerSection(el, fn)` observes
+  `el`; `subscribeGlobal(fn, gate)` takes the element whose visibility the work
+  is about — § 03's plate for the nav's inversion, § 05 for pizza rain's
+  trigger. Five call sites is five chances to forget, and a subscriber that
+  forgets is invisible until somebody profiles again.
+- **The loop stands down when nothing has moved.** Every subscriber on this page
+  is a pure function of the scroll offset and the viewport box, so a frame on
+  which none of those changed has nothing to compute. Having subscribers is
+  explicitly NOT a reason to keep ticking. After `IDLE_GRACE_MS` (600) of no
+  movement and no Lenis easing the rAF is cancelled; passive `wheel`,
+  `touchstart`, `touchmove`, `keydown`, `scroll`, `resize` and
+  `orientationchange` listeners re-arm it. A `dirty` flag guarantees a newly
+  gated-in subscriber gets one full pass before any of this applies to it.
+
+**Three things about this are load-bearing and each was a measured bug first.**
+
+1. **`rootMargin: "-1px 0px"` on the gate.** At threshold 0 Chrome reports an
+   element whose edge exactly touches the root's edge as intersecting, with an
+   intersection rect of ZERO height — § 02 starts at exactly `100svh`, so at the
+   top of the page it was "visible" with 1440×0 of itself on screen. Testing the
+   rect for a non-zero area instead is the obvious fix and it is **wrong**: an
+   observer notifies on threshold CROSSINGS, `isIntersecting` was already true
+   at zero area, so § 02 scrolling into view crossed nothing, no second callback
+   ever came, and the gate stayed shut for the life of the page — § 02's mark
+   never moved again. Shrinking the root makes the edge case genuinely
+   non-intersecting, so the crossing is real.
+2. **Lenis is never destroyed when the loop stands down.** It owns the wheel and
+   touch handling; tearing it down at rest would take smooth scrolling with it.
+3. **Lenis is fed a clock with the idle time subtracted.** It measures a delta
+   between consecutive `raf()` calls, so the first tick after a three-second
+   stand-down handed it a 3000ms frame and completed the easing in one step —
+   measured, a wheel notch from a stood-down loop moved the page in ONE jump (2
+   distinct `scrollY` values across 800ms) where an awake loop eased over 42.
+   Lenis only ever looks at differences, so any monotonic clock is valid.
+
+**Measured after, median of 5, 5s at rest:** hero **9** rAF and **0** rects;
+§ 02 **0/0**; § 04 **0/0**; mid-§ 04 **0/0**. § 03 reads 618 and § 05 601 —
+those are loops 2 and 3, the field's 80px pre-roll margin and the bands' own
+autoplay, both correct and both stopping on the next scroll.
 
 **Report the real inventory and the real at-rest callback count every pass. Do
 not report "three and clean" — that assertion is retired.** If a pass moves the
@@ -2102,20 +2179,13 @@ Mobile is not an afterthought — assume half of recruiter traffic is a phone.
   controller, § 02's index field, § 05's type bands. Zero pending timers once
   the page settles. **Report the real inventory and the real at-rest callback
   count every pass; "three and clean" is a retired assertion.**
-- **THE AT-REST COUNT IS A KNOWN VIOLATION and it is tracked, not fixed.**
-  Measured at rest with § 02 and § 05 both off screen: **606 rAF callbacks in 5
-  seconds** (re-measured **617** a session later; treat ~610 as the figure and
-  the delta as the signal). Byte-identical before and after the magnet, the
-  character reveal and the type bands were added — those three add subscribers
-  to the shared loop and no loop of their own. The cause is structural: the
-  shared scroll controller starts its loop on the first subscriber and stops
-  only when the last one leaves, and `section-mark` registers **every** section
-  permanently, so the loop is alive from mount to unload. The fix is to gate
-  each section-mark subscription on viewport intersection the way the field and
-  the bands already are. **It is a post-restructure task and must not be done
-  during the restructure** — it is orthogonal, and fixing it mid-restructure
-  makes every performance number un-attributable. Do not claim this budget line
-  is met until that gate exists.
+- **THE AT-REST COUNT IS FIXED — 608 rAF / 6,000 rects per 5s → 0 / 0** at
+  § 02, § 04 and mid-§ 04, and **9 / 0** at the hero. See § 6 Scroll for the
+  mechanism and for the three things in it that are load-bearing. The figure
+  that stood for months was ~610 callbacks with ~10 forced layouts per frame,
+  for a page doing nothing. **Report both numbers every pass** — the rAF count
+  and the `getBoundingClientRect` count — because the callbacks were never the
+  expensive half.
 - anime.js imported modularly, never the whole bundle
 - Raster images now number **seven** — § 05's Kyoto portrait, one photo per
   school station in § 04, `pizza.png` for § 05's easter egg, and **three project

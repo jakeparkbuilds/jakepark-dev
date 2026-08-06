@@ -416,9 +416,25 @@ export default function Work({
     };
   }, [reduced]);
 
-  // The thumbnail reveal is bound to DECODE, never to scroll position. See
-  // CLAUDE.md § 5 / §02: the row's own reveal ran on schedule whether or not
-  // pixels existed, so on a cold cache the wipe uncovered an empty frame.
+  // The thumbnail reveal takes TWO gates and needs both: the picture must be
+  // decoded, and its row must have arrived.
+  //
+  // Decode alone was the whole gate and it was half a mechanism. It was added
+  // because the row's reveal ran on schedule whether or not pixels existed, so
+  // on a cold cache the wipe uncovered an empty frame — true, and still true.
+  // But on any connection quick enough to decode before the reader scrolls,
+  // which on a warm cache is every connection, the reveal was SPENT OFF
+  // SCREEN. Measured on a production build at 1440: all three pictures reached
+  // `data-loaded` 85ms after navigation and `data-settled` at 608ms, while
+  // sitting 343, 871 and 1399px BELOW THE FOLD. By the time the reader got
+  // there the wipe had been over for several seconds and the picture was
+  // simply present at full strength — landing abruptly, with no arrival, while
+  // the text beside it wiped in and the registration corners faded at 300ms.
+  //
+  // So the second gate is the row's own crossing, observed at the same 0.25
+  // threshold the row's `data-landed` uses, on the same element. The picture
+  // now begins its 520ms wipe on the same frame its row begins its 420ms one,
+  // and the two read as one arrival.
   useEffect(() => {
     const list = listRef.current;
     if (!list) return;
@@ -437,7 +453,21 @@ export default function Work({
       };
       box.addEventListener("transitionend", settle);
 
-      const show = () => box.setAttribute("data-loaded", "true");
+      // Both gates, and the picture goes when the second of them lands —
+      // whichever order they arrive in. Under reduced motion the row never
+      // gets an observer at all (the effect above returns early), so `arrived`
+      // starts true and the decode gate is the only one, which is the
+      // behaviour that path already had: a 120ms fade, no wipe, no wait for
+      // the viewport.
+      let decoded = false;
+      let arrived = reduced;
+      const maybeShow = () => {
+        if (decoded && arrived) box.setAttribute("data-loaded", "true");
+      };
+      const show = () => {
+        decoded = true;
+        maybeShow();
+      };
       const reveal = () => {
         // decode() is what buys the smooth frame; the rejection path is what
         // stops a broken source leaving the picture permanently at opacity 0.
@@ -448,6 +478,21 @@ export default function Work({
         img.addEventListener("load", reveal, { once: true });
         img.addEventListener("error", show, { once: true });
       }
+
+      // The row, at the row's own threshold — not the box's. The box is most
+      // of the row's height but not all of it, and two different thresholds
+      // would put the picture and the text it belongs to on different frames.
+      const row = box.closest<HTMLElement>(".proj-row") ?? box;
+      const arrive = new IntersectionObserver(
+        ([entry]) => {
+          if (!entry.isIntersecting) return;
+          arrived = true;
+          arrive.disconnect();
+          maybeShow();
+        },
+        { threshold: 0.25 },
+      );
+      if (!reduced) arrive.observe(row);
 
       // Widen the fetch trigger without taking `priority`: these sit below the
       // hero and can never be the LCP element.
@@ -464,6 +509,7 @@ export default function Work({
 
       cleanups.push(() => {
         io.disconnect();
+        arrive.disconnect();
         box.removeEventListener("transitionend", settle);
       });
     }
@@ -472,7 +518,7 @@ export default function Work({
       for (const c of cleanups) c();
       for (const box of boxes) box.removeAttribute("data-armed");
     };
-  }, []);
+  }, [reduced]);
 
   return (
     <section

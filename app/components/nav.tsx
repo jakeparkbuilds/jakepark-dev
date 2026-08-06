@@ -40,6 +40,12 @@ export default function Nav() {
     const state = els.map(() => false);
     const mids = els.map(() => 0);
 
+    // GATED ON § 03 ITSELF. No nav element's midpoint can be inside the plate
+    // unless the plate is on screen, so off screen this subscriber computes
+    // "not inverted" every frame forever and pays 7 forced layouts to do it.
+    // The gate hands that back; the reset below is what makes it safe, because
+    // an element that was inverted on the last frame before the gate closed
+    // would otherwise stay light over paper.
     return subscribeGlobal(() => {
       const plateRect = plate.getBoundingClientRect();
       for (let i = 0; i < els.length; i++) {
@@ -53,7 +59,25 @@ export default function Nav() {
         if (inv) els[i].setAttribute("data-inv", "");
         else els[i].removeAttribute("data-inv");
       }
+    }, plate);
+  }, []);
+
+  // The gate's own closing edge. IntersectionObserver fires as § 03 leaves, at
+  // which moment the loop has already stopped calling the subscriber above —
+  // so anything still carrying [data-inv] would hold paper-coloured type on a
+  // paper ground until the plate came back. Clearing it here is the one write
+  // the gate needs, and it costs nothing: no rect is read.
+  useEffect(() => {
+    const plate = document.getElementById("experience");
+    if (!plate) return;
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) return;
+      for (const el of [nameRef.current, ...itemRefs.current]) {
+        el?.removeAttribute("data-inv");
+      }
     });
+    io.observe(plate);
+    return () => io.disconnect();
   }, []);
 
   useEffect(() => {
